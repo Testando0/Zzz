@@ -57,7 +57,7 @@
       font-size: 18px;
       border: none;
       border-radius: 6px;
-      background-color: #4CAF50;
+      background-color: #ff0000;
       color: white;
       cursor: pointer;
       margin-top: 10px;
@@ -65,7 +65,7 @@
     }
 
     button:hover {
-      background-color: #45a049;
+      background-color: #ff0000;
     }
 
     .message {
@@ -117,13 +117,13 @@
   <h1>Likes FF</h1>
 
   <div class="form-container">
-    <input type="text" id="userId" placeholder="Digite o ID do usuário" />
+    <input type="text" id="userId" placeholder="Digite O ID Do Usuário" />
     <button onclick="enviarLikes()">Enviar Likes</button>
     <div class="message" id="message"></div>
   </div>
 
   <div class="footer">
-    by @luanzn_fe
+    Redzin
   </div>
 
   <script>
@@ -132,7 +132,7 @@
       const messageElement = document.getElementById('message');
 
       if (!userId) {
-        alert('Por favor, insira um ID válido!');
+        alert('Por Favor, Insira Um ID Válido!');
         return;
       }
 
@@ -143,24 +143,24 @@
         .then(data => {
           if (data.status) {
             messageElement.className = 'message success';
-            messageElement.textContent = '✅ Likes enviados com sucesso!';
+            messageElement.textContent = '✅ Likes Enviados Com Sucesso!';
           } else {
-            const match = data.resultado.match(/Tente novamente em (\d+) horas e (\d+) minutos/);
+            const match = data.resultado.match(/Tente Novamente Em (\d+) Horas E (\d+) Minutos/);
             if (match) {
               const horas = match[1];
               const minutos = match[2];
               messageElement.className = 'message error';
-              messageElement.textContent = `⏳ Esse ID já recebeu likes. Tente novamente em ${horas}h e ${minutos}min.`;
+              messageElement.textContent = `⏳ Esse ID Já Recebeu Likes. Tente Novamente Em ${horas}h E ${minutos}Min.`;
             } else {
               messageElement.className = 'message error';
-              messageElement.textContent = '❌ Erro ao enviar likes! Verifique o ID.';
+              messageElement.textContent = '❌ Erro Ao Enviar Likes! Verifique O ID.';
             }
           }
           messageElement.style.display = 'block';
         })
         .catch(() => {
           messageElement.className = 'message error';
-          messageElement.textContent = '⚠️ Erro ao conectar com a API. Tente novamente mais tarde.';
+          messageElement.textContent = '⚠️ Erro Ao Conectar Com A API. Tente Novamente Mais Tarde.';
           messageElement.style.display = 'block';
         });
     }

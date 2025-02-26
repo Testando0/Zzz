@@ -43,7 +43,7 @@
             font-size: 16px;
             border: none; /* Remove a borda vermelha */
             border-radius: 20px;
-            background-color: #8B4513; /* Define a cor de fundo do botão como marrom */
+            background-color: #ff0000; /* Define a cor de fundo do botão como marrom */
             color: white; /* Define a cor do texto do botão como branco */
             transition: all 0.3s ease; /* Adiciona uma transição suave para mudanças de estilo */
             width: calc(33.33% - 20px); 
@@ -71,7 +71,7 @@
         .search-input {
             padding: 10px;
             font-size: 16px;
-            border: 2px solid #8B4513; /* marrom */
+            border: 2px solid #ff0000; /* marrom */
             border-radius: 5px 0 0 5px;
             width: 200px;
             background-color: #000000; /* Preto */
@@ -85,7 +85,7 @@
             border-radius: 0 5px 5px 0;
             cursor: pointer;
             background-color: #000000; /* Preto */
-            color: #8B4513; /* marrom */
+            color: #ff0000; /* marrom */
             transition: all 0.3s ease;
             display: flex;
             align-items: center;
@@ -122,7 +122,7 @@
 <body>
     <div class="top-bar">
         <div class="search-bar">
-            <input type="text" id="search-input" class="search-input" placeholder="Pesquisar botão">
+            <input type="text" id="search-input" class="search-input" placeholder="Pesquisar...">
             <button class="search-button" onclick="searchButton()">
                 <i class="fas fa-search icon"></i> Pesquisar
             </button>
@@ -255,7 +255,7 @@
         <button class="button" onclick="window.location.href = 'https://imginn.com/';">
             <i class="fas fa-user-lock"></i> Ver Perfil Privado
     </div>
-    <p> desenvolvido pelo Luanzin dev🖥️</p>
+    <p> Desenvolvido Por Redzin</p>
     <script>
         function searchButton() {
             const query = document.getElementById('search-input').value.toLowerCase();

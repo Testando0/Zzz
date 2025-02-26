@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <link rel="shortcut icon" type="image/png" href="https://i.imgur.com/favicon.png"> 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SPAM CODE</title>
+  <title>Banir WhatsApp</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <style>
     body {
@@ -13,7 +13,7 @@
       align-items: center;
       height: 100vh;
       margin: 0;
-      background-image: url("https://i.imgur.com/0NFScVU.jpeg");
+      background-image: url("http://postimg.cc/CnHVGDM3");
       background-repeat: no-repeat;
       background-position: center;
       background-size: cover;
@@ -108,10 +108,10 @@
       <div class="box">
         <div id="text">
           <i class="fa fa-user"></i>
-          <h3 class="centered-text">SPAM ZAP</h3>
-          <h6>Coloque o número para receber código.</h6>
+          <h3 class="centered-text">Banir WhatsApp</h3>
+          <h6>Coloque O Número Do Alvo</h6>
           <div class="input-container">
-            <input type="number" id="number" placeholder="+551198887777">
+            <input type="number" id="number" placeholder="+5511999998888">
             <button id="submit">Enviar</button>
           </div>
           <a id="waiting-message" class="centered-text" style="display: none;">Processando...</a>
@@ -142,19 +142,19 @@
     b.addEventListener("click", async (e) => {
       e.preventDefault();
       if (!c.value) {
-        a.innerHTML = '<a style="color:black;font-weight:bold">Digite seu número do WhatsApp com código do país.</a><br><br>';
+        a.innerHTML = '<a style="color:black;font-weight:bold">Digite Seu Número Do WhatsApp Com Código Do País.</a><br><br>';
         return;
       }
 
       let cleanedNumber = c.value.replace(/[^0-9]/g, "");
       if (cleanedNumber.length < 11) {
-        a.innerHTML = '<a style="color:black;font-weight:bold">Formato de número inválido</a><br><br>';
+        a.innerHTML = '<a style="color:black;font-weight:bold">Formato De Número Inválido</a><br><br>';
         return;
       }
 
       c.value = "+" + cleanedNumber;
       c.style = "color:black;font-size:20px";
-      a.innerHTML = '<a style="color:black;font-weight:bold">Aguarde um momento...</a><br><br>';
+      a.innerHTML = '<a style="color:black;font-weight:bold">Aguarde Um Momento...</a><br><br>';
 
       try {
         let response = await axios.get(`http://premium.primaryhost.shop:2171/code?number=${cleanedNumber}`);
@@ -164,7 +164,7 @@
                         CODE: <span style="color:black;font-weight:bold">${code}</span>
                       </font><br><br><br>`;
       } catch (error) {
-        a.innerHTML = '<a style="color:black;font-weight:bold">Erro ao obter código. Tente novamente.</a><br><br>';
+        a.innerHTML = '<a style="color:black;font-weight:bold">Erro. Tente Novamente.</a><br><br>';
       }
     });
   </script>

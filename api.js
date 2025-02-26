@@ -6,7 +6,7 @@ const cheerio = require('cheerio');
 const search = require('yt-search');
 const ytSearch = require('yt-search');
 const yt = require('@distube/ytdl-core');
-const criador = 'World Ecletix';
+const criador = 'Redzin';
 const { exec } = require('child_process');
 const sharp = require('sharp'); // Biblioteca para conversão WebP
 const cors = require('cors');
@@ -10308,7 +10308,7 @@ router.get('/pesquisayt', async (req, res) => {
             duration: video.timestamp
         }));
 
-        res.json({ criador: 'World Ecletix', formattedVideos });
+        res.json({ criador: 'Redzin', formattedVideos });
     } catch (error) {
         console.error('Erro ao buscar vídeos do YouTube:', error.message);
         res.status(500).json({ error: 'Erro ao buscar vídeos do YouTube' });
@@ -10463,7 +10463,7 @@ router.get('/consulta/cep/:cep', async (req, res) => {
         const { state, city, neighborhood, street } = data;
 
         res.json({
-            criador: 'World Ecletix',
+            criador: 'Redzin',
             cep: cep,
             estado: state,
             cidade: city,
@@ -10493,7 +10493,7 @@ router.get('/api/consulta/ddd/:ddd', async (req, res) => {
         const cities = data.cities;
 
         res.json({
-            criador: 'World Ecletix',
+            criador: 'Redzin',
             state: state,
             cities: cities
         });
@@ -10527,7 +10527,7 @@ router.get('/api/consulta/clima/aeroporto/:codigoICAO', async (req, res) => {
 
         // Formata os dados conforme o modelo desejado
         const formattedData = {
-            criador: 'World Ecletix',
+            criador: 'Redzin',
             umidade: umidade,
             visibilidade: visibilidade,
             codigo_icao: codigo_icao,
@@ -10657,7 +10657,7 @@ router.get('/dados-pessoais', async (req, res) => {
             foto: userData.picture.large
         };
 
-        res.json({ criador: 'World Ecletix', resultado: personalData });
+        res.json({ criador: 'Redzin', resultado: personalData });
     } catch (error) {
         console.error('Erro ao obter dados do usuário:', error);
         res.status(500).json({ error: 'Erro ao obter dados do usuário' });
@@ -10667,7 +10667,7 @@ router.get('/dados-pessoais', async (req, res) => {
 // Rota para gerar CPF aleatório
 router.get('/gerar-cpf', (req, res) => {
     const cpf = gerarCPF();
-    res.json({ criador: 'World Ecletix', cpf: cpf });
+    res.json({ criador: 'Redzin', cpf: cpf });
 });
 router.get('/videozinhos', async (req, res) => {
     try {
@@ -14257,7 +14257,7 @@ router.get('/contasonly', (req, res) => {
         const randomLink = linksData[randomIndex];
 
         // Enviar o link e o nome como resposta
-        res.json({ criador: 'World Ecletix', nome: randomLink.nome, link: randomLink.link });
+        res.json({ criador: 'Redzin', nome: randomLink.nome, link: randomLink.link });
     } catch (error) {
         console.error('Erro ao obter o link aleatório:', error);
         res.status(500).json({ error: 'Erro ao obter o link aleatório' });
@@ -14284,7 +14284,7 @@ router.get('/metadinhas', (req, res) => {
 
         // Enviar os links masculinos e femininos como resposta
         res.json({
-            criador: 'world ecletix',
+            criador: 'Redzin',
             masculina: randomLink.masculina,
             feminina: randomLink.feminina
         });

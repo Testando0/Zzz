@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ops! Erro 404 - Página não encontrada</title>
+<title>Ops! Erro 404 - Página Não Encontrada</title>
 <!-- Adicionando referências para favicons de diferentes tamanhos e tipos -->
     <link rel="icon" href="./icones/favicon-32x32.png" type="image/png" sizes="32x32">
     <link rel="icon" href="./icones/favicon-16x16.png" type="image/png" sizes="16x16">
@@ -19,7 +19,7 @@ html, body {
 }
 
 body {
-  background-image: url('https://i.imgur.com/MriAGw6.png');
+  background-image: url('https://files.catbox.moe/l86neb.jpg');
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center;
@@ -32,7 +32,7 @@ body {
 .container {
   text-align: center;
   background-color: rgba(0, 0, 0, 0.5);
-  border: 2px solid #98FB98;
+  border: 2px solid #ff0000;
   padding: 20px;
   color: white;
   max-width: 600px;
@@ -44,7 +44,7 @@ h1 {
 }
 
 a {
-  color: green;
+  color: red;
   text-decoration: none;
 }
 
@@ -59,7 +59,7 @@ a {
   width: 70%;
   padding: 8px;
   border: none;
-  border-bottom: 2px solid #98FB98;
+  border-bottom: 2px solid #ff0000;
   outline: none;
   font-size: 16px;
   background-color: transparent;
@@ -67,7 +67,7 @@ a {
 }
 
 .search-bar button {
-  background-color: #98FB98;
+  background-color: #ff0000;
   border: none;
   padding: 8px 15px;
 }
@@ -79,7 +79,7 @@ a {
 }
 
 .search-btn {
-  background-color: #98FB98;
+  background-color: #ff0000;
   border: none;
   padding: 0; /* Remover o preenchimento interno do botão */
   cursor: pointer;
@@ -90,25 +90,25 @@ a {
 </head>
 <body>
 <div class="container">
-  <h1>Erro 404 - Página não encontrada</h1>
-  <p>Lamentamos, mas a página que você está procurando não foi encontrada.</p>
-  <p><a href="/">Voltar para a página inicial</a></p>
+  <h1>Erro 404 - Página Não Encontrada</h1>
+  <p>Infelizmente, A Página Que Você Está Procurando Não Foi Encontrada.</p>
+  <p><a href="/">Voltar Para A Página Inicial</a></p>
   
   <!-- Barra para pesquisar DDD -->
   <div class="search-bar">
-    <input type="text" id="input-ddd" placeholder="Digite um DDD">
+    <input type="text" id="input-ddd" placeholder="Digite Um DDD">
     <button id="btn-pesquisar-ddd"><img src="https://i.imgur.com/ngqVTk1.png" alt="Pesquisar"></button>
   </div>
   
   <!-- Barra para pesquisar clima -->
   <div class="search-bar">
-    <input type="text" id="input-cidade" placeholder="Digite o nome da cidade">
+    <input type="text" id="input-cidade" placeholder="Digite O Nome Da Cidade">
     <button id="btn-pesquisar-clima"><img src="https://i.imgur.com/ngqVTk1.png" alt="Pesquisar"></button>
   </div>
   
   <!-- Campo de entrada e botão para criar um apelido -->
   <div class="search-bar">
-    <input type="text" id="input-nick" placeholder="Digite o texto para o Nick">
+    <input type="text" id="input-nick" placeholder="Digite O Texto Para O Nick">
     <button id="btn-criar-nick"><img src="https://i.imgur.com/ngqVTk1.png" alt="Pesquisar"></button>
   </div>
 
@@ -133,12 +133,12 @@ async function buscarClimaDaCidade(cidade) {
     try {
         const resposta = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${cidade}&appid=f5c0840c2457fbb64188a6d4be05618f&units=metric&lang=pt_br`);
         if (!resposta.ok) {
-            throw new Error("Cidade não encontrada");
+            throw new Error("Cidade Não Encontrada");
         }
         const clima = await resposta.json();
         return clima;
     } catch (erro) {
-        console.error("Erro ao buscar o clima:", erro);
+        console.error("Erro Ao Buscar O Clima:", erro);
         return { error: true };
     }
 }
@@ -146,17 +146,17 @@ async function buscarClimaDaCidade(cidade) {
 // Função para exibir as informações do clima
 function exibirInformacoesDoClima(clima) {
     if (clima.error) {
-        console.log("Desculpe, ocorreu um erro ao buscar as informações do clima.");
+        console.log("Desculpe, Ocorreu Um Erro Ao Buscar As Informações Do Clima.");
         return;
     }
     
     const informacoes = `
-🌞 Temperatura agora: ${clima.main.temp}ºC
+🌞 Temperatura Agora: ${clima.main.temp}ºC
 🏙️ Cidade: ${clima.name}
 🔥 Temperatura Máxima: ${clima.main.temp_max}°C
 ❄ Temperatura Mínima: ${clima.main.temp_min}°C
 🌦 Clima: ${clima.weather[0].description}
-💧 Umidade de ar: ${clima.main.humidity}%
+💧 Umidade Do Ar: ${clima.main.humidity}%
 🌫 Ventos: ${clima.wind.speed}
     `;
     
@@ -179,12 +179,12 @@ async function buscarInformacoesDoDDD(ddd) {
     try {
         const resposta = await fetch(`https://brasilapi.com.br/api/ddd/v1/${ddd}`);
         if (!resposta.ok) {
-            throw new Error("DDD não encontrado");
+            throw new Error("DDD Não Encontrado");
         }
         const dados = await resposta.json();
         return dados;
     } catch (erro) {
-        console.error("Erro ao buscar informações do DDD:", erro);
+        console.error("Erro Ao Buscar Informações Do DDD:", erro);
         return { error: true };
     }
 }
@@ -194,7 +194,7 @@ async function pesquisarDDD() {
     const ddd = document.getElementById("input-ddd").value;
     const dados = await buscarInformacoesDoDDD(ddd);
     if (dados.error) {
-        console.log("Desculpe, ocorreu um erro ao buscar informações do DDD.");
+        console.log("Desculpe, Ocorreu Um Erro Ao Buscar Informações Do DDD.");
     } else {
         exibirInformacoesDoDDD(dados);
     }
@@ -203,7 +203,7 @@ async function pesquisarDDD() {
 // Função para exibir as informações do DDD
 function exibirInformacoesDoDDD(dados) {
     if (dados.error) {
-        console.log("Desculpe, ocorreu um erro ao buscar informações do DDD.");
+        console.log("Desculpe, Ocorreu Um Erro Ao Buscar Informações Do DDD.");
         return;
     }
 
@@ -221,12 +221,12 @@ async function criarNick(texto) {
     try {
         const resposta = await fetch(`https://alizindev-api.onrender.com/api/tools/styletext?text=${texto}&apikey=a93e85c1`);
         if (!resposta.ok) {
-            throw new Error("Erro ao criar o Nick");
+            throw new Error("Erro Ao Criar O Nick");
         }
         const nick = await resposta.json();
         return nick;
     } catch (erro) {
-        console.error("Erro ao criar o Nick:", erro);
+        console.error("Erro Ao Criar O Nick:", erro);
         return { error: true, message: erro.message };
     }
 }
@@ -240,7 +240,7 @@ async function criarNickAoClicar() {
 // Função para exibir o apelido estilizado
 function exibirNickEstilizado(nick) {
     if (nick.error) {
-        console.log("Desculpe, ocorreu um erro ao criar o Nick:", nick.message);
+        console.log("Desculpe, Ocorreu Um Erro Ao Criar O Nick:", nick.message);
         return;
     }
 

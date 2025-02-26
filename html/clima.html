@@ -73,7 +73,7 @@
 <body>
     <div class="container">
         <h1>Clima Atual</h1>
-        <input type="text" id="city" placeholder="Digite a cidade">
+        <input type="text" id="city" placeholder="Digite A Cidade">
         <button id="getWeatherBtn">Obter Clima</button>
 
         <div class="weather-info" id="weatherInfo">
@@ -96,7 +96,7 @@
             if (city) {
                 getWeather(city);
             } else {
-                alert("Por favor, digite o nome de uma cidade!");
+                alert("Por Favor Informe A Cidade!");
             }
         });
 
@@ -109,11 +109,11 @@
                     if (data.cod === 200) {
                         displayWeather(data);
                     } else {
-                        alert("Cidade não encontrada!");
+                        alert("Cidade Não Encontrada!");
                     }
                 })
                 .catch(error => {
-                    console.error("Erro ao obter os dados: ", error);
+                    console.error("Erro Ao Obter Os Dados: ", error);
                 });
         }
 

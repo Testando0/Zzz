@@ -448,22 +448,6 @@ router.get('/googleimage/:query', async (req, res) => {
       return res.status(400).json({ error: 'Por favor, forneça um termo de pesquisa.' });
     }
 
-      router.get('/download-ytb', async (req, res) => {
-  const q = req.query.query;
-  if (!q) {
-    return res.status(400).send({ error: 'Query não fornecida' });
-  }
-
-  const url = `https://api.bronxyshost.com.br/api-bronxys/play?nome_url=${q}&apikey=KEY-TEMPORARIA-TELEGRAM-ALEATORY`;
-  try {
-    const response = await axios.get(url);
-    return res.send(response.data);
-  } catch (error) {
-    console.error(error);
-    return res.status(500).send({ error: 'Erro ao fazer requisição para a API do Pinterest' });
-  }
-});
-
     // Chaves de API do Google
     const GOOGLE_API_KEY = 'AIzaSyD1LwGYfWvRGpwOt7ppmXwHkWLm-lYMZUw';
     const GOOGLE_CX = '8336f5de960b14645'; // ID de pesquisa do Google
@@ -1210,7 +1194,7 @@ router.get('/musica4', async (req, res) => {
 
     try {
         // Montar a URL da API com o nome da música
-        const apiUrl = `https://carisys.online/api/downloads/youtube/play?query=${encodeURIComponent(musicName)}`;
+        const apiUrl = `https://api.bronxyshost.com.br/api-bronxys/play?nome_url=${q}&apikey=KEY-TEMPORARIA-TELEGRAM-ALEATORY`;
         
         // Fazer a requisição para a API
         const response = await axios.get(apiUrl);

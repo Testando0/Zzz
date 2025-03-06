@@ -1194,7 +1194,7 @@ router.get('/musica4', async (req, res) => {
 
     try {
         // Montar a URL da API com o nome da música
-        const apiUrl = `https://carisys.online/api/downloads/youtube/play?query=${encodeURIComponent(musicName)}`;
+        const apiUrl = `https://carisys.online/api/downloads/youtube/mp3-2?url=${q}`;
         
         // Fazer a requisição para a API
         const response = await axios.get(apiUrl);

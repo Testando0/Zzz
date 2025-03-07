@@ -1104,7 +1104,7 @@ const searchMusic = async (query) => {
 };
 
 // Rota para pesquisar e baixar o vídeo MP4 da música
-router.get('/clipe', async (req, res) => {
+router.get('/clipe4', async (req, res) => {
     const query = req.query.name; // Nome da música enviado como parâmetro na URL
     if (!query) {
         return res.status(400).send({ message: 'Name parameter is required' });
@@ -1127,7 +1127,7 @@ router.get('/clipe', async (req, res) => {
 });
 
 // Rota para pesquisar e baixar o áudio MP3 da música
-router.get('/musica', async (req, res) => {
+router.get('/musica4', async (req, res) => {
     const query = req.query.name; // Nome da música enviado como parâmetro na URL
     if (!query) {
         return res.status(400).send({ message: 'Name parameter is required' });
@@ -1149,7 +1149,7 @@ router.get('/musica', async (req, res) => {
     }
 });
 // Rota para baixar o vídeo MP4 a partir da URL
-router.get('/linkmp4', async (req, res) => {
+router.get('/linkmp4-v2', async (req, res) => {
     const videoUrl = req.query.url; // URL do vídeo enviado como parâmetro na URL
     if (!videoUrl) {
         return res.status(400).send({ message: 'URL parameter is required' });
@@ -1167,7 +1167,7 @@ router.get('/linkmp4', async (req, res) => {
 });
 
 // Rota para baixar o áudio MP3 a partir da URL
-router.get('/linkmp3', async (req, res) => {
+router.get('/linkmp3-v2', async (req, res) => {
     const videoUrl = req.query.url; // URL do vídeo enviado como parâmetro na URL
     if (!videoUrl) {
         return res.status(400).send({ message: 'URL parameter is required' });
@@ -1184,7 +1184,7 @@ router.get('/linkmp3', async (req, res) => {
     }
 });
 //fim 
-router.get('/musica4', async (req, res) => {
+router.get('/musica', async (req, res) => {
     const { query } = req; // O nome da música será passado como parâmetro de consulta
     const musicName = query.name; // Exemplo: /play?nome=nome_da_musica
 
@@ -1194,7 +1194,7 @@ router.get('/musica4', async (req, res) => {
 
     try {
         // Montar a URL da API com o nome da música
-        const apiUrl = `https://carisys.online/api/downloads/youtube/mp3?url=${q}`;
+        const apiUrl = `https://carisys.online/api/downloads/youtube/play?query=${encodeURIComponent(musicName)}`;
         
         // Fazer a requisição para a API
         const response = await axios.get(apiUrl);
@@ -1214,7 +1214,7 @@ router.get('/musica4', async (req, res) => {
 });
 
 // Rota GET chamada "playlink"
-router.get('/linkmp3-v2', (req, res) => {
+router.get('/linkmp3', (req, res) => {
     const youtubeUrl = req.query.url; // Obtenha o link do YouTube a partir dos parâmetros da query
     
     if (!youtubeUrl) {
@@ -1230,7 +1230,7 @@ router.get('/linkmp3-v2', (req, res) => {
 
 
 // Rota GET chamada "clipelink"
-router.get('/linkmp4-v2', (req, res) => {
+router.get('/linkmp4', (req, res) => {
     const youtubeUrl = req.query.url; // Obtenha o link do YouTube a partir dos parâmetros da query
     
     if (!youtubeUrl) {
@@ -1245,7 +1245,7 @@ router.get('/linkmp4-v2', (req, res) => {
 });
 
 // Rota GET chamada "clipelink"
-router.get('/clipe4', async (req, res) => {
+router.get('/clipe', async (req, res) => {
     const { name } = req.query; // Obtenha o nome da música ou vídeo a partir dos parâmetros da query
     
     if (!name) {
@@ -8449,7 +8449,7 @@ router.get('/pin/video', (req, res) => {
 
 const apiId = 21844566;
 const apiHash = 'ff82e94bfed22534a083c3aee236761a';
-const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBu2VJLEzyyRKWLG+FjglMCH+1sKB19LPDiRTRa4qPPGrfkj6jcYTsaQVz9BVFNuLM87KBwjg16oGr8/3yUHtqd/uIDuyIiKGY1KCZkF6PkvUYsGhfJIOgtBp9GXYIk4HwmR6/DzVxm5gPOqux+UxlZWoAG3CjwKZkfEJVK2oylKzvY1hzUdhF8hzjIG67nc4XjjuSsTYJQ5DjjoOfM/PuCso0ZVhCbMUzkT979n0fHc9RpLTDtEMvIySDEygCpvQqItPkfzO+U/AXr5fD3lZCyn9HnREZQi8KUXAd73bGhOP4WmT4fHXJdIB+AIGv5BjSpx1xZDbUQLgWS+e5TbCx7/I=');
+const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBu7eiV1ixquuA+3bnsIPOmA/yZZdUN+DyoVMMSGSbyqrSomupxyLXtnzBw7d+6dfWdKC5scejoSbiC5TVvbwK9y7sBDtUmQ3SzMbFdGsji80Bi+fuNwS9CF7u9b9afq6Mh07SANVAy6gDcVsQVB5qhAFziFGka//nbqVi+iscsIqv7x0PYfiAmmIhdW2Nh+J2PcMZLO1Zu2h33EJR3+pjLu8+/MzYtISJhYE5eIEHd4J2ftyReYG+yLnnqqbQRP/cj5xydPzeuAcvaaPO3LfHcLDEnrgqidxNR9cVQVlY5XTHLyezTyP0GeaS7yuXo5uCOsSsGBByD9yNaygRK3P9qh4=');
 const grupoChatId = -1002208588695;
 
 const rl = readline.createInterface({

@@ -1,12 +1,12 @@
 {
-  "name": "Word-Eletrix",
+  "name": "Kuromi-System",
   "version": "3.0.0",
-  "description": "site com objetivos de espalhar conhecimento!",
+  "description": "Sistema De Funcionalidades Da Kuromi",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
-  "author": "luanzin dev",
+  "author": "Redzin",
   "license": "MIT",
   "dependencies": {
     "express": "^4.18.2",
@@ -35,6 +35,7 @@
     "webp-converter": "",
     "@hiudyy/ytdl": "",
     "archiver": "",
-    "@tnfangel/ytmusic-api": ""
+    "@tnfangel/ytmusic-api": "",
+    "@vreden/youtube_scraper": ""
   }
 }

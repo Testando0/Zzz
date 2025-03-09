@@ -171,6 +171,122 @@ async function searchVideoByName(name) {
   throw new Error('Vídeo não encontrado');
 }
 
+const { ytmp3: play, ytmp4: clipe } = require('@vreden/youtube_scraper');
+
+// Função para baixar e enviar o arquivo diretamente como buffer
+const sendMediaAsBuffer = async (res, url, type) => {
+  try {
+    // Faz a requisição para o arquivo
+    const response = await axios.get(url, { responseType: 'arraybuffer' });
+
+    // Envia os headers para download
+    res.setHeader('Content-Type', type);
+    res.setHeader('Content-Disposition', 'attachment; filename="media"');
+
+    // Envia o arquivo como buffer
+    res.send(response.data);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao processar a mídia' });
+  }
+};
+
+// Rota para buscar e tocar uma música pelo nome
+router.get('/play', async (req, res) => {
+  const nome = req.query.nome;
+  const quality = req.query.quality || "128";
+
+  if (!nome) {
+    return res.status(400).json({ error: 'O parâmetro nome é obrigatório' });
+  }
+
+  try {
+    const searchResults = await ytSearch(nome);
+    if (!searchResults.videos.length) {
+      return res.status(404).json({ error: 'Nenhum resultado encontrado' });
+    }
+
+    const videoUrl = searchResults.videos[0].url;
+    const result = await play(videoUrl, quality);
+
+    if (result.status && result.download) {
+      return sendMediaAsBuffer(res, result.download.url, 'audio/mpeg');
+    }
+    res.status(500).json({ error: result.result });
+  } catch (error) {
+    res.status(500).json({ error: 'Erro interno no servidor' });
+  }
+});
+
+// Rota para buscar e tocar um clipe pelo nome
+router.get('/playvideo', async (req, res) => {
+  const nome = req.query.nome;
+  const quality = req.query.quality || "360";
+
+  if (!nome) {
+    return res.status(400).json({ error: 'O parâmetro nome é obrigatório' });
+  }
+
+  try {
+    const searchResults = await ytSearch(nome);
+    if (!searchResults.videos.length) {
+      return res.status(404).json({ error: 'Nenhum resultado encontrado' });
+    }
+
+    const videoUrl = searchResults.videos[0].url;
+    const result = await clipe(videoUrl, quality);
+
+    if (result.status && result.download) {
+      return sendMediaAsBuffer(res, result.download.url, 'video/mp4');
+    }
+    res.status(500).json({ error: result.result });
+  } catch (error) {
+    res.status(500).json({ error: 'Erro interno no servidor' });
+  }
+});
+
+
+// Rota para baixar áudio diretamente pelo link do YouTube
+router.get('/ytmp3', async (req, res) => {
+  const url = req.query.url;
+  const quality = req.query.quality || "128";
+
+  if (!url) {
+    return res.status(400).json({ error: 'O parâmetro url é obrigatório' });
+  }
+
+  try {
+    const result = await play(url, quality);
+
+    if (result.status && result.download) {
+      return sendMediaAsBuffer(res, result.download.url, 'audio/mpeg');
+    }
+    res.status(500).json({ error: result.result });
+  } catch (error) {
+    res.status(500).json({ error: 'Erro interno no servidor' });
+  }
+});
+
+// Rota para baixar vídeo diretamente pelo link do YouTube
+router.get('/ytmp4', async (req, res) => {
+  const url = req.query.url;
+  const quality = req.query.quality || "360";
+
+  if (!url) {
+    return res.status(400).json({ error: 'O parâmetro url é obrigatório' });
+  }
+
+  try {
+    const result = await clipe(url, quality);
+
+    if (result.status && result.download) {
+      return sendMediaAsBuffer(res, result.download.url, 'video/mp4');
+    }
+    res.status(500).json({ error: result.result });
+  } catch (error) {
+    res.status(500).json({ error: 'Erro interno no servidor' });
+  }
+});
+
 
 // Rota para baixar vídeo
 router.get('/play2', async (req, res) => {
@@ -10316,7 +10432,7 @@ router.get('/pesquisayt', async (req, res) => {
 });
 //ytmp3 pela ulr
 // Endpoint para baixar áudio a partir de uma URL
-router.get('/ytmp3', async (req, res) => {
+router.get('/ytmp3-v2', async (req, res) => {
     const { query } = req;
     const audioUrl = query.url; // Exemplo: /ytmp3?url=https://youtu.be/nome_do_audio
 
@@ -10345,7 +10461,7 @@ router.get('/ytmp3', async (req, res) => {
 });
 
 // Endpoint para baixar vídeo a partir de uma URL
-router.get('/ytmp4', async (req, res) => {
+router.get('/ytmp4-v2', async (req, res) => {
     const { query } = req;
     const videoUrl = query.url; // Exemplo: /ytmp4?url=https://youtu.be/nome_do_video
 
@@ -10375,7 +10491,7 @@ router.get('/ytmp4', async (req, res) => {
 
 //play para baixar musica pelo nome
 
-router.get('/play', async (req, res) => {
+router.get('/play4', async (req, res) => {
     const { query } = req; // O nome da música será passado como parâmetro de consulta
     const musicName = query.nome; // Exemplo: /play?nome=nome_da_musica
 
@@ -10413,7 +10529,7 @@ router.get('/play', async (req, res) => {
 });
 
 //rota para baixar video pelo nome
-router.get('/playvideo', async (req, res) => {
+router.get('/playvideo4', async (req, res) => {
     const { query } = req; // O nome da música será passado como parâmetro de consulta
     const musicName = query.nome; // Exemplo: /playvideo?nome=nome_da_musica
 

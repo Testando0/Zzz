@@ -29,7 +29,19 @@ const getImageBuffer = async (url) => {
         throw new Error('Erro ao buscar imagem.');
     }
 };
-//teste
+
+// Função para gerar o User-Agent
+function userAgent() {
+  const oos = [
+    'Macintosh; Intel Mac OS X 10_15_7', 'Macintosh; Intel Mac OS X 10_15_5', 'Macintosh; Intel Mac OS X 10_11_6',
+    'Macintosh; Intel Mac OS X 10_6_6', 'Macintosh; Intel Mac OS X 10_9_5', 'Macintosh; Intel Mac OS X 10_10_5',
+    'Macintosh; Intel Mac OS X 10_7_5', 'Macintosh; Intel Mac OS X 10_11_3', 'Macintosh; Intel Mac OS X 10_10_3',
+    'Macintosh; Intel Mac OS X 10_6_8', 'Macintosh; Intel Mac OS X 10_10_2', 'Macintosh; Intel Mac OS X 10_10_3',
+    'Macintosh; Intel Mac OS X 10_11_5', 'Windows NT 10.0; Win64; x64', 'Windows NT 10.0; WOW64', 'Windows NT 10.0'
+  ];
+
+  return `Mozilla/5.0 (${oos[Math.floor(Math.random() * oos.length)]}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${Math.floor(Math.random() * 3) + 87}.0.${Math.floor(Math.random() * 190) + 4100}.${Math.floor(Math.random() * 50) + 140} Safari/537.36`;
+}
 
 
 const {
@@ -162,6 +174,119 @@ const {
   mms
 } = require('./config.js'); // arquivo que ele puxa as funções 
 
+// Rota para buscar as informações do site
+router.get('/playertv', async (req, res) => {
+  try {
+    // URL do site para puxar os dados
+    const url = 'https://playertv.net';
+    
+    // Fazendo a requisição HTTP
+    const { data } = await axios.get(url);
+    
+    // Usando Cheerio para parsear o HTML
+    const $ = cheerio.load(data);
+    const posts = [];
+    
+    // Buscando os posts
+    $('.elementor-post').each((index, element) => {
+      const link = $(element).find('.elementor-post__title a').attr('href');
+      const title = $(element).find('.elementor-post__title a').text().trim();
+      const imgSrc = $(element).find('.elementor-post__thumbnail img').attr('src') || '';
+      
+      posts.push({
+        link,
+        title,
+        imgSrc
+      });
+    });
+
+    // Respondendo com os posts encontrados
+    res.json(posts);
+  } catch (error) {
+    console.error('Erro ao obter o conteúdo:', error);
+    res.status(500).json({ error: 'Erro ao buscar o conteúdo.' });
+  }
+});
+
+router.get('/iframe', async (req, res) => {
+  const canalUrl = req.query.canal;
+  if (!canalUrl) {
+    return res.status(400).json({ error: 'URL do canal é necessária' });
+  }
+
+  try {
+    // Faz a requisição para a página do canal
+    const { data } = await axios.get(canalUrl);
+    const $ = cheerio.load(data);
+
+    // Busca o iframe correto dentro da página
+    const iframeSrc = $('.entry-content iframe').attr('src');
+
+    if (!iframeSrc) {
+      return res.status(404).json({ error: 'Iframe não encontrado' });
+    }
+
+    res.json({ iframe: iframeSrc });
+  } catch (error) {
+    console.error('Erro ao buscar o iframe:', error);
+    res.status(500).json({ error: 'Erro ao processar a página do canal' });
+  }
+});
+
+
+router.get('/canal/:slug', async (req, res) => {
+  const slug = req.params.slug;
+
+  try {
+    // Busca a lista de canais na API
+    const response = await axios.get('https://world-ecletix.onrender.com/api/playertv');
+    const canais = response.data;
+
+    // Encontra o canal correspondente ao slug
+    const canal = canais.find(c => slugify(c.title) === slug);
+
+    if (!canal) {
+      return res.status(404).send('<h1>Canal não encontrado</h1>');
+    }
+
+    // Obtém o iframe do canal a partir da outra API
+    const iframeResponse = await axios.get(`https://world-ecletix.onrender.com/api/iframe?canal=${encodeURIComponent(canal.link)}`);
+    const iframeUrl = iframeResponse.data.iframe;
+
+    res.send(`
+      <!DOCTYPE html>
+      <html lang="pt-BR">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Assistindo ${canal.title}</title>
+          <style>
+            body { font-family: Arial, sans-serif; text-align: center; }
+            iframe { width: 100%; height: 500px; border: none; margin-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <h1>Assistindo ${canal.title}</h1>
+          <iframe src="${iframeUrl}" allow="encrypted-media" allowfullscreen></iframe>
+        </body>
+      </html>
+    `);
+  } catch (error) {
+    console.error('Erro ao carregar o canal:', error);
+    res.status(500).send('<h1>Erro ao carregar o canal.</h1>');
+  }
+});
+
+// Função para converter nomes de canais em slugs
+function slugify(text) {
+  return text.toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove acentos
+    .replace(/[^a-z0-9]+/g, "-") // Troca espaços e caracteres especiais por "-"
+    .replace(/^-+|-+$/g, ""); // Remove traços extras no início/fim
+}
+
+
+
 // Função para buscar o vídeo pelo nome usando yt-search
 async function searchVideoByName(name) {
   const result = await search(name);  // Busca o vídeo pelo nome
@@ -190,8 +315,96 @@ const sendMediaAsBuffer = async (res, url, type) => {
   }
 };
 
+
+// Baixar áudio pelo nome
+router.get('/play/:name', async (req, res) => {
+    try {
+        const { name } = req.params;
+        const searchResults = await search(name);
+
+        if (!searchResults.videos.length) {
+            return res.status(404).json({ error: 'Vídeo não encontrado' });
+        }
+
+        const videoUrl = searchResults.videos[0].url;
+        const { data: response } = await axios.get(`https://apis.giftedtech.web.id/api/download/ytmp3?apikey=gifted&url=${videoUrl}`);
+        
+        if (response.success) {
+            return res.redirect(response.result.download_url);
+        } else {
+            return res.status(400).json({ error: 'Erro ao processar o download' });
+        }
+    } catch (error) {
+        return res.status(500).json({ error: 'Erro interno no servidor' });
+    }
+});
+
+// Baixar vídeo pelo nome
+router.get('/playvideo/:name', async (req, res) => {
+    try {
+        const { name } = req.params;
+        const searchResults = await search(name);
+
+        if (!searchResults.videos.length) {
+            return res.status(404).json({ error: 'Vídeo não encontrado' });
+        }
+
+        const videoUrl = searchResults.videos[0].url;
+        const { data: response } = await axios.get(`https://apis.giftedtech.web.id/api/download/ytmp4?apikey=gifted&url=${videoUrl}`);
+        
+        if (response.success) {
+            return res.redirect(response.result.download_url);
+        } else {
+            return res.status(400).json({ error: 'Erro ao processar o download' });
+        }
+    } catch (error) {
+        return res.status(500).json({ error: 'Erro interno no servidor' });
+    }
+});
+
+// Baixar áudio pelo link
+router.get('/ytmp3', async (req, res) => {
+    try {
+        const videoUrl = req.query.url;
+        if (!videoUrl) {
+            return res.status(400).json({ error: 'URL do vídeo é obrigatória' });
+        }
+
+        const { data: response } = await axios.get(`https://apis.giftedtech.web.id/api/download/ytmp3?apikey=gifted&url=${videoUrl}`);
+        
+        if (response.success) {
+            return res.redirect(response.result.download_url);
+        } else {
+            return res.status(400).json({ error: 'Erro ao processar o download' });
+        }
+    } catch (error) {
+        return res.status(500).json({ error: 'Erro interno no servidor' });
+    }
+});
+
+// Baixar vídeo pelo link
+router.get('/ytmp4', async (req, res) => {
+    try {
+        const videoUrl = req.query.url;
+        if (!videoUrl) {
+            return res.status(400).json({ error: 'URL do vídeo é obrigatória' });
+        }
+
+        const { data: response } = await axios.get(`https://apis.giftedtech.web.id/api/download/ytmp4?apikey=gifted&url=${videoUrl}`);
+        
+        if (response.success) {
+            return res.redirect(response.result.download_url);
+        } else {
+            return res.status(400).json({ error: 'Erro ao processar o download' });
+        }
+    } catch (error) {
+        return res.status(500).json({ error: 'Erro interno no servidor' });
+    }
+});
+
+
 // Rota para buscar e tocar uma música pelo nome
-router.get('/play', async (req, res) => {
+router.get('/play5', async (req, res) => {
   const nome = req.query.nome;
   const quality = req.query.quality || "128";
 
@@ -217,8 +430,31 @@ router.get('/play', async (req, res) => {
   }
 });
 
+router.get('/musica', async (req, res) => {
+    try {
+        const { name } = req.query;
+        if (!name) return res.status(400).json({ error: "O parâmetro 'name' é obrigatório." });
+
+        // Buscar a música no YouTube
+        const searchResults = await ytSearch(name);
+        if (!searchResults.videos.length) return res.status(404).json({ error: "Música não encontrada." });
+
+        const video = searchResults.videos[0]; // Pega o primeiro resultado
+        const videoUrl = video.url;
+
+        // Construir a URL de download e redirecionar
+        const downloadUrl = `https://api.nexfuture.com.br/api/downloads/youtube/mp3-2?url=${videoUrl}`;
+        res.redirect(downloadUrl);
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Erro interno do servidor." });
+    }
+});
+
+
 // Rota para buscar e tocar um clipe pelo nome
-router.get('/playvideo', async (req, res) => {
+router.get('/playvideo5', async (req, res) => {
   const nome = req.query.nome;
   const quality = req.query.quality || "360";
 
@@ -246,7 +482,7 @@ router.get('/playvideo', async (req, res) => {
 
 
 // Rota para baixar áudio diretamente pelo link do YouTube
-router.get('/ytmp3', async (req, res) => {
+router.get('/ytmp35', async (req, res) => {
   const url = req.query.url;
   const quality = req.query.quality || "128";
 
@@ -267,7 +503,7 @@ router.get('/ytmp3', async (req, res) => {
 });
 
 // Rota para baixar vídeo diretamente pelo link do YouTube
-router.get('/ytmp4', async (req, res) => {
+router.get('/ytmp45', async (req, res) => {
   const url = req.query.url;
   const quality = req.query.quality || "360";
 
@@ -1300,7 +1536,7 @@ router.get('/linkmp3-v2', async (req, res) => {
     }
 });
 //fim 
-router.get('/musica', async (req, res) => {
+router.get('/musica5', async (req, res) => {
     const { query } = req; // O nome da música será passado como parâmetro de consulta
     const musicName = query.name; // Exemplo: /play?nome=nome_da_musica
 
@@ -1965,280 +2201,29 @@ router.get('/bolsonaro', async (req, res) => {
     });
   }
 });
-
-router.get('/affect', async (req, res) => {
-  const logs = []; // Array para registrar os logs que serão retornados no JSON
-
-  try {
-    // Obtém o link da imagem da query
-    const image = req.query.link;
-    logs.push({ etapa: "Recebendo link", valor: image });
-    console.log("[/affect] Link recebido:", image);
-
-    // Verifica se o parâmetro 'link' foi enviado
-    if (!image) {
-      logs.push({ etapa: "Erro", valor: "Faltando o parâmetro 'link'." });
-      return res.status(400).json({
-        status: 400,
-        info: "Faltando o parâmetro 'link'.",
-        resultado: "error",
-        logs
-      });
-    }
-
-    // Gerando o arquivo com a função 'affect'
-    const filePath = await affect(image); // Passando o link para a função 'affect'
-    logs.push({ etapa: "Arquivo gerado", valor: filePath });
-    console.log("[/affect] Caminho do arquivo gerado:", filePath);
-
-    // Verificando se o arquivo realmente existe antes de tentar enviar
-    if (!fs.existsSync(filePath)) {
-      logs.push({ etapa: "Erro", valor: "Arquivo não encontrado." });
-      console.error("[/affect] Arquivo não encontrado:", filePath);
-      return res.status(500).json({
-        status: 500,
-        info: "Arquivo não encontrado.",
-        resultado: "error",
-        logs
-      });
-    }
-
-    // Enviando o arquivo gerado
-    res.sendFile(filePath, (err) => {
-      if (err) {
-        logs.push({ etapa: "Erro ao enviar arquivo", valor: err.message });
-        console.error("[/affect] Erro ao enviar arquivo:", err.message);
-        return res.status(500).json({
-          status: 500,
-          info: "Erro ao enviar arquivo.",
-          resultado: "error",
-          logs
-        });
-      } else {
-        logs.push({ etapa: "Arquivo enviado", valor: "Sucesso" });
-        console.log("[/affect] Arquivo enviado com sucesso.");
-      }
-    });
-  } catch (err) {
-    logs.push({ etapa: "Erro no processamento", valor: err.message });
-    console.error("[/affect] Erro no processamento:", err.message);
-    res.status(500).json({
-      status: 500,
-      info: "Ops, aconteceu um erro no servidor interno.",
-      resultado: "error",
-      logs
-    });
-  }
-});
-
-router.get('/beautiful', async (req, res) => {
-  try {
-    // Passando 'req' e 'res' para a função 'beautiful'
-    const filePath = await beautiful(image);  
-    res.sendFile(filePath);  // Envia o arquivo gerado para o cliente
-  } catch (err) {
-    res.status(500).send({
-      status: 500,
-      info: 'Ops, aconteceu um erro no servidor interno.',
-      resultado: 'error',
-    });
-  }
-});
-
-router.get('/blurr', async (req, res) => {
-  try {
-    // Passando 'req' e 'res' para a função 'blurr'
-    const filePath = await blurr(image);  
-    res.sendFile(filePath);  // Envia o arquivo gerado para o cliente
-  } catch (err) {
-    res.status(500).send({
-      status: 500,
-      info: 'Ops, aconteceu um erro no servidor interno.',
-      resultado: 'error',
-    });
-  }
-});
-
-router.get('/bnw', async (req, res) => {
-  try {
-    // Passando 'req' e 'res' para a função 'bnw'
-    const filePath = await bnw(image);  
-    res.sendFile(filePath);  // Envia o arquivo gerado para o cliente
-  } catch (err) {
-    res.status(500).send({
-      status: 500,
-      info: 'Ops, aconteceu um erro no servidor interno.',
-      resultado: 'error',
-    });
-  }
-});
-router.get('/circle', async (req, res) => {
-  try {
-    const filePath = await circle(image);
-    res.sendFile(filePath);
-  } catch (err) {
-    res.status(500).send({
-      status: 500,
-      info: 'Ops, aconteceu um erro no servidor interno.',
-      resultado: 'error',
-    });
-  }
-});
-
-router.get('/del', async (req, res) => {
-  try {
-    const filePath = await del(image);
-    res.sendFile(filePath);
-  } catch (err) {
-    res.status(500).send({
-      status: 500,
-      info: 'Ops, aconteceu um erro no servidor interno.',
-      resultado: 'error',
-    });
-  }
-});
-
-router.get('/dither', async (req, res) => {
-  try {
-    const filePath = await dither(image);
-    res.sendFile(filePath);
-  } catch (err) {
-    res.status(500).send({
-      status: 500,
-      info: 'Ops, aconteceu um erro no servidor interno.',
-      resultado: 'error',
-    });
-  }
-});
-
-router.get('/invert', async (req, res) => {
-  try {
-    const filePath = await invert(image);
-    res.sendFile(filePath);
-  } catch (err) {
-    res.status(500).send({
-      status: 500,
-      info: 'Ops, aconteceu um erro no servidor interno.',
-      resultado: 'error',
-    });
-  }
-});
-
-router.get('/jail', async (req, res) => {
-  try {
-    const filePath = await jail(image);
-    res.sendFile(filePath);
-  } catch (err) {
-    res.status(500).send({
-      status: 500,
-      info: 'Ops, aconteceu um erro no servidor interno.',
-      resultado: 'error',
-    });
-  }
-});
-
-router.get('/facepalm', async (req, res) => {
-  try {
-    const filePath = await facepalm(image);
-    res.sendFile(filePath);
-  } catch (err) {
-    res.status(500).send({
-      status: 500,
-      info: 'Ops, aconteceu um erro no servidor interno.',
-      resultado: 'error',
-    });
-  }
-});
-router.get('/magik', async (req, res) => {
-  try {
-    const filePath = await magik(image);
-    res.sendFile(filePath);
-  } catch (err) {
-    res.status(500).send({
-      status: 500,
-      info: 'Ops, aconteceu um erro no servidor interno.',
-      resultado: 'error',
-    });
-  }
-});
-
-router.get('/pixelate', async (req, res) => {
-  try {
-    const filePath = await pixelate(image);
-    res.sendFile(filePath);
-  } catch (err) {
-    res.status(500).send({
-      status: 500,
-      info: 'Ops, aconteceu um erro no servidor interno.',
-      resultado: 'error',
-    });
-  }
-});
-
-router.get('/rip', async (req, res) => {
-  try {
-    const filePath = await rip(image);
-    res.sendFile(filePath);
-  } catch (err) {
-    res.status(500).send({
-      status: 500,
-      info: 'Ops, aconteceu um erro no servidor interno.',
-      resultado: 'error',
-    });
-  }
-});
-router.get('/wanted', async (req, res) => {
-  try {
-    const filePath = await wanted(image);
-    res.sendFile(filePath);
-  } catch (err) {
-    res.status(500).send({
-      status: 500,
-      info: 'Ops, aconteceu um erro no servidor interno.',
-      resultado: 'error',
-    });
-  }
-});
-
-router.get('/wasted', async (req, res) => {
-  try {
-    const filePath = await wasted(image);
-    res.sendFile(filePath);
-  } catch (err) {
-    res.status(500).send({
-      status: 500,
-      info: 'Ops, aconteceu um erro no servidor interno.',
-      resultado: 'error',
-    });
-  }
-});
-
-router.get('/bobross', async (req, res) => {
-  try {
-    const filePath = await bobross(image);
-    res.sendFile(filePath);
-  } catch (err) {
-    res.status(500).send({
-      status: 500,
-      info: 'Ops, aconteceu um erro no servidor interno.',
-      resultado: 'error',
-    });
-  }
-});
-router.get('/mms', async (req, res) => {
-  try {
-    const filePath = await mms(image);
-    res.sendFile(filePath);
-  } catch (err) {
-    res.status(500).send({
-      status: 500,
-      info: 'Ops, aconteceu um erro no servidor interno.',
-      resultado: 'error',
-    });
-  }
-});
-
-router.get('/musicard', musicard);
+router.get('/beautiful', beautiful)
+router.get('/musicard', musicard) 
+router.get('/bnw', bnw) 
+router.get('/affect', affect) 
+router.get('/blur', blurr)    
+router.get('/circle', circle) 
+router.get('/del', del) 
+router.get('/invert', invert)  
+router.get('/lgbt', gay) 
+router.get('/facepalm', facepalm)    
+router.get('/dither', dither) 
+router.get('/jail', jail) 
+router.get('/magik', magik) 
+router.get('/rip', rip)   
+router.get('/sepia', sepia) 
+router.get('/rotate', rotate) 
+router.get('/pixelate', pixelate) 
+router.get('/trash', trash) 
+router.get('/wasted', wasted)
+router.get('/wanted', wanted)
+router.get('/bobross', bobross)
+router.get('/karaba', bobross)
+router.get('/mms', mms)
 
 //fim do canvas
 // Rota GET para buscar resultados do Google (Raspagem)
@@ -2368,7 +2353,7 @@ router.get('/guia-series', async (req, res) => {
 
 router.get('/jogosdodia', async (req, res) => {
   try {
-    const { data } = await axios.get('https://multicanais.meme/');
+    const { data } = await axios.get('https://multicanais.bingo/');
     const $ = cheerio.load(data);
     const jogos = [];
 
@@ -3043,7 +3028,7 @@ router.get('/jogosdehoje', async (req, res) => {
 });
 router.get('/ufc', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.meme/categoria/ufc-ao-vivo/';
+    const siteUrl = 'https://multicanais.bingo/categoria/ufc-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -3074,7 +3059,7 @@ router.get('/ufc', async (req, res) => {
 // Rota para a API bbb25
 router.get('/bbb25', (req, res) => {
   const resultado = [
-    "https://multicanais.meme/assistir-bbb-ao-vivo-online-24-horas/",
+    "https://multicanais.bingo/assistir-bbb-ao-vivo-online-24-horas/",
     "https://globoplay.gratis/"
   ];
   
@@ -3083,7 +3068,7 @@ router.get('/bbb25', (req, res) => {
 
 router.get('/basquete', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.meme/categoria/categoria/nba-ao-vivo//';
+    const siteUrl = 'https://multicanais.bingo/categoria/categoria/nba-ao-vivo//';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -3115,7 +3100,7 @@ router.get('/basquete', async (req, res) => {
 
 router.get('/nfl', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.meme/categoria/nfl-ao-vivo/';
+    const siteUrl = 'https://multicanais.bingo/categoria/nfl-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -3146,7 +3131,7 @@ router.get('/nfl', async (req, res) => {
 
  router.get('/ucl', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.meme/categoria/champions-league-ao-vivo/';
+    const siteUrl = 'https://multicanais.bingo/categoria/champions-league-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -3177,7 +3162,7 @@ router.get('/nfl', async (req, res) => {
 
 router.get('/brasileirao', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.meme/categoria/brasileiro-ao-vivo/';
+    const siteUrl = 'https://multicanais.bingo/categoria/brasileiro-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -3207,7 +3192,7 @@ router.get('/brasileirao', async (req, res) => {
 });
 router.get('/tv', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.meme/categoria/tv-online/';
+    const siteUrl = 'https://multicanais.bingo/categoria/tv-online/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -3237,7 +3222,7 @@ router.get('/tv', async (req, res) => {
 });
 router.get('/esportedodia', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.meme/categoria/esportes-ao-vivo/';
+    const siteUrl = 'https://multicanais.bingo/categoria/esportes-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -3268,7 +3253,7 @@ router.get('/esportedodia', async (req, res) => {
 });
 router.get('/futebol', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.meme/categoria/futebol-ao-vivo/';
+    const siteUrl = 'https://multicanais.bingo/categoria/futebol-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -4442,6 +4427,49 @@ router.get('/whois/:domain', async (req, res) => {
         res.status(500).json({ error: 'Erro ao buscar dados do Whois.' });
     }
 });
+
+// Função para verificar a operadora
+router.get('/qual-operadora/:numero', async (req, res) => {
+  const numero = req.params.numero;
+  const getDate = String(Date.now()).slice(0, 10);
+  const telefone = numero; // Aqui você pode aplicar a formatação do número, se necessário
+
+  if (!telefone) return res.status(400).json({ error: 'Número desconhecido.' });
+
+  const user = userAgent();
+
+  const headers = {
+    "User-Agent": user,
+    "cookie": `SSID=sfeb17gj92tcllul8c17tb6iji; USID=4f85b07d2188dc8b683bf2050d0a20dc; _jsuid=2662589599; _heatmaps_g2g_100536567=no; cf_clearance=KmTYQBKBLdNP4axA2h60DDwZE9j.wTKAPaI38jgr8lk-${getDate}-0-1-68ba348d.886f8aa2.e20e0874-0.2.${getDate}`,
+    'Accept-Language': "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+    'Origin': 'https://www.qualoperadora.net',
+    'Referer': 'https://www.qualoperadora.net/'
+  };
+
+  const formData = new URLSearchParams();
+  formData.append("telefone", telefone);
+
+  try {
+    const response = await axios.post('https://www.qualoperadora.net', formData, { headers });
+    const $ = cheerio.load(response.data);
+    const ope = $('div[id="resultado"] > span').html()?.split(/ +/);
+    
+    if (!ope) return res.status(404).json({ error: 'Operadora desconhecida ou não foi encontrada.' });
+
+    const estado = $('div[id="resultado"] > span > span').html();
+    
+    res.json({
+      telefone,
+      operadora: ope[0],
+      dispositivo: ope.pop(),
+      estado
+    });
+  } catch (error) {
+    console.error(error); // Log para ajudar na depuração
+    res.status(500).json({ error: 'Erro ao buscar a operadora ou erro de rede.' });
+  }
+});
+
 
 router.get('/operadora', async (req, res) => {
     const { numero } = req.query;
@@ -6665,55 +6693,7 @@ router.get('/emojimix3', async (req, res) => {
         return res.send(resul);
     }
 });
-//attp
 
-// Função auxiliar para gerar a URL da figurinha
-function getStickerUrl(type, text) {
-    return `https://api-duda.onrender.com/api/${type}?texto=${encodeURIComponent(text)}&apikey=@alizindev`;
-}
-
-// Rota para o comando 'attp'
-router.get('/attp', (req, res) => {
-    const text = req.query.text;
-    if (!text) return res.status(400).send('Texto não fornecido');
-    const url = getStickerUrl('attp', text);
-    res.json({ sticker: { url } });
-});
-
-// Rota para o comando 'attp2'
-router.get('/attp2', (req, res) => {
-    const text = req.query.text;
-    if (!text) return res.status(400).send('Texto não fornecido');
-    const url = getStickerUrl('attp10', text);
-    res.json({ sticker: { url } });
-});
-
-// Rota para o comando 'attp3'
-router.get('/attp3', (req, res) => {
-    const text = req.query.text;
-    if (!text) return res.status(400).send('Texto não fornecido');
-    const url = getStickerUrl('attp6', text);
-    res.json({ sticker: { url } });
-});
-
-// Rota para o comando 'attp4'
-router.get('/attp4', (req, res) => {
-    const text = req.query.text;
-    if (!text) return res.status(400).send('Texto não fornecido');
-    const url = getStickerUrl('attp3', text);
-    res.json({ sticker: { url } });
-});
-
-// Rota para o comando 'attp5'
-router.get('/attp5', (req, res) => {
-    const text = req.query.text;
-    if (!text) return res.status(400).send('Texto não fornecido');
-    const url = getStickerUrl('attp9', text);
-    res.json({ sticker: { url } });
-});
-
-
-//fim do attp
 
 
 //Photooxy 
@@ -8565,7 +8545,7 @@ router.get('/pin/video', (req, res) => {
 
 const apiId = 21844566;
 const apiHash = 'ff82e94bfed22534a083c3aee236761a';
-const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBu7eiV1ixquuA+3bnsIPOmA/yZZdUN+DyoVMMSGSbyqrSomupxyLXtnzBw7d+6dfWdKC5scejoSbiC5TVvbwK9y7sBDtUmQ3SzMbFdGsji80Bi+fuNwS9CF7u9b9afq6Mh07SANVAy6gDcVsQVB5qhAFziFGka//nbqVi+iscsIqv7x0PYfiAmmIhdW2Nh+J2PcMZLO1Zu2h33EJR3+pjLu8+/MzYtISJhYE5eIEHd4J2ftyReYG+yLnnqqbQRP/cj5xydPzeuAcvaaPO3LfHcLDEnrgqidxNR9cVQVlY5XTHLyezTyP0GeaS7yuXo5uCOsSsGBByD9yNaygRK3P9qh4=');
+const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBu7H7etICnYWpiS4KPOLt0IQWEJxKLSgKdecp/MsmhoqJHjVL0RDdz4OHorNTYXK/KQlRKXVz5gctimpDhv//HzS93Dxgz9btjNOGMcw0ElKOa6sF2ZiEQi1OVcb1p0oC0fa4ubFAvQQ7Q+B3zO2r20I0YiXY/3KrnW0t/nmDP/0m3E7JC1fN3D6bZ91MiqB/PKJHo/8hUCqJ1AIm7MbgVxDQ7i3OIobUaQ8whNotbFZAWJatHlQQG7UliGqPdy+G6L6el6YWB6VEzS2ZObQ8oMk/l1qllkTtDITlp+58/4AYmsX0oWwBMUPZKSNPQREoNZOob3WJ3XtJym1ucbgyEq4=');
 const grupoChatId = -1002208588695;
 
 const rl = readline.createInterface({
@@ -8605,6 +8585,439 @@ let client;
   }
 })();
 
+router.get('/attp', async (req, res, next) => {
+    let texto = req.query.texto;
+    let tipo = req.query.tipo || 'attp1';  // Parâmetro para determinar qual API usar (default é attp1)
+
+    if (!texto) return res.json({ message: "Faltando o parâmetro texto" });
+
+    // Verifica se o tipo é válido (attp1 até attp10)
+    if (!['attp1', 'attp2', 'attp3', 'attp4', 'attp5', 'attp6', 'attp7', 'attp8', 'attp9', 'attp10'].includes(tipo)) {
+        return res.json({ message: "Tipo inválido. Use 'attp1' até 'attp10'" });
+    }
+
+    try {
+        // Monta a URL da API com o tipo e o texto
+        let apiUrl = `https://api.iblgroup.cloud/api-iblcloud/${tipo}?texto=${texto}&apikey=TURBO_CONECT`;
+
+        // Fazendo a requisição com axios e pegando os dados binários
+        let response = await axios.get(apiUrl, { responseType: 'arraybuffer' });
+
+        // Definindo o caminho onde o arquivo será salvo (na raiz do projeto)
+        const filePath = path.join(__dirname, `${tipo}.webp`);
+
+        // Escrevendo o arquivo na raiz do projeto
+        fs.writeFileSync(filePath, response.data);
+
+        // Enviando o arquivo como resposta
+        res.sendFile(filePath);
+    } catch (error) {
+        console.error(error);  // Log para facilitar a depuração
+        return res.json({ message: "Erro no servidor interno..." });
+    }
+});
+
+router.get('/consultarcpf', async (req, res, next) => {
+    let cpf = req.query.cpf;
+
+    if (!cpf) return res.json({ message: "Faltando o parâmetro cpf" });
+
+    try {
+        // Requisição à API com o CPF fornecido
+        let url = `https://api.iblgroup.cloud/ibl-premium/cpf1?q=${cpf}`;
+        let response = await axios.get(url);
+
+        // Verifica se a resposta contém a chave 'message'
+        if (response.data.message) {
+            // Formatar a resposta de maneira mais legível
+            let dados = response.data.message.split("\n").map(line => line.trim()).filter(line => line !== "");
+            res.json(dados);
+        } else {
+            res.json({ message: "Nenhum dado encontrado para este CPF" });
+        }
+
+    } catch (error) {
+        console.error(error);  // Log para facilitar a depuração
+        res.json({ message: "Erro ao consultar a API" });
+    }
+});
+
+
+router.get('/cpf3', async (req, res) => {
+  const cpf = req.query.q;
+  if (!cpf) return res.json({ message: "Faltando o parâmetro CPF!" });
+
+  const url = `https://api.iblgroup.cloud/ibl-premium/cpf3?q=${encodeURIComponent(cpf)}`;
+  
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (!data.message) {
+      return res.json({ message: "Não foi possível obter informações sobre o CPF." });
+    }
+
+    // Extraindo e formatando as informações dinâmicas
+    const message = data.message;
+
+    // Separa as informações importantes da resposta da API
+    const info = message.split("\n").reduce((acc, line) => {
+      if (line.includes("• NOME:")) {
+        acc.nome = line.replace('• NOME: ', '').trim();
+      } else if (line.includes("• CPF:")) {
+        acc.cpf = line.replace('• CPF: ', '').trim();
+      } else if (line.includes("• NASCIMENTO:")) {
+        acc.nascimento = line.replace('• NASCIMENTO: ', '').trim();
+      } else if (line.includes("• IDADE:")) {
+        acc.idade = line.replace('• IDADE: ', '').trim();
+      } else if (line.includes("• MÃE:")) {
+        acc.mae = line.replace('• MÃE: ', '').trim();
+      } else if (line.includes("• PROFISSÃO:")) {
+        acc.profissao = line.replace('• PROFISSÃO: ', '').trim();
+      } else if (line.includes("• SCORE:")) {
+        acc.score = line.replace('• SCORE: ', '').trim();
+      }
+      return acc;
+    }, {});
+
+    const formattedMessage = `
+      🔍 CONSULTA DE CPF 🔍
+      ----------------------------------------
+      • NOME: ${info.nome || 'Sem Informação'}
+      • CPF: ${info.cpf || 'Sem Informação'}
+      • NASCIMENTO: ${info.nascimento || 'Sem Informação'}
+      • IDADE: ${info.idade || 'Sem Informação'}
+      • MÃE: ${info.mae || 'Sem Informação'}
+      • PROFISSÃO: ${info.profissao || 'Sem Informação'}
+      • SCORE: ${info.score || 'Sem Informação'}
+      ----------------------------------------
+      🔛
+    `;
+
+    res.json({ message: formattedMessage });
+
+  } catch (error) {
+    res.json({ message: "Erro ao consultar o CPF. Tente novamente mais tarde." });
+  }
+});
+router.get('/cpf2', async (req, res) => {
+  const cpf = req.query.q;
+  if (!cpf) return res.json({ message: "Faltando o parâmetro CPF!" });
+
+  const url = `https://api.iblgroup.cloud/ibl-premium/cpf2?q=${cpf}`;
+  
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (!data.message) {
+      return res.json({ message: "Não foi possível obter informações sobre o CPF." });
+    }
+
+    // Extraindo e formatando as informações dinâmicas
+    const message = data.message;
+
+    // Separa as informações importantes da resposta da API
+    const info = message.split("\n").reduce((acc, line) => {
+      if (line.includes("• CPF:")) {
+        acc.cpf = line.replace('• CPF: ', '').trim();
+      } else if (line.includes("• NOME:")) {
+        acc.nome = line.replace('• NOME: ', '').trim();
+      } else if (line.includes("• NASCIMENTO:")) {
+        acc.nascimento = line.replace('• NASCIMENTO: ', '').trim();
+      } else if (line.includes("• IDADE:")) {
+        acc.idade = line.replace('• IDADE: ', '').trim();
+      } else if (line.includes("• SIGNO:")) {
+        acc.signo = line.replace('• SIGNO: ', '').trim();
+      } else if (line.includes("• MÃE:")) {
+        acc.mae = line.replace('• MÃE: ', '').trim();
+      } else if (line.includes("• PAI:")) {
+        acc.pai = line.replace('• PAI: ', '').trim();
+      } else if (line.includes("• NACIONALIDADE:")) {
+        acc.nacionalidade = line.replace('• NACIONALIDADE: ', '').trim();
+      } else if (line.includes("• ESCOLARIDADE:")) {
+        acc.escolaridade = line.replace('• ESCOLARIDADE: ', '').trim();
+      } else if (line.includes("• ESTADO CIVIL:")) {
+        acc.estadoCivil = line.replace('• ESTADO CIVIL: ', '').trim();
+      } else if (line.includes("• PROFISSÃO:")) {
+        acc.profissao = line.replace('• PROFISSÃO: ', '').trim();
+      } else if (line.includes("• RENDA PRESUMIDA:")) {
+        acc.rendaPresumida = line.replace('• RENDA PRESUMIDA: ', '').trim();
+      } else if (line.includes("• E-MAILS:")) {
+        acc.emails = line.replace('• E-MAILS: ', '').trim();
+      } else if (line.includes("• TELEFONES PROPRIETÁRIO:")) {
+        acc.telefonesProprietario = line.replace('• TELEFONES PROPRIETÁRIO: ', '').trim();
+      } else if (line.includes("• ENDEREÇOS:")) {
+        acc.enderecos = line.replace('• ENDEREÇOS: ', '').trim();
+      }
+      return acc;
+    }, {});
+
+    const formattedMessage = `
+      🔍 CONSULTA DE CPF 🔍
+      ----------------------------------------
+      • CPF: ${info.cpf || 'Sem Informação'}
+      • NOME: ${info.nome || 'Sem Informação'}
+      • NASCIMENTO: ${info.nascimento || 'Sem Informação'}
+      • IDADE: ${info.idade || 'Sem Informação'}
+      • SIGNO: ${info.signo || 'Sem Informação'}
+      • MÃE: ${info.mae || 'Sem Informação'}
+      • PAI: ${info.pai || 'Sem Informação'}
+      • NACIONALIDADE: ${info.nacionalidade || 'Sem Informação'}
+      • ESCOLARIDADE: ${info.escolaridade || 'Sem Informação'}
+      • ESTADO CIVIL: ${info.estadoCivil || 'Sem Informação'}
+      • PROFISSÃO: ${info.profissao || 'Sem Informação'}
+      • RENDA PRESUMIDA: ${info.rendaPresumida || 'Sem Informação'}
+      
+      ----------------------------------------
+      • E-MAILS: ${info.emails || 'Sem Informação'}
+      
+      ----------------------------------------
+      • TELEFONES PROPRIETÁRIO: ${info.telefonesProprietario || 'Sem Informação'}
+      
+      ----------------------------------------
+      • ENDEREÇOS: ${info.enderecos || 'Sem Informação'}
+      ----------------------------------------
+      🔛
+    `;
+
+    res.json({ message: formattedMessage });
+
+  } catch (error) {
+    res.json({ message: "Erro ao consultar o CPF. Tente novamente mais tarde." });
+  }
+});
+router.get('/numero', async (req, res) => {
+  const telefone = req.query.q;
+  if (!telefone) return res.json({ message: "Faltando o parâmetro TELEFONE!" });
+
+  const url = `https://api.iblgroup.cloud/ibl-premium/telefone?q=${telefone}`;
+  
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (!data.message) {
+      return res.json({ message: "Não foi possível obter informações sobre o telefone." });
+    }
+
+    // Extraindo e formatando as informações dinâmicas
+    const message = data.message;
+
+    // Separa as informações importantes da resposta da API
+    const info = message.split("\n").reduce((acc, line) => {
+      if (line.includes("• TELEFONE:")) {
+        acc.telefone = line.replace('• TELEFONE: ', '').trim();
+      } else if (line.includes("• NOME:")) {
+        acc.nome = line.replace('• NOME: ', '').trim();
+      } else if (line.includes("• CPF/CNPJ:")) {
+        acc.cpfCnpj = line.replace('• CPF/CNPJ: ', '').trim();
+      } else if (line.includes("• LOGRADOURO:")) {
+        acc.logradouro = line.replace('• LOGRADOURO: ', '').trim();
+      } else if (line.includes("• NÚMERO:")) {
+        acc.numero = line.replace('• NÚMERO: ', '').trim();
+      } else if (line.includes("• COMPLEMENTO:")) {
+        acc.complemento = line.replace('• COMPLEMENTO: ', '').trim();
+      } else if (line.includes("• BAIRRO:")) {
+        acc.bairro = line.replace('• BAIRRO: ', '').trim();
+      } else if (line.includes("• CIDADE:")) {
+        acc.cidade = line.replace('• CIDADE: ', '').trim();
+      } else if (line.includes("• ESTADO:")) {
+        acc.estado = line.replace('• ESTADO: ', '').trim();
+      } else if (line.includes("• CEP:")) {
+        acc.cep = line.replace('• CEP: ', '').trim();
+      }
+      return acc;
+    }, {});
+
+    const formattedMessage = `
+      🔍 CONSULTA DE TELEFONE 🔍
+      ----------------------------------------
+      • TELEFONE: ${info.telefone || 'Sem Informação'}
+      • NOME: ${info.nome || 'Sem Informação'}
+      • CPF/CNPJ: ${info.cpfCnpj || 'Sem Informação'}
+      • LOGRADOURO: ${info.logradouro || 'Sem Informação'}
+      • NÚMERO: ${info.numero || 'Sem Informação'}
+      • COMPLEMENTO: ${info.complemento || 'Sem Informação'}
+      • BAIRRO: ${info.bairro || 'Sem Informação'}
+      • CIDADE: ${info.cidade || 'Sem Informação'}
+      • ESTADO: ${info.estado || 'Sem Informação'}
+      • CEP: ${info.cep || 'Sem Informação'}
+      ----------------------------------------
+      🔛
+    `;
+
+    res.json({ message: formattedMessage });
+
+  } catch (error) {
+    res.json({ message: "Erro ao consultar o telefone. Tente novamente mais tarde." });
+  }
+});
+router.get('/placa2', async (req, res) => {
+  const placa = req.query.q;
+  if (!placa) return res.json({ message: "Faltando o parâmetro PLACA!" });
+
+  const url = `https://api.iblgroup.cloud/ibl-premium/placa?q=${placa}`;
+  
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (!data.message) {
+      return res.json({ message: "Não foi possível obter informações sobre a placa." });
+    }
+
+    // Extraindo e formatando as informações dinâmicas
+    const message = data.message;
+
+    // Separa as informações importantes da resposta da API
+    const info = message.split("\n").reduce((acc, line) => {
+      if (line.includes("• PLACA:")) {
+        acc.placa = line.replace('• PLACA: ', '').trim();
+      } else if (line.includes("• SITUAÇÃO:")) {
+        acc.situacao = line.replace('• SITUAÇÃO: ', '').trim();
+      } else if (line.includes("• MARCA:")) {
+        acc.marca = line.replace('• MARCA: ', '').trim();
+      } else if (line.includes("• MODELO:")) {
+        acc.modelo = line.replace('• MODELO: ', '').trim();
+      } else if (line.includes("• COR:")) {
+        acc.cor = line.replace('• COR: ', '').trim();
+      } else if (line.includes("• ANO - FABRICAÇÃO:")) {
+        acc.anoFabricacao = line.replace('• ANO - FABRICAÇÃO: ', '').trim();
+      } else if (line.includes("• ANO - MODELO:")) {
+        acc.anoModelo = line.replace('• ANO - MODELO: ', '').trim();
+      } else if (line.includes("• MUNICIPIO:")) {
+        acc.municipio = line.replace('• MUNICIPIO: ', '').trim();
+      } else if (line.includes("• ESTADO:")) {
+        acc.estado = line.replace('• ESTADO: ', '').trim();
+      } else if (line.includes("• CHASSI:")) {
+        acc.chassi = line.replace('• CHASSI: ', '').trim();
+      } else if (line.includes("• RENAVAM:")) {
+        acc.renavam = line.replace('• RENAVAM: ', '').trim();
+      }
+      return acc;
+    }, {});
+
+    const formattedMessage = `
+      🔍 CONSULTA DE PLACA 🔍
+      ----------------------------------------
+      • PLACA: ${info.placa || 'Sem Informação'}
+      • SITUAÇÃO: ${info.situacao || 'Sem Informação'}
+      • MARCA: ${info.marca || 'Sem Informação'}
+      • MODELO: ${info.modelo || 'Sem Informação'}
+      • COR: ${info.cor || 'Sem Informação'}
+      • ANO DE FABRICAÇÃO: ${info.anoFabricacao || 'Sem Informação'}
+      • ANO DE MODELO: ${info.anoModelo || 'Sem Informação'}
+      • MUNICÍPIO: ${info.municipio || 'Sem Informação'}
+      • ESTADO: ${info.estado || 'Sem Informação'}
+      • CHASSI: ${info.chassi || 'Sem Informação'}
+      • RENAVAM: ${info.renavam || 'Sem Informação'}
+      ----------------------------------------
+      🔛
+    `;
+
+    res.json({ message: formattedMessage });
+
+  } catch (error) {
+    res.json({ message: "Erro ao consultar a placa. Tente novamente mais tarde." });
+  }
+});
+router.get('/nome-completo', async (req, res) => {
+  const nome = req.query.q;
+  if (!nome) return res.json({ message: "Faltando o parâmetro NOME!" });
+
+  const url = `https://api.iblgroup.cloud/ibl-premium/nome?q=${encodeURIComponent(nome)}`;
+  
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (!data.message) {
+      return res.json({ message: "Não foi possível obter informações sobre o nome." });
+    }
+
+    // Extraindo e formatando as informações dinâmicas
+    const message = data.message;
+
+    // Separa as informações importantes da resposta da API
+    const info = message.split("\n").reduce((acc, line) => {
+      if (line.includes("• NOME:")) {
+        acc.nome = line.replace('• NOME: ', '').trim();
+      } else if (line.includes("• CPF:")) {
+        acc.cpf = line.replace('• CPF: ', '').trim();
+      } else if (line.includes("• SEXO:")) {
+        acc.sexo = line.replace('• SEXO: ', '').trim();
+      } else if (line.includes("• NASCIMENTO:")) {
+        acc.nascimento = line.replace('• NASCIMENTO: ', '').trim();
+      }
+      return acc;
+    }, {});
+
+    const formattedMessage = `
+      🔍 CONSULTA DE NOME 🔍
+      ----------------------------------------
+      • NOME: ${info.nome || 'Sem Informação'}
+      • CPF: ${info.cpf || 'Sem Informação'}
+      • SEXO: ${info.sexo || 'Sem Informação'}
+      • NASCIMENTO: ${info.nascimento || 'Sem Informação'}
+      ----------------------------------------
+      🔛
+    `;
+
+    res.json({ message: formattedMessage });
+
+  } catch (error) {
+    res.json({ message: "Erro ao consultar o nome. Tente novamente mais tarde." });
+  }
+});
+router.get('/email', async (req, res) => {
+  const email = req.query.q;
+  if (!email) return res.json({ message: "Faltando o parâmetro E-MAIL!" });
+
+  const url = `https://api.iblgroup.cloud/ibl-premium/email?q=${encodeURIComponent(email)}`;
+  
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (!data.message) {
+      return res.json({ message: "Não foi possível obter informações sobre o e-mail." });
+    }
+
+    // Extraindo e formatando as informações dinâmicas
+    const message = data.message;
+
+    // Separa as informações importantes da resposta da API
+    const info = message.split("\n").reduce((acc, line) => {
+      if (line.includes("• NOME:")) {
+        acc.nome = line.replace('• NOME: ', '').trim();
+      } else if (line.includes("• CPF/CNPJ:")) {
+        acc.cpfCnpj = line.replace('• CPF/CNPJ: ', '').trim();
+      } else if (line.includes("• SEXO:")) {
+        acc.sexo = line.replace('• SEXO: ', '').trim();
+      } else if (line.includes("• NASCIMENTO:")) {
+        acc.nascimento = line.replace('• NASCIMENTO: ', '').trim();
+      }
+      return acc;
+    }, {});
+
+    const formattedMessage = `
+      🔍 CONSULTA DE E-MAIL 🔍
+      ----------------------------------------
+      • NOME: ${info.nome || 'Sem Informação'}
+      • CPF/CNPJ: ${info.cpfCnpj || 'Sem Informação'}
+      • SEXO: ${info.sexo || 'Sem Informação'}
+      • NASCIMENTO: ${info.nascimento || 'Sem Informação'}
+      ----------------------------------------
+      🔛
+    `;
+
+    res.json({ message: formattedMessage });
+
+  } catch (error) {
+    res.json({ message: "Erro ao consultar o e-mail. Tente novamente mais tarde." });
+  }
+});
 router.get('/consultas', async (req, res) => {
   try {
     const type = req.query.type;

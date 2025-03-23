@@ -1,7 +1,7 @@
 {
   "name": "Kuromi Api",
   "version": "3.0.0",
-  "description": "Sistemas Kuromi,
+  "description": "Sistemas Kuromi",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

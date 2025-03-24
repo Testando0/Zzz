@@ -6,7 +6,7 @@ const cheerio = require('cheerio');
 const search = require('yt-search');
 const ytSearch = require('yt-search');
 const yt = require('@distube/ytdl-core');
-const criador = 'Redzin';
+const criador = 'Kuromi Api';
 const { exec } = require('child_process');
 const sharp = require('sharp'); // Biblioteca para conversão WebP
 const cors = require('cors');
@@ -430,27 +430,26 @@ router.get('/play5', async (req, res) => {
   }
 });
 
+
 router.get('/musica', async (req, res) => {
     try {
-        const { name } = req.query;
-        if (!name) return res.status(400).json({ error: "O parâmetro 'name' é obrigatório." });
+        const name = req.query.name;
+        if (!name) {
+            return res.status(400).json({ error: 'Parâmetro "name" é obrigatório' });
+        }
 
-        // Buscar a música no YouTube
-        const searchResults = await ytSearch(name);
-        if (!searchResults.videos.length) return res.status(404).json({ error: "Música não encontrada." });
+        const response = await axios.get(`https://api.nexfuture.com.br/api/downloads/youtube/playaudio/v2?query=${encodeURIComponent(name)}`);
 
-        const video = searchResults.videos[0]; // Pega o primeiro resultado
-        const videoUrl = video.url;
-
-        // Construir a URL de download e redirecionar
-        const downloadUrl = `https://api.nexfuture.com.br/api/downloads/youtube/mp3-2?url=${videoUrl}`;
-        res.redirect(downloadUrl);
-
+        if (response.data?.resultado?.result?.downloads?.audio?.any4k) {
+            return res.redirect(response.data.resultado.result.downloads.audio.any4k);
+        } else {
+            return res.status(404).json({ error: 'URL de download não encontrada' });
+        }
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Erro interno do servidor." });
+        return res.status(500).json({ error: 'Erro ao processar a solicitação', details: error.message });
     }
 });
+
 
 
 // Rota para buscar e tocar um clipe pelo nome
@@ -478,6 +477,25 @@ router.get('/playvideo5', async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: 'Erro interno no servidor' });
   }
+});
+
+router.get('/clipe', async (req, res) => {
+    try {
+        const name = req.query.name;
+        if (!name) {
+            return res.status(400).json({ error: 'Parâmetro "name" é obrigatório' });
+        }
+
+        const response = await axios.get(`https://api.nexfuture.com.br/api/downloads/youtube/playvideo/v2?query=${encodeURIComponent(name)}`);
+
+        if (response.data?.resultado?.result?.downloads?.audio?.any4k) {
+            return res.redirect(response.data.resultado.result.downloads.audio.any4k);
+        } else {
+            return res.status(404).json({ error: 'URL de download não encontrada' });
+        }
+    } catch (error) {
+        return res.status(500).json({ error: 'Erro ao processar a solicitação', details: error.message });
+    }
 });
 
 
@@ -1085,7 +1103,7 @@ router.get('/hd', async (req, res) => {
     if (!imageUrl) return res.status(400).json({ error: 'Informe uma URL de imagem' });
 
     try {
-        const response = await axios.get(`https://carisys.online/api/outros/remini?url=${encodeURIComponent(imageUrl)}`, { responseType: 'arraybuffer' });
+        const response = await axios.get(`https://https://api.nexfuture.com.br/api/outros/remini?url=${encodeURIComponent(imageUrl)}`, { responseType: 'arraybuffer' });
         res.setHeader('Content-Type', 'image/jpeg');
         res.send(response.data);
     } catch (error) {
@@ -1399,7 +1417,7 @@ router.get('/instamp4', async (req, res) => {
 
     try {
         // Montar a URL da API externa
-        const apiUrl = `https://carisys.online/api/downloads/instagram/dl?url=${encodeURIComponent(instagramUrl)}`;
+        const apiUrl = `https://https://api.nexfuture.com.br/api/downloads/instagram/dl?url=${encodeURIComponent(instagramUrl)}`;
 
         // Fazer a requisição para a API externa
         const apiResponse = await axios.get(apiUrl);
@@ -1427,7 +1445,7 @@ router.get('/instamp3', (req, res) => {
 
     try {
         // Montar a URL da API externa
-        const apiUrl = `https://carisys.online/api/downloads/instagram/mp3?url=${encodeURIComponent(instagramUrl)}`;
+        const apiUrl = `https://https://api.nexfuture.com.br/api/downloads/instagram/mp3?url=${encodeURIComponent(instagramUrl)}`;
 
         // Redirecionar o cliente para a URL
         res.redirect(apiUrl);
@@ -1546,7 +1564,7 @@ router.get('/musica5', async (req, res) => {
 
     try {
         // Montar a URL da API com o nome da música
-        const apiUrl = `https://carisys.online/api/downloads/youtube/play?query=${encodeURIComponent(musicName)}`;
+        const apiUrl = `https://https://api.nexfuture.com.br/api/downloads/youtube/play?query=${encodeURIComponent(musicName)}`;
         
         // Fazer a requisição para a API
         const response = await axios.get(apiUrl);
@@ -1574,7 +1592,7 @@ router.get('/linkmp3', (req, res) => {
     }
     
     // Monta a URL da API externa
-    const apiUrl = `https://carisys.online/api/downloads/youtube/mp3-2?url=${encodeURIComponent(youtubeUrl)}`;
+    const apiUrl = `https://https://api.nexfuture.com.br/api/downloads/youtube/mp3-2?url=${encodeURIComponent(youtubeUrl)}`;
     
     // Redireciona para a URL da API
     res.redirect(apiUrl);
@@ -1590,14 +1608,14 @@ router.get('/linkmp4', (req, res) => {
     }
     
     // Monta a URL da API externa
-    const apiUrl = `https://carisys.online/api/downloads/youtube/mp4?url=${encodeURIComponent(youtubeUrl)}`;
+    const apiUrl = `https://https://api.nexfuture.com.br/api/downloads/youtube/mp4?url=${encodeURIComponent(youtubeUrl)}`;
     
     // Redireciona para a URL da API
     res.redirect(apiUrl);
 });
 
 // Rota GET chamada "clipelink"
-router.get('/clipe', async (req, res) => {
+router.get('/clipe5', async (req, res) => {
     const { name } = req.query; // Obtenha o nome da música ou vídeo a partir dos parâmetros da query
     
     if (!name) {
@@ -1614,7 +1632,7 @@ router.get('/clipe', async (req, res) => {
         }
         
         // Monta a URL da API com o link do vídeo encontrado
-        const apiUrl = `https://carisys.online/api/downloads/youtube/mp4?url=${encodeURIComponent(video.url)}`;
+        const apiUrl = `https://https://api.nexfuture.com.br/api/downloads/youtube/mp4?url=${encodeURIComponent(video.url)}`;
         
         // Redireciona para a URL da API
         res.redirect(apiUrl);
@@ -2010,7 +2028,7 @@ router.get('/ia', async (req, res) => {
   }
 
   try {
-    const response = await axios.get(`https://carisys.online/api/ai/gpt?query=${texto}`);
+    const response = await axios.get(`https://https://api.nexfuture.com.br/api/ai/gpt?query=${texto}`);
 
     if (response.data && response.data.resposta) {
       res.json({ resposta: response.data.resposta });
@@ -2052,7 +2070,7 @@ router.get('/sabetudo', async (req, res) => {
   }
 
   try {
-    const response = await axios.get(`https://carisys.online/api/ai/gemini-pro?query=${texto}`);
+    const response = await axios.get(`https://https://api.nexfuture.com.br/api/ai/gemini-pro?query=${texto}`);
 
     if (response.data && response.data.resposta) {
       res.json({ resposta: response.data.resposta });
@@ -3707,7 +3725,7 @@ router.get('/playstore2', async (req, res) => {
     try {
         // Fazendo a solicitação para a API externa
         const response = await axios.get(
-            `https://carisys.online/api/pesquisa/playstore?nome=${encodeURIComponent(nome)}`
+            `https://https://api.nexfuture.com.br/api/pesquisa/playstore?nome=${encodeURIComponent(nome)}`
         );
 
         // Verificando se a resposta contém o campo "resultado"
@@ -3805,7 +3823,7 @@ router.get('/orbital-img', async (req, res) => {
     try {
         // Fazendo a solicitação para a API externa
         const response = await axios.get(
-            `https://carisys.online/api/ai/orbital-img?query=${encodeURIComponent(texto)}&model=animefy`
+            `https://https://api.nexfuture.com.br/api/ai/orbital-img?query=${encodeURIComponent(texto)}&model=animefy`
         );
 
         // Verificando a resposta
@@ -4428,18 +4446,42 @@ router.get('/whois/:domain', async (req, res) => {
     }
 });
 
-// Função para verificar a operadora
 router.get('/qual-operadora/:numero', async (req, res) => {
+  // Função de formatação do número
+  const formtarNumero = (n) => {
+    n = n?.replace(/[^0-9]/g, "");
+    if (!(n.startsWith('55') && /([0-9]{5,16}|0)/.test(n))) return null;
+
+    const ddd = n.substr(2, 2); // Ex: 91
+    const testN = 8 == n.substr(4).length; // 8 = 9 (false) | 8 = 8 (true)
+    let numero = n.substr(4, 5) + "-" + n.substr(9, 4);
+    if (testN) {
+      numero = n.substr(4, 4) + "-" + n.substr(8, 4);
+    }
+    return `(${ddd}) ${numero}`;
+  };
+
+  // Função que retorna o "user-agent" aleatório
+  const userAgent = () => {
+    const oos = [
+      'Macintosh; Intel Mac OS X 10_15_7', 'Macintosh; Intel Mac OS X 10_15_5', 'Macintosh; Intel Mac OS X 10_11_6',
+      'Macintosh; Intel Mac OS X 10_6_6', 'Macintosh; Intel Mac OS X 10_9_5', 'Macintosh; Intel Mac OS X 10_10_5',
+      'Macintosh; Intel Mac OS X 10_7_5', 'Macintosh; Intel Mac OS X 10_11_3', 'Macintosh; Intel Mac OS X 10_10_3',
+      'Macintosh; Intel Mac OS X 10_6_8', 'Macintosh; Intel Mac OS X 10_10_2', 'Macintosh; Intel Mac OS X 10_10_3',
+      'Macintosh; Intel Mac OS X 10_11_5', 'Windows NT 10.0; Win64; x64', 'Windows NT 10.0; WOW64', 'Windows NT 10.0'
+    ];
+    return `Mozilla/5.0 (${oos[Math.floor(Math.random() * oos.length)]}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${Math.floor(Math.random() * 3) + 87}.0.${Math.floor(Math.random() * 190) + 4100}.${Math.floor(Math.random() * 50) + 140} Safari/537.36`;
+  };
+
+  // Número recebido da URL
   const numero = req.params.numero;
+  const telefone = formtarNumero(numero);
+
+  if (!telefone) return res.status(400).json({ error: 'Número desconhecido ou inválido.' });
+
   const getDate = String(Date.now()).slice(0, 10);
-  const telefone = numero; // Aqui você pode aplicar a formatação do número, se necessário
-
-  if (!telefone) return res.status(400).json({ error: 'Número desconhecido.' });
-
-  const user = userAgent();
-
   const headers = {
-    "User-Agent": user,
+    "User-Agent": userAgent(),
     "cookie": `SSID=sfeb17gj92tcllul8c17tb6iji; USID=4f85b07d2188dc8b683bf2050d0a20dc; _jsuid=2662589599; _heatmaps_g2g_100536567=no; cf_clearance=KmTYQBKBLdNP4axA2h60DDwZE9j.wTKAPaI38jgr8lk-${getDate}-0-1-68ba348d.886f8aa2.e20e0874-0.2.${getDate}`,
     'Accept-Language': "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
     'Origin': 'https://www.qualoperadora.net',
@@ -4453,11 +4495,11 @@ router.get('/qual-operadora/:numero', async (req, res) => {
     const response = await axios.post('https://www.qualoperadora.net', formData, { headers });
     const $ = cheerio.load(response.data);
     const ope = $('div[id="resultado"] > span').html()?.split(/ +/);
-    
+
     if (!ope) return res.status(404).json({ error: 'Operadora desconhecida ou não foi encontrada.' });
 
     const estado = $('div[id="resultado"] > span > span').html();
-    
+
     res.json({
       telefone,
       operadora: ope[0],
@@ -4469,7 +4511,6 @@ router.get('/qual-operadora/:numero', async (req, res) => {
     res.status(500).json({ error: 'Erro ao buscar a operadora ou erro de rede.' });
   }
 });
-
 
 router.get('/operadora', async (req, res) => {
     const { numero } = req.query;
@@ -9842,7 +9883,7 @@ router.get('/fundodatela', async (req, res) => {
   }
 
   try {
-    const response = await axios.get(`https://carisys.online/api/pesquisa/wallpaper?query=${query}`);
+    const response = await axios.get(`https://https://api.nexfuture.com.br/api/pesquisa/wallpaper?query=${query}`);
 
     if (response.data.status) {
       // Filtrar apenas URLs válidas
@@ -10837,7 +10878,7 @@ router.get('/pesquisayt', async (req, res) => {
             duration: video.timestamp
         }));
 
-        res.json({ criador: 'Redzin', formattedVideos });
+        res.json({ criador: 'Kuromi Api', formattedVideos });
     } catch (error) {
         console.error('Erro ao buscar vídeos do YouTube:', error.message);
         res.status(500).json({ error: 'Erro ao buscar vídeos do YouTube' });
@@ -10992,7 +11033,7 @@ router.get('/consulta/cep/:cep', async (req, res) => {
         const { state, city, neighborhood, street } = data;
 
         res.json({
-            criador: 'Redzin',
+            criador: 'Kuromi Api',
             cep: cep,
             estado: state,
             cidade: city,
@@ -11022,7 +11063,7 @@ router.get('/api/consulta/ddd/:ddd', async (req, res) => {
         const cities = data.cities;
 
         res.json({
-            criador: 'Redzin',
+            criador: 'Kuromi Api',
             state: state,
             cities: cities
         });
@@ -11056,7 +11097,7 @@ router.get('/api/consulta/clima/aeroporto/:codigoICAO', async (req, res) => {
 
         // Formata os dados conforme o modelo desejado
         const formattedData = {
-            criador: 'Redzin',
+            criador: 'Kuromi Api',
             umidade: umidade,
             visibilidade: visibilidade,
             codigo_icao: codigo_icao,
@@ -11186,7 +11227,7 @@ router.get('/dados-pessoais', async (req, res) => {
             foto: userData.picture.large
         };
 
-        res.json({ criador: 'Redzin', resultado: personalData });
+        res.json({ criador: 'Kuromi Api', resultado: personalData });
     } catch (error) {
         console.error('Erro ao obter dados do usuário:', error);
         res.status(500).json({ error: 'Erro ao obter dados do usuário' });
@@ -11196,7 +11237,7 @@ router.get('/dados-pessoais', async (req, res) => {
 // Rota para gerar CPF aleatório
 router.get('/gerar-cpf', (req, res) => {
     const cpf = gerarCPF();
-    res.json({ criador: 'Redzin', cpf: cpf });
+    res.json({ criador: 'Kuromi Api', cpf: cpf });
 });
 router.get('/videozinhos', async (req, res) => {
     try {
@@ -14786,7 +14827,7 @@ router.get('/contasonly', (req, res) => {
         const randomLink = linksData[randomIndex];
 
         // Enviar o link e o nome como resposta
-        res.json({ criador: 'Redzin', nome: randomLink.nome, link: randomLink.link });
+        res.json({ criador: 'Kuromi Api', nome: randomLink.nome, link: randomLink.link });
     } catch (error) {
         console.error('Erro ao obter o link aleatório:', error);
         res.status(500).json({ error: 'Erro ao obter o link aleatório' });
@@ -14813,7 +14854,7 @@ router.get('/metadinhas', (req, res) => {
 
         // Enviar os links masculinos e femininos como resposta
         res.json({
-            criador: 'Redzin',
+            criador: 'Kuromi Api',
             masculina: randomLink.masculina,
             feminina: randomLink.feminina
         });

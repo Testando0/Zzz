@@ -17,7 +17,7 @@
         #consulta { margin-bottom: 20px; }
         #tipoConsulta, #digiteAqui, #pesquisar { padding: 10px 20px; font-size: 16px; border-radius: 5px; }
         #tipoConsulta, #pesquisar { background-color: #fff; border: none; cursor: pointer; }
-        #digiteAqui { border: 1px solid #ccc; }
+        #digiteAqui { border: 1px solid #ff000; }
         #loading { display: none; margin-top: 20px; }
         pre { font-size: 18px; }
     </style>
@@ -40,12 +40,18 @@
         <option value="feriados">Feriados</option>
         <option value="ip">IP</option>
         <option value="nome">Nome</option>
+        <option value="nome-completo">Nome Completo</option>
+        <option value="email">Email</option>
         <option value="telefone">Telefone</option>
+        <option value="numero">Número</option>
         <option value="placa">Placa</option>
         <option value="cpf">CPF</option>
+        <option value="cpf2">CPF2</option>
+        <option value="cpf3">CPF3</option>
+        <option value="cpfcompleto">Cpf Completo</option>
         <option value="site">Site</option>
         <option value="signo">Signo</option>
-        <option value="letraMusica">Letra Da Música</option>
+        <option value="letraMusica">Letra De Música</option>
         <option value="clima">Clima</option>
         <option value="mudarFonte">Mudar Fonte</option>
         <option value="correios">Correios</option>
@@ -53,6 +59,8 @@
         <option value="serie">Série</option>
         <option value="notaFilme">Nota Do Filme</option>
         <option value="significadoNome">Significado Do Nome</option>
+        <option value="infoff">Info FF</option>
+        <option value="infoff2">Info FF2</option>
         <option value="audiosMemes">Áudios Memes</option>
     </select>
 
@@ -98,14 +106,32 @@
             case 'nome':
                 apiURL = 'https://world-ecletix.onrender.com/api/consultas?type=nome&query=' + encodeURIComponent(consulta);
                 break;
+                case 'nome-completo':
+                apiURL = 'https://world-ecletix.onrender.com/api/nome-completo?q=' + encodeURIComponent(consulta);
+                break;
+                case 'email':
+                apiURL = 'https://world-ecletix.onrender.com/api/email?q=' + encodeURIComponent(consulta);
+                break;
             case 'telefone':
                 apiURL = 'https://world-ecletix.onrender.com/api/consultas?type=telefone&query=' + encodeURIComponent(consulta);
+                break;
+                case 'numero':
+                apiURL = 'https://world-ecletix.onrender.com/api/numero?q=' + encodeURIComponent(consulta);
                 break;
             case 'placa':
                 apiURL = 'https://world-ecletix.onrender.com/api/consultas?type=placa&query=' + encodeURIComponent(consulta);
                 break;
             case 'cpf':
                 apiURL = 'https://world-ecletix.onrender.com/api/consultas?type=cpf&query=' + encodeURIComponent(consulta);
+                break;
+                case 'cpf2':
+                apiURL = 'https://world-ecletix.onrender.com/api/cpf2?q=' + encodeURIComponent(consulta);
+                break;
+                case 'cpf2':
+                apiURL = 'https://world-ecletix.onrender.com/api/cpf3?q=' + encodeURIComponent(consulta);
+                break;
+                case 'cpfcompleto':
+                apiURL = 'https://world-ecletix.onrender.com/api/consultarcpf?cpf=' + encodeURIComponent(consulta);
                 break;
             case 'site':
                 apiURL = 'https://world-ecletix.onrender.com/api/consultas?type=site&query=' + encodeURIComponent(consulta);
@@ -137,6 +163,12 @@
             case 'significadoNome':
                 apiURL = 'https://world-ecletix.onrender.com/api/significadodonome?nome=' + encodeURIComponent(consulta);
                 break;
+                case 'infoff':
+                apiURL = 'https://world-ecletix.onrender.com/api/infoff?id=' + encodeURIComponent(consulta);
+                break;
+                case 'infoff2':
+                apiURL = 'https://world-ecletix.onrender.com/api/infoff2?id=' + encodeURIComponent(consulta);
+                break;
             case 'audiosMemes':
                 apiURL = 'https://world-ecletix.onrender.com/api/audiomeme?query=' + encodeURIComponent(consulta);
                 break;
@@ -144,7 +176,7 @@
                 apiURL = '#';
         }
 
-        document.getElementById('resultado').innerText = 'Use VPN Em Caso De Bloqueio Por IP';
+        document.getElementById('resultado').innerText = 'Use VPN em caso de bloqueio por IP';
         window.open(apiURL);
     }
 </script>

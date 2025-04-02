@@ -6,7 +6,7 @@ const cheerio = require('cheerio');
 const search = require('yt-search');
 const ytSearch = require('yt-search');
 const yt = require('@distube/ytdl-core');
-const criador = 'Kuromi Api';
+const criador = 'Kuromi - Api';
 const { exec } = require('child_process');
 const sharp = require('sharp'); // Biblioteca para conversão WebP
 const cors = require('cors');
@@ -566,6 +566,36 @@ router.get('/play2', async (req, res) => {
     console.error(error);
     res.status(500).send('Erro ao baixar o vídeo.');
   }
+});
+
+router.get('/threads', async (req, res) => { try { const { url } = req.query; if (!url) return res.status(400).json({ error: 'URL is required' });
+
+const response = await axios.get(`https://api.vreden.my.id/api/download/threads?url=${encodeURIComponent(url)}`);
+    
+    const data = response.data;
+    data.creator = 'come primas';
+    
+    res.json(data);
+} catch (error) {
+    res.status(500).json({ error: 'Failed to fetch data' });
+}
+
+});
+
+router.get('/capcut', async (req, res) => {
+    try {
+        const { url } = req.query;
+        if (!url) return res.status(400).json({ error: 'URL is required' });
+
+        const response = await axios.get(`https://api.vreden.my.id/api/capcutdl?url=${encodeURIComponent(url)}`);
+        
+        const data = response.data;
+        data.creator = 'come primas';
+        
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch data' });
+    }
 });
 
 // Rota para baixar música
@@ -1380,33 +1410,58 @@ router.get('/info-player', async (req, res) => {
     }
 });
 
-router.get('/likesff', async (req, res) => {
-  const { id } = req.query;
+router.get('/likeff', async (req, res) => {
+    const { id, quantity = 10 } = req.query;
 
-  // Validação do parâmetro
-  if (!id) {
-    return res.status(400).json({ error: 'O parâmetro "id" é obrigatório!' });
-  }
+    if (!id) {
+        return res.status(400).json({ error: 'O parâmetro "id" é obrigatório.' });
+    }
 
-  try {
-    // Fazendo a requisição para a API externa
-    const response = await axios.get(`https://api.nowgarena.com/api/send_likes`, {
-      params: { uid: id, key: 'projetoswq' }, // Parâmetros fixos
-    });
+    try {
+        const response = await axios.get(`https://likes.ffgarena.cloud/api/likeidszbeta?uid=${id}&quantity=${quantity}`);
+        const data = response.data;
 
-    // Retornando a resposta da API externa
-    res.status(200).json({
-      message: 'Likes enviados com sucesso!',
-      data: response.data,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      error: 'Erro ao enviar os likes!',
-      details: error.response?.data || error.message,
-    });
-  }
+        const formattedResponse = {
+            "Apelido do Jogador": data.PlayerNickname,
+            "Região": data.PlayerRegion,
+            "Nível": data.PlayerLevel,
+            "Experiência": data.PlayerEXP.toLocaleString(),
+            "Likes Antes": data.Likes_Antes.toLocaleString(),
+            "Likes Depois": data.Likes_Depois.toLocaleString(),
+            "Likes Enviados pelo Bot": data.BotSend
+        };
+
+        res.json(formattedResponse);
+    } catch (error) {
+        res.status(500).json({ error: 'Erro ao buscar informações de likes.', details: error.message });
+    }
 });
+
+router.get('/likesff', async (req, res) => {
+    const { id, quantity = 10 } = req.query;
+
+    if (!id) {
+        return res.status(400).json({ error: 'O parâmetro "id" é obrigatório.' });
+    }
+
+    try {
+        const response = await axios.get(`https://adderfreefirelikes.squareweb.app/api/like?uid=${id}&quantity=${quantity}`);
+        const data = response.data;
+
+        const formattedResponse = {
+            "ID do Jogador": data.target_id,
+            "Likes Enviados": data.likes_enviados.toLocaleString(),
+            "Falhas": data.falhas,
+            "Sucessos": data.sucessos,
+            "Status": data.status === "ok" ? "Sucesso" : "Erro"
+        };
+
+        res.json(formattedResponse);
+    } catch (error) {
+        res.status(500).json({ error: 'Erro ao enviar likes.', details: error.message });
+    }
+});
+
 
 router.get('/instamp4', async (req, res) => {
     const { url: instagramUrl } = req.query;
@@ -2042,26 +2097,87 @@ router.get('/ia', async (req, res) => {
 });
 
 router.get('/lady', async (req, res) => {
-  const { texto } = req.query;
+    const { texto } = req.query;
 
-  if (!texto) {
-    return res.status(400).json({ status: false, mensagem: 'O parâmetro "texto" é obrigatório.' });
-  }
-
-  try {
-    const response = await axios.get(`http://premium.primaryhost.shop:2173/gpt.php?text=${texto}`);
-
-    if (response.data && response.data.response && response.data.response.data) {
-      res.json({ resposta: response.data.response.data });
-    } else {
-      res.json({ resposta: 'Sem resposta disponível' });
+    if (!texto) {
+        return res.status(400).json({ status: false, mensagem: 'O parâmetro "texto" é obrigatório.' });
     }
-  } catch (error) {
-    console.error('Erro ao buscar dados:', error.message);
-    res.status(500).json({ status: false, mensagem: 'Erro interno do servidor.' });
-  }
+
+    try {
+        const response = await axios.get(`https://api.nexfuture.com.br/api/inteligencias/gemini/pro?query=${encodeURIComponent(texto)}`);
+
+        if (response.data && response.data.resposta) {
+            res.json({ resposta: response.data.resposta });
+        } else {
+            res.json({ resposta: 'Sem resposta disponível' });
+        }
+    } catch (error) {
+        console.error('Erro ao buscar dados:', error.message);
+        res.status(500).json({ status: false, mensagem: 'Erro interno do servidor.' });
+    }
 });
 
+router.get('/blackbox', async (req, res) => {
+    const { texto } = req.query;
+
+    if (!texto) {
+        return res.status(400).json({ status: false, mensagem: 'O parâmetro "texto" é obrigatório.' });
+    }
+
+    try {
+        const response = await axios.get(`https://api.nexfuture.com.br/api/inteligencias/blackbox??query=${encodeURIComponent(texto)}`);
+
+        if (response.data && response.data.resposta) {
+            res.json({ resposta: response.data.resposta });
+        } else {
+            res.json({ resposta: 'Sem resposta disponível' });
+        }
+    } catch (error) {
+        console.error('Erro ao buscar dados:', error.message);
+        res.status(500).json({ status: false, mensagem: 'Erro interno do servidor.' });
+    }
+});
+
+router.get('/deepseek', async (req, res) => {
+    const { texto } = req.query;
+
+    if (!texto) {
+        return res.status(400).json({ status: false, mensagem: 'O parâmetro "texto" é obrigatório.' });
+    }
+
+    try {
+        const response = await axios.get(`https://api.nexfuture.com.br/api/inteligencias/deepseek?query=${encodeURIComponent(texto)}`);
+
+        if (response.data && response.data.resposta) {
+            res.json({ resposta: response.data.resposta });
+        } else {
+            res.json({ resposta: 'Sem resposta disponível' });
+        }
+    } catch (error) {
+        console.error('Erro ao buscar dados:', error.message);
+        res.status(500).json({ status: false, mensagem: 'Erro interno do servidor.' });
+    }
+});
+router.get('/we-ai', async (req, res) => {
+    const { texto } = req.query;
+
+    if (!texto) {
+        return res.status(400).json({ status: false, mensagem: 'O parâmetro "texto" é obrigatório.' });
+    }
+
+    try {
+        const response = await axios.get(`https://api.nexfuture.com.br/api/inteligencias/chatgpt?query=${encodeURIComponent(texto)}`);
+
+        if (response.data && response.data.resposta) {
+            res.json({ resposta: response.data.resposta });
+        } else {
+            res.json({ resposta: 'Sem resposta disponível' });
+        }
+    } catch (error) {
+        console.error('Erro ao buscar dados:', error.message);
+        res.status(500).json({ status: false, mensagem: 'Erro interno do servidor.' });
+    }
+});
 router.get('/sabetudo', async (req, res) => {
   const { texto } = req.query;
 
@@ -2070,7 +2186,7 @@ router.get('/sabetudo', async (req, res) => {
   }
 
   try {
-    const response = await axios.get(`https://https://api.nexfuture.com.br/api/ai/gemini-pro?query=${texto}`);
+    const response = await axios.get(`https://https://api.nexfuture.com.br/api/inteligencias/gemini/pro?query=${texto}`);
 
     if (response.data && response.data.resposta) {
       res.json({ resposta: response.data.resposta });
@@ -5138,7 +5254,36 @@ router.get('/folha', async (req, res) => {
 });
 
 
-router.get('/transcrever', async (req, res) => {
+router.get('/transcrever/audio', async (req, res) => {
+    const { audio } = req.query;
+    if (!audio) {
+        return res.status(400).json({ error: 'Parâmetro "audio" é obrigatório' });
+    }
+
+    try {
+        const response = await axios.get(`https://api.nexfuture.com.br/api/outros/aspose-transcribe?url=${audio}&diarization=true&is_multilingual=false`);
+        res.json(response.data);
+    } catch (error) {
+        res.status(500).json({ error: 'Erro ao transcrever áudio', details: error.message });
+    }
+});
+
+router.get('/transcrever/video', async (req, res) => {
+    const { video } = req.query;
+    if (!video) {
+        return res.status(400).json({ error: 'Parâmetro "video" é obrigatório' });
+    }
+
+    try {
+        const response = await axios.get(`https://api.nexfuture.com.br/api/outros/transcrever/youtube?query=${video}`);
+        res.json(response.data);
+    } catch (error) {
+        res.status(500).json({ error: 'Erro ao transcrever vídeo', details: error.message });
+    }
+});
+
+
+router.get('/transcreve', async (req, res) => {
     const apiKey = '46343532cb9a48aba921a1404a81cfe6'; // Sua chave API da AssemblyAI
     const audioUrl = req.query.url; // Obtém a URL do áudio a partir dos parâmetros da query
 
@@ -5800,7 +5945,7 @@ router.get('/netersg', async (req, res) => {
         res.status(500).json({ status: false, mensagem: "Erro interno ao processar a solicitação." });
     }
 });
-//gerar imagem by luan 
+//gerar imagem by Redzin 
 
 // Rota para gerar a imagem usando um parâmetro de consulta
 router.get('/gerar-imagem', async (req, res) => {
@@ -5848,7 +5993,7 @@ router.get('/gerar-imagem', async (req, res) => {
 
 //fim 
 
-// play e playvideo by luan vulgo come primas 
+// play e playvideo by Redzin
 
 const got = require('got');
 const ytsr = require('yt-search');
@@ -9261,7 +9406,23 @@ router.get('/likes', async (req, res) => {
     return res.json({ status: false, resultado: 'Erro interno do servidor.' });
   }
 });
-router.get('/infoff', async (req, res) => { try { const id = req.query.id; if (!id) { console.log('Parâmetro id ausente na requisição'); return res.json({ status: false, resultado: 'Cadê o parâmetro id?' }); }
+
+router.get('/infoff', async (req, res) => {
+    const { id } = req.query;
+
+    if (!id) {
+        return res.status(400).json({ error: 'O parâmetro "id" é obrigatório.' });
+    }
+
+    try {
+        const response = await axios.get(`https://freefireinfo.squareweb.app/api/info_player?uid=${id}`);
+        res.json(response.data);
+    } catch (error) {
+        res.status(500).json({ error: 'Erro ao buscar informações do jogador.', details: error.message });
+    }
+});
+
+router.get('/infoff2', async (req, res) => { try { const id = req.query.id; if (!id) { console.log('Parâmetro id ausente na requisição'); return res.json({ status: false, resultado: 'Cadê o parâmetro id?' }); }
 
 console.log(`[INFOID]: ID = ${id}`);
 
@@ -10878,7 +11039,7 @@ router.get('/pesquisayt', async (req, res) => {
             duration: video.timestamp
         }));
 
-        res.json({ criador: 'Kuromi Api', formattedVideos });
+        res.json({ criador: 'Kuromi - Api', formattedVideos });
     } catch (error) {
         console.error('Erro ao buscar vídeos do YouTube:', error.message);
         res.status(500).json({ error: 'Erro ao buscar vídeos do YouTube' });
@@ -11033,7 +11194,7 @@ router.get('/consulta/cep/:cep', async (req, res) => {
         const { state, city, neighborhood, street } = data;
 
         res.json({
-            criador: 'Kuromi Api',
+            criador: 'Kuromi - Api',
             cep: cep,
             estado: state,
             cidade: city,
@@ -11063,7 +11224,7 @@ router.get('/api/consulta/ddd/:ddd', async (req, res) => {
         const cities = data.cities;
 
         res.json({
-            criador: 'Kuromi Api',
+            criador: 'Kuromi - Api',
             state: state,
             cities: cities
         });
@@ -11097,7 +11258,7 @@ router.get('/api/consulta/clima/aeroporto/:codigoICAO', async (req, res) => {
 
         // Formata os dados conforme o modelo desejado
         const formattedData = {
-            criador: 'Kuromi Api',
+            criador: 'Kuromi - Api',
             umidade: umidade,
             visibilidade: visibilidade,
             codigo_icao: codigo_icao,
@@ -11227,7 +11388,7 @@ router.get('/dados-pessoais', async (req, res) => {
             foto: userData.picture.large
         };
 
-        res.json({ criador: 'Kuromi Api', resultado: personalData });
+        res.json({ criador: 'Kuromi - Api', resultado: personalData });
     } catch (error) {
         console.error('Erro ao obter dados do usuário:', error);
         res.status(500).json({ error: 'Erro ao obter dados do usuário' });
@@ -11237,7 +11398,7 @@ router.get('/dados-pessoais', async (req, res) => {
 // Rota para gerar CPF aleatório
 router.get('/gerar-cpf', (req, res) => {
     const cpf = gerarCPF();
-    res.json({ criador: 'Kuromi Api', cpf: cpf });
+    res.json({ criador: 'Kuromi - Api', cpf: cpf });
 });
 router.get('/videozinhos', async (req, res) => {
     try {
@@ -14827,7 +14988,7 @@ router.get('/contasonly', (req, res) => {
         const randomLink = linksData[randomIndex];
 
         // Enviar o link e o nome como resposta
-        res.json({ criador: 'Kuromi Api', nome: randomLink.nome, link: randomLink.link });
+        res.json({ criador: 'Kuromi - Api', nome: randomLink.nome, link: randomLink.link });
     } catch (error) {
         console.error('Erro ao obter o link aleatório:', error);
         res.status(500).json({ error: 'Erro ao obter o link aleatório' });
@@ -14854,7 +15015,7 @@ router.get('/metadinhas', (req, res) => {
 
         // Enviar os links masculinos e femininos como resposta
         res.json({
-            criador: 'Kuromi Api',
+            criador: 'Kuromi - Api',
             masculina: randomLink.masculina,
             feminina: randomLink.feminina
         });

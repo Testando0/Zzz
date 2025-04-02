@@ -8,7 +8,7 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Detalhes da Série</title>
+    <title>Detalhes Da Série</title>
 
     <style>
 
@@ -88,11 +88,11 @@
 
         <img id="seriePoster">
 
-        <p><b>Ano de Lançamento:</b> <span id="serieYear"></span></p>
+        <p><b>Ano De Lançamento:</b> <span id="serieYear"></span></p>
 
         <p><b>Elenco:</b> <span id="serieCast"></span></p>
 
-        <h2>Selecione Temporada e Episódio</h2>
+        <h2>Selecione Temporada E Episódio</h2>
 
         <select id="seasonSelect" onchange="loadEpisodes()"></select>
 
@@ -201,7 +201,7 @@
 
             let episode = document.getElementById("episodeSelect").value;
 
-            document.getElementById("videoPlayer").src = `https://embed.spaceembed.us.kg/s/${serieId}/${season}/${episode}`;
+            document.getElementById("videoPlayer").src = `https://superflixapi.ps/serie/${serieId}/${season}/${episode}`;
 
         }
 

@@ -6,7 +6,7 @@ const cheerio = require('cheerio');
 const search = require('yt-search');
 const ytSearch = require('yt-search');
 const yt = require('@distube/ytdl-core');
-const criador = 'Kuromi - Api';
+const criador = 'Redzin';
 const { exec } = require('child_process');
 const sharp = require('sharp'); // Biblioteca para conversão WebP
 const cors = require('cors');
@@ -173,6 +173,182 @@ const {
   bobross, 
   mms
 } = require('./config.js'); // arquivo que ele puxa as funções 
+router.get('/igstalk', async (req, res) => {
+  const username = req.query.user
+  if (!username) {
+    return res.status(400).json({ error: 'Parâmetro ?user= é obrigatório' })
+  }
+
+  // Função interna para buscar perfil do Instagram
+  const instaCheck = async (user) => {
+    const api = 'https://privatephotoviewer.com/wp-json/instagram-viewer/v1/fetch-profile'
+    const payload = { find: user }
+    const headers = {
+      'Content-Type': 'application/json',
+      'Accept': '*/*',
+      'X-Requested-With': 'XMLHttpRequest',
+      'User-Agent': 'Mozilla/5.0 (Linux; Android 11)',
+      'Referer': 'https://privatephotoviewer.com/'
+    }
+
+    try {
+      const { data } = await axios.post(api, payload, { headers })
+      const $ = cheerio.load(data.html)
+
+      let profilePic = $('#profile-insta').find('.col-md-4 img').attr('src')
+      if (profilePic?.startsWith('//')) profilePic = 'https:' + profilePic
+
+      const name = $('#profile-insta').find('.col-md-8 h4.text-muted').text().trim()
+      const user = $('#profile-insta').find('.col-md-8 h5.text-muted').text().trim()
+      const stats = {}
+
+      $('#profile-insta')
+        .find('.col-md-8 .d-flex.justify-content-between.my-3 > div')
+        .each((i, el) => {
+          const value = $(el).find('strong').text().trim()
+          const label = $(el).find('span.text-muted').text().trim().toLowerCase()
+          if (label.includes('posts')) stats.posts = value
+          else if (label.includes('followers')) stats.followers = value
+          else if (label.includes('following')) stats.following = value
+        })
+
+      const bio = $('#profile-insta').find('.col-md-8 p').text().trim()
+
+      return {
+        name,
+        username: user,
+        profilePic,
+        posts: stats.posts,
+        followers: stats.followers,
+        following: stats.following,
+        bio
+      }
+    } catch (error) {
+      console.error('Erro ao buscar dados:', error.message)
+      return null
+    }
+  }
+
+  try {
+    const data = await instaCheck(username)
+    if (!data) {
+      return res.status(404).json({ error: 'Perfil não encontrado ou privado' })
+    }
+
+    res.json({
+      status: 'success',
+      source: 'privatephotoviewer.com',
+      data
+    })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Erro interno no servidor' })
+  }
+})
+router.get('/book', async (req, res) => {
+  const { livro } = req.query;
+  if (!livro) return res.json({ status: false, erro: "Informe o parâmetro: livro" });
+
+  try {
+    const response = await axios.get(`https://www.googleapis.com/books/v1/volumes`, {
+      params: {
+        q: livro,
+        langRestrict: 'pt'
+      }
+    });
+
+    res.json({
+      status: true,
+      criador: "world-ecletix",
+      resultado: response.data.items || []
+    });
+  } catch {
+    res.json({ status: false, resultado: "Nenhuma resposta obtida do servidor" });
+  }
+});
+router.get('/cotacao', async (req, res) => {
+  const { moeda } = req.query;
+  if (!moeda) return res.json({ erro: "Faltando parâmetro: moeda" });
+
+  const moda = moeda.toLowerCase().replace("ó", "o");
+  const moedasMap = {
+    dolar: "USD-BRL",
+    euro: "EUR-BRL",
+    bitcoin: "BTC-BRL",
+    libra: "GBP-BRL",
+    ether: "ETH-BRL",
+    iene: "JPY-BRL",
+    yuan: "CNY-BRL"
+  };
+
+  const money = moedasMap[moda];
+  if (!money) {
+    return res.json({
+      erro: `A moeda escolhida não está presente em meu banco de dados... As moedas disponíveis são:
+• Dólar
+• Euro
+• Bitcoin
+• Libra
+• Ether
+• Iene
+• Yuan`
+    });
+  }
+
+  try {
+    const response = await axios.get(`https://economia.awesomeapi.com.br/last/${money}`);
+    const dados = response.data[Object.keys(response.data)[0]];
+
+    res.json({
+      status: true,
+      criador: "world-ecletix",
+      resultado: [dados]
+    });
+  } catch {
+    res.json({ status: false, erro: "Nenhuma resposta obtida do servidor" });
+  }
+});
+router.get('/celular2', async (req, res) => {
+  try {
+    const modelo = req.query.modelo;
+    if (!modelo) return res.json({ status: false, motivo: 'Coloque o parâmetro: modelo' });
+
+    const buscaResp = await axios.get(`https://www.techtudo.com.br/busca/?q=${encodeURIComponent(modelo)}`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0'
+      }
+    });
+
+    const $busca = cheerio.load(buscaResp.data);
+    const DFN_UR = $busca(".widget--navigational__title").text().toLowerCase();
+    if (!DFN_UR) return res.json({ status: false, message: 'Modelo não encontrado' });
+
+    const slug = DFN_UR.replace(/\s+/g, '-');
+    const detalhesResp = await axios.get(`https://www.techtudo.com.br/tudo-sobre/${slug}/`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0'
+      }
+    });
+
+    const $detalhes = cheerio.load(detalhesResp.data);
+    const titulo = $detalhes("h1").text();
+    const resumo = $detalhes("div").find(".content-row").text().replace(/  /g, "\n\n").trim();
+    const info = $detalhes("div").find(".all-about").text().trim();
+
+    res.json({
+      status: true,
+      código: 999,
+      criador: 'World-Ecletix',
+      resultado: {
+        title: titulo,
+        info: info,
+        resumo: resumo
+      }
+    });
+  } catch (error) {
+    res.json({ message: "Erro... Aguarde ou fale com algum administrador." });
+  }
+});
 
 // Rota para buscar as informações do site
 router.get('/playertv', async (req, res) => {
@@ -234,22 +410,20 @@ router.get('/iframe', async (req, res) => {
 });
 
 
-router.get('/canal/:slug', async (req, res) => {
+
+    router.get('/canal/:slug', async (req, res) => {
   const slug = req.params.slug;
 
   try {
-    // Busca a lista de canais na API
     const response = await axios.get('https://world-ecletix.onrender.com/api/playertv');
     const canais = response.data;
 
-    // Encontra o canal correspondente ao slug
     const canal = canais.find(c => slugify(c.title) === slug);
 
     if (!canal) {
       return res.status(404).send('<h1>Canal não encontrado</h1>');
     }
 
-    // Obtém o iframe do canal a partir da outra API
     const iframeResponse = await axios.get(`https://world-ecletix.onrender.com/api/iframe?canal=${encodeURIComponent(canal.link)}`);
     const iframeUrl = iframeResponse.data.iframe;
 
@@ -261,8 +435,25 @@ router.get('/canal/:slug', async (req, res) => {
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>Assistindo ${canal.title}</title>
           <style>
-            body { font-family: Arial, sans-serif; text-align: center; }
-            iframe { width: 100%; height: 500px; border: none; margin-top: 20px; }
+            body {
+              font-family: Arial, sans-serif;
+              text-align: center;
+              background: url('https://files.catbox.moe/d0cb9z.jpg') no-repeat center center fixed;
+              background-size: cover;
+              color: white;
+            }
+            iframe {
+              width: 100%;
+              height: 500px;
+              border: none;
+              margin-top: 20px;
+            }
+            h1 {
+              background-color: rgba(0, 0, 0, 0.5);
+              display: inline-block;
+              padding: 10px 20px;
+              border-radius: 10px;
+            }
           </style>
         </head>
         <body>
@@ -317,91 +508,92 @@ const sendMediaAsBuffer = async (res, url, type) => {
 
 
 // Baixar áudio pelo nome
-router.get('/play/:name', async (req, res) => {
-    try {
-        const { name } = req.params;
-        const searchResults = await search(name);
+router.get('/play', async (req, res) => {
+  const { name } = req.query;
 
-        if (!searchResults.videos.length) {
-            return res.status(404).json({ error: 'Vídeo não encontrado' });
-        }
+  if (!name) {
+    return res.status(400).json({ error: 'Name is required' });
+  }
 
-        const videoUrl = searchResults.videos[0].url;
-        const { data: response } = await axios.get(`https://apis.giftedtech.web.id/api/download/ytmp3?apikey=gifted&url=${videoUrl}`);
-        
-        if (response.success) {
-            return res.redirect(response.result.download_url);
-        } else {
-            return res.status(400).json({ error: 'Erro ao processar o download' });
-        }
-    } catch (error) {
-        return res.status(500).json({ error: 'Erro interno no servidor' });
+  try {
+    const response = await axios.get(`https://api.vreden.my.id/api/ytplaymp3?query=${encodeURIComponent(name)}`);
+    const downloadUrl = response.data.result.download.url;
+
+    if (downloadUrl) {
+      return res.redirect(downloadUrl);  // Redireciona para o link de download do áudio
+    } else {
+      return res.status(404).json({ error: 'Download link not available' });
     }
+  } catch (error) {
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
 });
-
 // Baixar vídeo pelo nome
-router.get('/playvideo/:name', async (req, res) => {
-    try {
-        const { name } = req.params;
-        const searchResults = await search(name);
+router.get('/playvideo', async (req, res) => {
+  const { name } = req.query;
 
-        if (!searchResults.videos.length) {
-            return res.status(404).json({ error: 'Vídeo não encontrado' });
-        }
+  if (!name) {
+    return res.status(400).json({ error: 'Name is required' });
+  }
 
-        const videoUrl = searchResults.videos[0].url;
-        const { data: response } = await axios.get(`https://apis.giftedtech.web.id/api/download/ytmp4?apikey=gifted&url=${videoUrl}`);
-        
-        if (response.success) {
-            return res.redirect(response.result.download_url);
-        } else {
-            return res.status(400).json({ error: 'Erro ao processar o download' });
-        }
-    } catch (error) {
-        return res.status(500).json({ error: 'Erro interno no servidor' });
+  try {
+    const response = await axios.get(`https://api.vreden.my.id/api/ytplaymp4?query=${encodeURIComponent(name)}`);
+    const downloadUrl = response.data.result.download.url;
+
+    if (downloadUrl) {
+      return res.redirect(downloadUrl);  // Redireciona para o link de download do vídeo
+    } else {
+      return res.status(404).json({ error: 'Download link not available' });
     }
+  } catch (error) {
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
 });
-
 // Baixar áudio pelo link
-router.get('/ytmp3', async (req, res) => {
-    try {
-        const videoUrl = req.query.url;
-        if (!videoUrl) {
-            return res.status(400).json({ error: 'URL do vídeo é obrigatória' });
-        }
 
-        const { data: response } = await axios.get(`https://apis.giftedtech.web.id/api/download/ytmp3?apikey=gifted&url=${videoUrl}`);
-        
-        if (response.success) {
-            return res.redirect(response.result.download_url);
-        } else {
-            return res.status(400).json({ error: 'Erro ao processar o download' });
-        }
-    } catch (error) {
-        return res.status(500).json({ error: 'Erro interno no servidor' });
+router.get('/ytmp3', async (req, res) => {
+  const { url } = req.query;
+  
+  if (!url) {
+    return res.status(400).json({ error: 'URL is required' });
+  }
+
+  try {
+    const response = await axios.get(`https://api.vreden.my.id/api/ytmp3?url=${url}`);
+    const downloadUrl = response.data.result.download.url;
+
+    if (downloadUrl) {
+      return res.redirect(downloadUrl);  // Redireciona para o link de download do áudio
+    } else {
+      return res.status(404).json({ error: 'Download link not available' });
     }
+  } catch (error) {
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
 });
+
 
 // Baixar vídeo pelo link
 router.get('/ytmp4', async (req, res) => {
-    try {
-        const videoUrl = req.query.url;
-        if (!videoUrl) {
-            return res.status(400).json({ error: 'URL do vídeo é obrigatória' });
-        }
+  const { url } = req.query;
 
-        const { data: response } = await axios.get(`https://apis.giftedtech.web.id/api/download/ytmp4?apikey=gifted&url=${videoUrl}`);
-        
-        if (response.success) {
-            return res.redirect(response.result.download_url);
-        } else {
-            return res.status(400).json({ error: 'Erro ao processar o download' });
-        }
-    } catch (error) {
-        return res.status(500).json({ error: 'Erro interno no servidor' });
+  if (!url) {
+    return res.status(400).json({ error: 'URL is required' });
+  }
+
+  try {
+    const response = await axios.get(`https://api.vreden.my.id/api/ytmp4?url=${url}`);
+    const downloadUrl = response.data.result.download.url;
+
+    if (downloadUrl) {
+      return res.redirect(downloadUrl);  // Redireciona para o link de download do vídeo
+    } else {
+      return res.status(404).json({ error: 'Download link not available' });
     }
+  } catch (error) {
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
 });
-
 
 // Rota para buscar e tocar uma música pelo nome
 router.get('/play5', async (req, res) => {
@@ -430,7 +622,7 @@ router.get('/play5', async (req, res) => {
   }
 });
 
-router.get('/musica', async (req, res) => {
+router.get('/musica3', async (req, res) => {
     const { name } = req.query;
     if (!name) {
         return res.status(400).json({ error: 'O parâmetro \"name\" é obrigatório' });
@@ -477,23 +669,21 @@ router.get('/playvideo5', async (req, res) => {
   }
 });
 
-router.get('/clipe', async (req, res) => {
-    try {
-        const name = req.query.name;
-        if (!name) {
-            return res.status(400).json({ error: 'Parâmetro "name" é obrigatório' });
-        }
 
-        const response = await axios.get(`https://api.nexfuture.com.br/api/downloads/youtube/playvideo/v2?query=${encodeURIComponent(name)}`);
+router.get('/clipe3', async (req, res) => {
+  const { name } = req.query;
+  if (!name) return res.status(400).send('Parâmetro "name" é obrigatório');
 
-        if (response.data?.resultado?.result?.downloads?.audio?.any4k) {
-            return res.redirect(response.data.resultado.result.downloads.audio.any4k);
-        } else {
-            return res.status(404).json({ error: 'URL de download não encontrada' });
-        }
-    } catch (error) {
-        return res.status(500).json({ error: 'Erro ao processar a solicitação', details: error.message });
-    }
+  try {
+    const response = await axios.get(`https://api.nexfuture.com.br/api/downloads/youtube/playvideo/v2?query=${encodeURIComponent(name)}`);
+    const any4k = response.data?.resultado?.result?.downloads?.video?.any4k;
+
+    if (!any4k) return res.status(404).send('Link de download não encontrado');
+
+    return res.redirect(any4k);
+  } catch (err) {
+    return res.status(500).send('Erro ao buscar o vídeo');
+  }
 });
 
 
@@ -1527,7 +1717,7 @@ const searchMusic = async (query) => {
 };
 
 // Rota para pesquisar e baixar o vídeo MP4 da música
-router.get('/clipe4', async (req, res) => {
+router.get('/clipe', async (req, res) => {
     const query = req.query.name; // Nome da música enviado como parâmetro na URL
     if (!query) {
         return res.status(400).send({ message: 'Name parameter is required' });
@@ -1550,7 +1740,7 @@ router.get('/clipe4', async (req, res) => {
 });
 
 // Rota para pesquisar e baixar o áudio MP3 da música
-router.get('/musica4', async (req, res) => {
+router.get('/musica', async (req, res) => {
     const query = req.query.name; // Nome da música enviado como parâmetro na URL
     if (!query) {
         return res.status(400).send({ message: 'Name parameter is required' });
@@ -1572,7 +1762,7 @@ router.get('/musica4', async (req, res) => {
     }
 });
 // Rota para baixar o vídeo MP4 a partir da URL
-router.get('/linkmp4-v2', async (req, res) => {
+router.get('/linkmp4', async (req, res) => {
     const videoUrl = req.query.url; // URL do vídeo enviado como parâmetro na URL
     if (!videoUrl) {
         return res.status(400).send({ message: 'URL parameter is required' });
@@ -1590,7 +1780,7 @@ router.get('/linkmp4-v2', async (req, res) => {
 });
 
 // Rota para baixar o áudio MP3 a partir da URL
-router.get('/linkmp3-v2', async (req, res) => {
+router.get('/linkmp3', async (req, res) => {
     const videoUrl = req.query.url; // URL do vídeo enviado como parâmetro na URL
     if (!videoUrl) {
         return res.status(400).send({ message: 'URL parameter is required' });
@@ -1617,7 +1807,7 @@ router.get('/musica5', async (req, res) => {
 
     try {
         // Montar a URL da API com o nome da música
-        const apiUrl = `https://https://api.nexfuture.com.br/api/downloads/youtube/play?query=${encodeURIComponent(musicName)}`;
+        const apiUrl = `https://api.nexfuture.com.br/api/downloads/youtube/play?query=${encodeURIComponent(musicName)}`;
         
         // Fazer a requisição para a API
         const response = await axios.get(apiUrl);
@@ -1637,35 +1827,47 @@ router.get('/musica5', async (req, res) => {
 });
 
 // Rota GET chamada "playlink"
-router.get('/linkmp3', (req, res) => {
-    const youtubeUrl = req.query.url; // Obtenha o link do YouTube a partir dos parâmetros da query
-    
-    if (!youtubeUrl) {
-        return res.status(400).send('O parâmetro "url" é obrigatório.');
+
+router.get('/linkmp33', async (req, res) => {
+    const { url } = req.query;
+    if (!url) {
+        return res.status(400).json({ error: 'O parâmetro url é obrigatório' });
     }
-    
-    // Monta a URL da API externa
-    const apiUrl = `https://https://api.nexfuture.com.br/api/downloads/youtube/mp3-2?url=${encodeURIComponent(youtubeUrl)}`;
-    
-    // Redireciona para a URL da API
-    res.redirect(apiUrl);
+
+    try {
+        const response = await axios.get(`https://api.nexfuture.com.br/api/downloads/youtube/playaudio/v2?query=${encodeURIComponent(url)}`);
+        const audioLink = response.data?.resultado?.result?.downloads?.audio?.config;
+
+        if (!audioLink) {
+            return res.status(404).json({ error: 'Música não encontrada' });
+        }
+
+        return res.redirect(audioLink);
+    } catch (error) {
+        return res.status(500).json({ error: 'Erro ao buscar a música' });
+    }
 });
 
-
-// Rota GET chamada "clipelink"
-router.get('/linkmp4', (req, res) => {
-    const youtubeUrl = req.query.url; // Obtenha o link do YouTube a partir dos parâmetros da query
-    
-    if (!youtubeUrl) {
-        return res.status(400).send('O parâmetro "url" é obrigatório.');
+router.get('/linkmp44', async (req, res) => {
+    const { url } = req.query;
+    if (!url) {
+        return res.status(400).json({ error: 'O parâmetro url é obrigatório' });
     }
-    
-    // Monta a URL da API externa
-    const apiUrl = `https://https://api.nexfuture.com.br/api/downloads/youtube/mp4?url=${encodeURIComponent(youtubeUrl)}`;
-    
-    // Redireciona para a URL da API
-    res.redirect(apiUrl);
+
+    try {
+        const response = await axios.get(`https://api.nexfuture.com.br/api/downloads/youtube/playvideo/v2?query=${encodeURIComponent(url)}`);
+        const videoLink = response.data?.resultado?.result?.downloads?.video?.config;
+
+        if (!videoLink) {
+            return res.status(404).json({ error: 'Link de download não encontrado' });
+        }
+
+        return res.redirect(videoLink);
+    } catch (error) {
+        return res.status(500).json({ error: 'Erro ao buscar o vídeo' });
+    }
 });
+
 
 // Rota GET chamada "clipelink"
 router.get('/clipe5', async (req, res) => {
@@ -2485,7 +2687,7 @@ router.get('/guia-series', async (req, res) => {
 
 router.get('/jogosdodia', async (req, res) => {
   try {
-    const { data } = await axios.get('https://multicanais.bingo/');
+    const { data } = await axios.get('https://multicanais.asia/');
     const $ = cheerio.load(data);
     const jogos = [];
 
@@ -3120,36 +3322,68 @@ router.get('/tabela-portugal', async (req, res) => {
   }
 });
 router.get('/jogosdehoje', async (req, res) => {
-  const url = 'https://onefootball.com/pt-br/jogos'; // URL do site
+  const url = 'https://onefootball.com.br/pt-br/jogos';
 
   try {
-    const { data } = await axios.get(url);
+    const { data } = await axios.get(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36',
+        'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+      }
+    });
+
     const $ = cheerio.load(data);
     const jogos = [];
 
     $('article').each((index, element) => {
-      const time1 = $(element).find('.SimpleMatchCardTeam_simpleMatchCardTeam__name__7Ud8D').first().text().trim();
-      const time2 = $(element).find('.SimpleMatchCardTeam_simpleMatchCardTeam__name__7Ud8D').last().text().trim();
-      const horario = $(element).find('time').text().trim();
-      const status = $(element)
+      const casa = $(element).find('.SimpleMatchCardTeam_simpleMatchCardTeam__name__7Ud8D').first().text().trim();
+      const fora = $(element).find('.SimpleMatchCardTeam_simpleMatchCardTeam__name__7Ud8D').last().text().trim();
+
+      let horario = $(element).find('time').text().trim();
+      if (!horario || horario.toLowerCase().includes('inval')) {
+        horario = '';
+      }
+
+      let tempo = $(element)
+        .find('.title-8-bold.SimpleMatchCard_simpleMatchCard__live__kg0bW')
+        .text()
+        .trim();
+
+      if (!tempo) tempo = 'Hoje';
+
+      let status = $(element)
         .find('.title-8-medium.SimpleMatchCard_simpleMatchCard__infoMessage___NJqW.SimpleMatchCard_simpleMatchCard__infoMessage__secondary__hisY4')
         .text()
         .trim();
 
-      // Separando o placar corretamente
-      const placarTime1 = $(element)
+      // Regras para status e horário
+      if (tempo !== 'Hoje') {
+        status = 'Ao vivo';
+        if (!horario) {
+          horario = 'Agora';
+        }
+      }
+
+      const placarCasa = $(element)
         .find('.SimpleMatchCardTeam_simpleMatchCardTeam__score__UYMc_')
         .first()
         .text()
         .trim();
-      const placarTime2 = $(element)
+      const placarFora = $(element)
         .find('.SimpleMatchCardTeam_simpleMatchCardTeam__score__UYMc_')
         .last()
         .text()
         .trim();
-      const placar = `${placarTime1} x ${placarTime2}`;
+      const placar = (placarCasa && placarFora) ? `${placarCasa} x ${placarFora}` : ' x ';
 
-      jogos.push({ time1, time2, horario, placar, status });
+      jogos.push({
+        casa,
+        fora,
+        horario,
+        placar,
+        status,
+        tempo
+      });
     });
 
     res.json(jogos);
@@ -3158,9 +3392,10 @@ router.get('/jogosdehoje', async (req, res) => {
     res.status(500).json({ error: 'Erro ao buscar os jogos' });
   }
 });
+
 router.get('/ufc', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.bingo/categoria/ufc-ao-vivo/';
+    const siteUrl = 'https://multicanais.asia/categoria/ufc-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -3191,7 +3426,7 @@ router.get('/ufc', async (req, res) => {
 // Rota para a API bbb25
 router.get('/bbb25', (req, res) => {
   const resultado = [
-    "https://multicanais.bingo/assistir-bbb-ao-vivo-online-24-horas/",
+    "https://multicanais.asia/assistir-bbb-ao-vivo-online-24-horas/",
     "https://globoplay.gratis/"
   ];
   
@@ -3200,7 +3435,7 @@ router.get('/bbb25', (req, res) => {
 
 router.get('/basquete', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.bingo/categoria/categoria/nba-ao-vivo//';
+    const siteUrl = 'https://multicanais.asia/categoria/categoria/nba-ao-vivo//';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -3232,7 +3467,7 @@ router.get('/basquete', async (req, res) => {
 
 router.get('/nfl', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.bingo/categoria/nfl-ao-vivo/';
+    const siteUrl = 'https://multicanais.asia/categoria/nfl-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -3263,7 +3498,7 @@ router.get('/nfl', async (req, res) => {
 
  router.get('/ucl', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.bingo/categoria/champions-league-ao-vivo/';
+    const siteUrl = 'https://multicanais.asia/categoria/champions-league-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -3294,7 +3529,7 @@ router.get('/nfl', async (req, res) => {
 
 router.get('/brasileirao', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.bingo/categoria/brasileiro-ao-vivo/';
+    const siteUrl = 'https://multicanais.asia/categoria/brasileiro-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -3324,7 +3559,7 @@ router.get('/brasileirao', async (req, res) => {
 });
 router.get('/tv', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.bingo/categoria/tv-online/';
+    const siteUrl = 'https://multicanais.asia/categoria/tv-online/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -3354,7 +3589,7 @@ router.get('/tv', async (req, res) => {
 });
 router.get('/esportedodia', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.bingo/categoria/esportes-ao-vivo/';
+    const siteUrl = 'https://multicanais.asia/categoria/esportes-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -3385,7 +3620,7 @@ router.get('/esportedodia', async (req, res) => {
 });
 router.get('/futebol', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.bingo/categoria/futebol-ao-vivo/';
+    const siteUrl = 'https://multicanais.asia/categoria/futebol-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -4270,7 +4505,66 @@ router.get('/rgb3', (req, res) => {
     res.setHeader('Content-Type', 'image/gif');
     res.send(encoder.out.getData());
 });
+router.get('/futeboledits', async (req, res) => {
+    // Caminho para o arquivo JSON
+    const loliFilePath = path.join(__dirname, 'dados', 'futeboledits.json');
 
+    // Função para ler o arquivo JSON
+    function lerArquivoJSON() {
+        const rawdata = fs.readFileSync(loliFilePath);
+        return JSON.parse(rawdata);
+    }
+
+    try {
+        // Carregar os vídeos do arquivo JSON
+        const loliData = lerArquivoJSON();
+        const videos = loliData.videos; // Alterado para 'videos'
+
+        // Escolher um vídeo aleatório
+        const randomIndex = Math.floor(Math.random() * videos.length);
+        const randomVideoUrl = videos[randomIndex];
+
+        // Fazer requisição para obter o vídeo
+        const response = await axios.get(randomVideoUrl, { responseType: 'arraybuffer' });
+
+        // Enviar o vídeo como resposta
+        res.set('Content-Type', 'video/mp4'); // Define o tipo de conteúdo como vídeo MP4
+        res.send(Buffer.from(response.data, 'binary'));
+    } catch (error) {
+        console.error('Erro ao obter o vídeo aleatório:', error);
+        res.status(500).send('Erro ao obter o vídeo aleatório');
+    }
+});
+router.get('/soloedits', async (req, res) => {
+    // Caminho para o arquivo JSON
+    const loliFilePath = path.join(__dirname, 'dados', 'soloedits.json');
+
+    // Função para ler o arquivo JSON
+    function lerArquivoJSON() {
+        const rawdata = fs.readFileSync(loliFilePath);
+        return JSON.parse(rawdata);
+    }
+
+    try {
+        // Carregar os vídeos do arquivo JSON
+        const loliData = lerArquivoJSON();
+        const videos = loliData.videos; // Alterado para 'videos'
+
+        // Escolher um vídeo aleatório
+        const randomIndex = Math.floor(Math.random() * videos.length);
+        const randomVideoUrl = videos[randomIndex];
+
+        // Fazer requisição para obter o vídeo
+        const response = await axios.get(randomVideoUrl, { responseType: 'arraybuffer' });
+
+        // Enviar o vídeo como resposta
+        res.set('Content-Type', 'video/mp4'); // Define o tipo de conteúdo como vídeo MP4
+        res.send(Buffer.from(response.data, 'binary'));
+    } catch (error) {
+        console.error('Erro ao obter o vídeo aleatório:', error);
+        res.status(500).send('Erro ao obter o vídeo aleatório');
+    }
+});
 
 router.get('/editsfeminina', async (req, res) => {
     // Caminho para o arquivo JSON
@@ -4560,69 +4854,125 @@ router.get('/whois/:domain', async (req, res) => {
     }
 });
 
-router.get('/qual-operadora/:numero', async (req, res) => {
-  // Função de formatação do número
-  const formtarNumero = (n) => {
+class OperadoraUtil {
+  static formtarNumero(n) {
     n = n?.replace(/[^0-9]/g, "");
     if (!(n.startsWith('55') && /([0-9]{5,16}|0)/.test(n))) return null;
 
-    const ddd = n.substr(2, 2); // Ex: 91
-    const testN = 8 == n.substr(4).length; // 8 = 9 (false) | 8 = 8 (true)
+    const ddd = n.substr(2, 2);
+    const testN = 8 == n.substr(4).length;
     let numero = n.substr(4, 5) + "-" + n.substr(9, 4);
     if (testN) {
       numero = n.substr(4, 4) + "-" + n.substr(8, 4);
     }
     return `(${ddd}) ${numero}`;
-  };
+  }
 
-  // Função que retorna o "user-agent" aleatório
-  const userAgent = () => {
-    const oos = [
-      'Macintosh; Intel Mac OS X 10_15_7', 'Macintosh; Intel Mac OS X 10_15_5', 'Macintosh; Intel Mac OS X 10_11_6',
-      'Macintosh; Intel Mac OS X 10_6_6', 'Macintosh; Intel Mac OS X 10_9_5', 'Macintosh; Intel Mac OS X 10_10_5',
-      'Macintosh; Intel Mac OS X 10_7_5', 'Macintosh; Intel Mac OS X 10_11_3', 'Macintosh; Intel Mac OS X 10_10_3',
-      'Macintosh; Intel Mac OS X 10_6_8', 'Macintosh; Intel Mac OS X 10_10_2', 'Macintosh; Intel Mac OS X 10_10_3',
-      'Macintosh; Intel Mac OS X 10_11_5', 'Windows NT 10.0; Win64; x64', 'Windows NT 10.0; WOW64', 'Windows NT 10.0'
-    ];
-    return `Mozilla/5.0 (${oos[Math.floor(Math.random() * oos.length)]}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${Math.floor(Math.random() * 3) + 87}.0.${Math.floor(Math.random() * 190) + 4100}.${Math.floor(Math.random() * 50) + 140} Safari/537.36`;
-  };
+  static async getHTML(url, options) {
+    const headers = options.headers;
+    const formData = new URLSearchParams();
+    formData.append('telefone', options.form.telefone);
 
-  // Número recebido da URL
+    const response = await axios.post(url, formData, { headers });
+    return response.data;
+  }
+
+  static qualOperadora(numero) {
+    const user = userAgent();
+    const getDate = String(Date.now()).slice(0, 10);
+    const telefone = this.formtarNumero(numero);
+    if (!telefone) return Promise.reject('Número desconhecido.');
+
+    const headers = {
+      "user-agent": user,
+      "cookie": `SSID=sfeb17gj92tcllul8c17tb6iji; USID=4f85b07d2188dc8b683bf2050d0a20dc; _jsuid=2662589599; _heatmaps_g2g_100536567=no; cf_clearance=KmTYQBKBLdNP4axA2h60DDwZE9j.wTKAPaI38jgr8lk-${getDate}-0-1-68ba348d.886f8aa2.e20e0874-0.2.${getDate}`,
+      'accept-language': "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+      Origin: 'https://www.qualoperadora.net',
+      Referer: 'https://www.qualoperadora.net/'
+    };
+
+    const options = {
+      method: "POST",
+      headers,
+      form: { telefone }
+    };
+
+    return this.getHTML('https://www.qualoperadora.net', options).then((html) => {
+      const $ = cheerio.load(html);
+      const ope = $('div[id="resultado"] > span').html()?.split(/ +/);
+      if (!ope) return Promise.reject('Operadora desconhecida ou não encontrada.');
+
+      const estado = $('div[id="resultado"] > span > span').html();
+
+      return {
+        telefone,
+        operadora: ope[0],
+        dispositivo: ope.pop(),
+        estado
+      };
+    });
+  }
+}
+
+// Rota GET usando a classe acima
+router.get('/operadora2/:numero', async (req, res) => {
   const numero = req.params.numero;
-  const telefone = formtarNumero(numero);
 
-  if (!telefone) return res.status(400).json({ error: 'Número desconhecido ou inválido.' });
+  try {
+    const resultado = await OperadoraUtil.qualOperadora(numero);
+    res.json(resultado);
+  } catch (err) {
+    res.status(400).json({ error: err.toString() });
+  }
+});
 
-  const getDate = String(Date.now()).slice(0, 10);
-  const headers = {
-    "User-Agent": userAgent(),
-    "cookie": `SSID=sfeb17gj92tcllul8c17tb6iji; USID=4f85b07d2188dc8b683bf2050d0a20dc; _jsuid=2662589599; _heatmaps_g2g_100536567=no; cf_clearance=KmTYQBKBLdNP4axA2h60DDwZE9j.wTKAPaI38jgr8lk-${getDate}-0-1-68ba348d.886f8aa2.e20e0874-0.2.${getDate}`,
-    'Accept-Language': "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
-    'Origin': 'https://www.qualoperadora.net',
-    'Referer': 'https://www.qualoperadora.net/'
-  };
+
+router.get('/qual-operadora/:numero', async (req, res) => {
+  const numero = req.params.numero?.replace(/\D/g, "");
+
+  if (!numero || !/^55\d{10,11}$/.test(numero)) {
+    return res.status(400).json({ error: 'Número inválido. Use o formato com DDI (ex: 5591987654321)' });
+  }
+
+  const ddd = numero.substr(2, 2);
+  const restante = numero.substr(4);
+  const formatado = `(${ddd}) ${restante.length === 8 ? restante.substr(0, 4) + '-' + restante.substr(4) : restante.substr(0, 5) + '-' + restante.substr(5)}`;
 
   const formData = new URLSearchParams();
-  formData.append("telefone", telefone);
+  formData.append("telefone", formatado);
+
+  const headers = {
+    'User-Agent': `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/117.0.0.0 Safari/537.36`,
+    'Referer': 'https://www.qualoperadora.net/',
+    'Origin': 'https://www.qualoperadora.net',
+    'Content-Type': 'application/x-www-form-urlencoded'
+  };
 
   try {
     const response = await axios.post('https://www.qualoperadora.net', formData, { headers });
     const $ = cheerio.load(response.data);
-    const ope = $('div[id="resultado"] > span').html()?.split(/ +/);
 
-    if (!ope) return res.status(404).json({ error: 'Operadora desconhecida ou não foi encontrada.' });
+    const spanText = $('div#resultado span').text().trim();
 
-    const estado = $('div[id="resultado"] > span > span').html();
+    if (!spanText) {
+      return res.status(404).json({ error: 'Não foi possível encontrar informações para este número.' });
+    }
 
-    res.json({
-      telefone,
-      operadora: ope[0],
-      dispositivo: ope.pop(),
-      estado
+    const partes = spanText.split(/\s+/);
+    const operadora = partes[0];
+    const estado = $('div#resultado span span').text().trim();
+    const dispositivo = partes[partes.length - 1];
+
+    return res.json({
+      telefone: formatado,
+      operadora,
+      estado: estado || null,
+      dispositivo
     });
-  } catch (error) {
-    console.error(error); // Log para ajudar na depuração
-    res.status(500).json({ error: 'Erro ao buscar a operadora ou erro de rede.' });
+
+  } catch (err) {
+    console.error("Erro ao acessar qualoperadora.net:", err.message);
+    return res.status(500).json({ error: 'Erro ao consultar o site da operadora. Tente novamente mais tarde.' });
   }
 });
 
@@ -5943,7 +6293,7 @@ router.get('/netersg', async (req, res) => {
         res.status(500).json({ status: false, mensagem: "Erro interno ao processar a solicitação." });
     }
 });
-//gerar imagem by Redzin 
+//gerar imagem by luan 
 
 // Rota para gerar a imagem usando um parâmetro de consulta
 router.get('/gerar-imagem', async (req, res) => {
@@ -5991,7 +6341,7 @@ router.get('/gerar-imagem', async (req, res) => {
 
 //fim 
 
-// play e playvideo by Redzin
+// play e playvideo by luan vulgo come primas 
 
 const got = require('got');
 const ytsr = require('yt-search');
@@ -6087,7 +6437,7 @@ router.get('/spotify2', async (req, res) => {
 });
 //ytmp3 pela ulr
 // Endpoint para baixar áudio a partir de uma URL
-router.get('/linkmp3', async (req, res) => {
+router.get('/linkmp3-v4', async (req, res) => {
     const { query } = req;
     const audioUrl = query.url; // Exemplo: /ytmp3?url=https://youtu.be/nome_do_audio
 
@@ -6222,7 +6572,7 @@ router.get('/clipe2', async (req, res) => {
 });
 //fim
 // Rota para buscar e converter vídeo para MP3 e enviar como stream
-router.get('/musica3', async (req, res) => {
+router.get('/musica4', async (req, res) => {
     const videoName = req.query.name;
 
     console.log(`Recebido pedido para download do vídeo: ${videoName}`);
@@ -6254,7 +6604,7 @@ router.get('/musica3', async (req, res) => {
     }
 });
 
-router.get('/clipe3', async (req, res) => {
+router.get('/clipe4', async (req, res) => {
     const videoName = req.query.name;
 
     console.log(`Recebido pedido para download do clipe: ${videoName}`);
@@ -6309,7 +6659,7 @@ router.get('/clipe3', async (req, res) => {
 
 
 // Rota para baixar MP3 com qualidade automática (melhor disponível) e enviar o arquivo
-router.get('/linkmp33', async (req, res) => {
+router.get('/linkmp3-v5', async (req, res) => {
     const url = req.query.url;
 
     try {
@@ -6357,7 +6707,7 @@ router.get('/linkmp33', async (req, res) => {
 });
 
 // Rota para baixar MP4 com qualidade automática (melhor disponível)
-router.get('/linkmp44', async (req, res) => {
+router.get('/linkmp4-v5', async (req, res) => {
     const url = req.query.url;
 
     try {
@@ -8729,7 +9079,7 @@ router.get('/pin/video', (req, res) => {
 
 const apiId = 21844566;
 const apiHash = 'ff82e94bfed22534a083c3aee236761a';
-const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBu7H7etICnYWpiS4KPOLt0IQWEJxKLSgKdecp/MsmhoqJHjVL0RDdz4OHorNTYXK/KQlRKXVz5gctimpDhv//HzS93Dxgz9btjNOGMcw0ElKOa6sF2ZiEQi1OVcb1p0oC0fa4ubFAvQQ7Q+B3zO2r20I0YiXY/3KrnW0t/nmDP/0m3E7JC1fN3D6bZ91MiqB/PKJHo/8hUCqJ1AIm7MbgVxDQ7i3OIobUaQ8whNotbFZAWJatHlQQG7UliGqPdy+G6L6el6YWB6VEzS2ZObQ8oMk/l1qllkTtDITlp+58/4AYmsX0oWwBMUPZKSNPQREoNZOob3WJ3XtJym1ucbgyEq4=');
+const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBu8QPYE6KzrDAwYQEENc8XDZq6sVVlJ+QDnY6gVsOlCXwpRSRP6tGEXKtZzm+yi/asrL+TBjN1uWdAzIOLEFeaG55vxcHEPN898QuDGc0C9uEdE3xaIKHM9zqyUqQoqsgquRj7tjeQtufopbtEXXOaNX4Hxo2tg6VfG90EQhUalgCXeqryDyw8FsrAFqiq2vn/l1cVXsERMd0g+Rv9TVKQdftZ7XKT9/83zP40C8kHl0kCfIHgQPBM1hUTZ7iJO+qWy8AJ2UYvoy0PTSMLNLhORwKwNSjwHF1hIMEFpy04chVv4Tt693KVHrvON4Ict2/VyIxkiWI6WlTkQviFZLNeJM=');
 const grupoChatId = -1002208588695;
 
 const rl = readline.createInterface({
@@ -8826,382 +9176,138 @@ router.get('/consultarcpf', async (req, res, next) => {
     }
 });
 
-
 router.get('/cpf3', async (req, res) => {
-  const cpf = req.query.q;
-  if (!cpf) return res.json({ message: "Faltando o parâmetro CPF!" });
+    let cpf = req.query.q;
 
-  const url = `https://api.iblgroup.cloud/ibl-premium/cpf3?q=${encodeURIComponent(cpf)}`;
-  
-  try {
-    const response = await fetch(url);
-    const data = await response.json();
+    if (!cpf) return res.json({ message: "Faltando o parâmetro cpf" });
 
-    if (!data.message) {
-      return res.json({ message: "Não foi possível obter informações sobre o CPF." });
+    try {
+        let url = `https://api.iblgroup.cloud/ibl-premium/cpf3?q=${cpf}`;
+        let response = await axios.get(url);
+
+        if (response.data.message) {
+            let dados = response.data.message.split("\n").map(linha => linha.trim()).filter(l => l !== "");
+            res.json(dados);
+        } else {
+            res.json({ message: "Nenhum dado encontrado para este CPF" });
+        }
+
+    } catch (error) {
+        console.error(error);
+        res.json({ message: "Erro ao consultar a API" });
     }
-
-    // Extraindo e formatando as informações dinâmicas
-    const message = data.message;
-
-    // Separa as informações importantes da resposta da API
-    const info = message.split("\n").reduce((acc, line) => {
-      if (line.includes("• NOME:")) {
-        acc.nome = line.replace('• NOME: ', '').trim();
-      } else if (line.includes("• CPF:")) {
-        acc.cpf = line.replace('• CPF: ', '').trim();
-      } else if (line.includes("• NASCIMENTO:")) {
-        acc.nascimento = line.replace('• NASCIMENTO: ', '').trim();
-      } else if (line.includes("• IDADE:")) {
-        acc.idade = line.replace('• IDADE: ', '').trim();
-      } else if (line.includes("• MÃE:")) {
-        acc.mae = line.replace('• MÃE: ', '').trim();
-      } else if (line.includes("• PROFISSÃO:")) {
-        acc.profissao = line.replace('• PROFISSÃO: ', '').trim();
-      } else if (line.includes("• SCORE:")) {
-        acc.score = line.replace('• SCORE: ', '').trim();
-      }
-      return acc;
-    }, {});
-
-    const formattedMessage = `
-      🔍 CONSULTA DE CPF 🔍
-      ----------------------------------------
-      • NOME: ${info.nome || 'Sem Informação'}
-      • CPF: ${info.cpf || 'Sem Informação'}
-      • NASCIMENTO: ${info.nascimento || 'Sem Informação'}
-      • IDADE: ${info.idade || 'Sem Informação'}
-      • MÃE: ${info.mae || 'Sem Informação'}
-      • PROFISSÃO: ${info.profissao || 'Sem Informação'}
-      • SCORE: ${info.score || 'Sem Informação'}
-      ----------------------------------------
-      🔛
-    `;
-
-    res.json({ message: formattedMessage });
-
-  } catch (error) {
-    res.json({ message: "Erro ao consultar o CPF. Tente novamente mais tarde." });
-  }
 });
+
 router.get('/cpf2', async (req, res) => {
-  const cpf = req.query.q;
-  if (!cpf) return res.json({ message: "Faltando o parâmetro CPF!" });
+    let cpf = req.query.q;
 
-  const url = `https://api.iblgroup.cloud/ibl-premium/cpf2?q=${cpf}`;
-  
-  try {
-    const response = await fetch(url);
-    const data = await response.json();
+    if (!cpf) return res.json({ message: "Faltando o parâmetro cpf" });
 
-    if (!data.message) {
-      return res.json({ message: "Não foi possível obter informações sobre o CPF." });
+    try {
+        let url = `https://api.iblgroup.cloud/ibl-premium/cpf2?q=${cpf}`;
+        let response = await axios.get(url);
+
+        if (response.data.message) {
+            let dados = response.data.message.split("\n").map(linha => linha.trim()).filter(l => l !== "");
+            res.json(dados);
+        } else {
+            res.json({ message: "Nenhum dado encontrado para este CPF" });
+        }
+
+    } catch (error) {
+        console.error(error);
+        res.json({ message: "Erro ao consultar a API" });
     }
-
-    // Extraindo e formatando as informações dinâmicas
-    const message = data.message;
-
-    // Separa as informações importantes da resposta da API
-    const info = message.split("\n").reduce((acc, line) => {
-      if (line.includes("• CPF:")) {
-        acc.cpf = line.replace('• CPF: ', '').trim();
-      } else if (line.includes("• NOME:")) {
-        acc.nome = line.replace('• NOME: ', '').trim();
-      } else if (line.includes("• NASCIMENTO:")) {
-        acc.nascimento = line.replace('• NASCIMENTO: ', '').trim();
-      } else if (line.includes("• IDADE:")) {
-        acc.idade = line.replace('• IDADE: ', '').trim();
-      } else if (line.includes("• SIGNO:")) {
-        acc.signo = line.replace('• SIGNO: ', '').trim();
-      } else if (line.includes("• MÃE:")) {
-        acc.mae = line.replace('• MÃE: ', '').trim();
-      } else if (line.includes("• PAI:")) {
-        acc.pai = line.replace('• PAI: ', '').trim();
-      } else if (line.includes("• NACIONALIDADE:")) {
-        acc.nacionalidade = line.replace('• NACIONALIDADE: ', '').trim();
-      } else if (line.includes("• ESCOLARIDADE:")) {
-        acc.escolaridade = line.replace('• ESCOLARIDADE: ', '').trim();
-      } else if (line.includes("• ESTADO CIVIL:")) {
-        acc.estadoCivil = line.replace('• ESTADO CIVIL: ', '').trim();
-      } else if (line.includes("• PROFISSÃO:")) {
-        acc.profissao = line.replace('• PROFISSÃO: ', '').trim();
-      } else if (line.includes("• RENDA PRESUMIDA:")) {
-        acc.rendaPresumida = line.replace('• RENDA PRESUMIDA: ', '').trim();
-      } else if (line.includes("• E-MAILS:")) {
-        acc.emails = line.replace('• E-MAILS: ', '').trim();
-      } else if (line.includes("• TELEFONES PROPRIETÁRIO:")) {
-        acc.telefonesProprietario = line.replace('• TELEFONES PROPRIETÁRIO: ', '').trim();
-      } else if (line.includes("• ENDEREÇOS:")) {
-        acc.enderecos = line.replace('• ENDEREÇOS: ', '').trim();
-      }
-      return acc;
-    }, {});
-
-    const formattedMessage = `
-      🔍 CONSULTA DE CPF 🔍
-      ----------------------------------------
-      • CPF: ${info.cpf || 'Sem Informação'}
-      • NOME: ${info.nome || 'Sem Informação'}
-      • NASCIMENTO: ${info.nascimento || 'Sem Informação'}
-      • IDADE: ${info.idade || 'Sem Informação'}
-      • SIGNO: ${info.signo || 'Sem Informação'}
-      • MÃE: ${info.mae || 'Sem Informação'}
-      • PAI: ${info.pai || 'Sem Informação'}
-      • NACIONALIDADE: ${info.nacionalidade || 'Sem Informação'}
-      • ESCOLARIDADE: ${info.escolaridade || 'Sem Informação'}
-      • ESTADO CIVIL: ${info.estadoCivil || 'Sem Informação'}
-      • PROFISSÃO: ${info.profissao || 'Sem Informação'}
-      • RENDA PRESUMIDA: ${info.rendaPresumida || 'Sem Informação'}
-      
-      ----------------------------------------
-      • E-MAILS: ${info.emails || 'Sem Informação'}
-      
-      ----------------------------------------
-      • TELEFONES PROPRIETÁRIO: ${info.telefonesProprietario || 'Sem Informação'}
-      
-      ----------------------------------------
-      • ENDEREÇOS: ${info.enderecos || 'Sem Informação'}
-      ----------------------------------------
-      🔛
-    `;
-
-    res.json({ message: formattedMessage });
-
-  } catch (error) {
-    res.json({ message: "Erro ao consultar o CPF. Tente novamente mais tarde." });
-  }
 });
+
 router.get('/numero', async (req, res) => {
-  const telefone = req.query.q;
-  if (!telefone) return res.json({ message: "Faltando o parâmetro TELEFONE!" });
+    let telefone = req.query.q;
 
-  const url = `https://api.iblgroup.cloud/ibl-premium/telefone?q=${telefone}`;
-  
-  try {
-    const response = await fetch(url);
-    const data = await response.json();
+    if (!telefone) return res.json({ message: "Faltando o parâmetro telefone" });
 
-    if (!data.message) {
-      return res.json({ message: "Não foi possível obter informações sobre o telefone." });
+    try {
+        let url = `https://api.iblgroup.cloud/ibl-premium/telefone?q=${telefone}`;
+        let response = await axios.get(url);
+
+        if (response.data.message) {
+            let dados = response.data.message.split("\n").map(linha => linha.trim()).filter(l => l !== "");
+            res.json(dados);
+        } else {
+            res.json({ message: "Nenhum dado encontrado para este telefone" });
+        }
+
+    } catch (error) {
+        console.error(error);
+        res.json({ message: "Erro ao consultar a API" });
     }
-
-    // Extraindo e formatando as informações dinâmicas
-    const message = data.message;
-
-    // Separa as informações importantes da resposta da API
-    const info = message.split("\n").reduce((acc, line) => {
-      if (line.includes("• TELEFONE:")) {
-        acc.telefone = line.replace('• TELEFONE: ', '').trim();
-      } else if (line.includes("• NOME:")) {
-        acc.nome = line.replace('• NOME: ', '').trim();
-      } else if (line.includes("• CPF/CNPJ:")) {
-        acc.cpfCnpj = line.replace('• CPF/CNPJ: ', '').trim();
-      } else if (line.includes("• LOGRADOURO:")) {
-        acc.logradouro = line.replace('• LOGRADOURO: ', '').trim();
-      } else if (line.includes("• NÚMERO:")) {
-        acc.numero = line.replace('• NÚMERO: ', '').trim();
-      } else if (line.includes("• COMPLEMENTO:")) {
-        acc.complemento = line.replace('• COMPLEMENTO: ', '').trim();
-      } else if (line.includes("• BAIRRO:")) {
-        acc.bairro = line.replace('• BAIRRO: ', '').trim();
-      } else if (line.includes("• CIDADE:")) {
-        acc.cidade = line.replace('• CIDADE: ', '').trim();
-      } else if (line.includes("• ESTADO:")) {
-        acc.estado = line.replace('• ESTADO: ', '').trim();
-      } else if (line.includes("• CEP:")) {
-        acc.cep = line.replace('• CEP: ', '').trim();
-      }
-      return acc;
-    }, {});
-
-    const formattedMessage = `
-      🔍 CONSULTA DE TELEFONE 🔍
-      ----------------------------------------
-      • TELEFONE: ${info.telefone || 'Sem Informação'}
-      • NOME: ${info.nome || 'Sem Informação'}
-      • CPF/CNPJ: ${info.cpfCnpj || 'Sem Informação'}
-      • LOGRADOURO: ${info.logradouro || 'Sem Informação'}
-      • NÚMERO: ${info.numero || 'Sem Informação'}
-      • COMPLEMENTO: ${info.complemento || 'Sem Informação'}
-      • BAIRRO: ${info.bairro || 'Sem Informação'}
-      • CIDADE: ${info.cidade || 'Sem Informação'}
-      • ESTADO: ${info.estado || 'Sem Informação'}
-      • CEP: ${info.cep || 'Sem Informação'}
-      ----------------------------------------
-      🔛
-    `;
-
-    res.json({ message: formattedMessage });
-
-  } catch (error) {
-    res.json({ message: "Erro ao consultar o telefone. Tente novamente mais tarde." });
-  }
 });
+
 router.get('/placa2', async (req, res) => {
-  const placa = req.query.q;
-  if (!placa) return res.json({ message: "Faltando o parâmetro PLACA!" });
+    let placa = req.query.q;
 
-  const url = `https://api.iblgroup.cloud/ibl-premium/placa?q=${placa}`;
-  
-  try {
-    const response = await fetch(url);
-    const data = await response.json();
+    if (!placa) return res.json({ message: "Faltando o parâmetro placa" });
 
-    if (!data.message) {
-      return res.json({ message: "Não foi possível obter informações sobre a placa." });
+    try {
+        let url = `https://api.iblgroup.cloud/ibl-premium/placa?q=${placa}`;
+        let response = await axios.get(url);
+
+        if (response.data.message) {
+            let dados = response.data.message.split("\n").map(linha => linha.trim()).filter(l => l !== "");
+            res.json(dados);
+        } else {
+            res.json({ message: "Nenhum dado encontrado para esta placa" });
+        }
+
+    } catch (error) {
+        console.error(error);
+        res.json({ message: "Erro ao consultar a API" });
     }
-
-    // Extraindo e formatando as informações dinâmicas
-    const message = data.message;
-
-    // Separa as informações importantes da resposta da API
-    const info = message.split("\n").reduce((acc, line) => {
-      if (line.includes("• PLACA:")) {
-        acc.placa = line.replace('• PLACA: ', '').trim();
-      } else if (line.includes("• SITUAÇÃO:")) {
-        acc.situacao = line.replace('• SITUAÇÃO: ', '').trim();
-      } else if (line.includes("• MARCA:")) {
-        acc.marca = line.replace('• MARCA: ', '').trim();
-      } else if (line.includes("• MODELO:")) {
-        acc.modelo = line.replace('• MODELO: ', '').trim();
-      } else if (line.includes("• COR:")) {
-        acc.cor = line.replace('• COR: ', '').trim();
-      } else if (line.includes("• ANO - FABRICAÇÃO:")) {
-        acc.anoFabricacao = line.replace('• ANO - FABRICAÇÃO: ', '').trim();
-      } else if (line.includes("• ANO - MODELO:")) {
-        acc.anoModelo = line.replace('• ANO - MODELO: ', '').trim();
-      } else if (line.includes("• MUNICIPIO:")) {
-        acc.municipio = line.replace('• MUNICIPIO: ', '').trim();
-      } else if (line.includes("• ESTADO:")) {
-        acc.estado = line.replace('• ESTADO: ', '').trim();
-      } else if (line.includes("• CHASSI:")) {
-        acc.chassi = line.replace('• CHASSI: ', '').trim();
-      } else if (line.includes("• RENAVAM:")) {
-        acc.renavam = line.replace('• RENAVAM: ', '').trim();
-      }
-      return acc;
-    }, {});
-
-    const formattedMessage = `
-      🔍 CONSULTA DE PLACA 🔍
-      ----------------------------------------
-      • PLACA: ${info.placa || 'Sem Informação'}
-      • SITUAÇÃO: ${info.situacao || 'Sem Informação'}
-      • MARCA: ${info.marca || 'Sem Informação'}
-      • MODELO: ${info.modelo || 'Sem Informação'}
-      • COR: ${info.cor || 'Sem Informação'}
-      • ANO DE FABRICAÇÃO: ${info.anoFabricacao || 'Sem Informação'}
-      • ANO DE MODELO: ${info.anoModelo || 'Sem Informação'}
-      • MUNICÍPIO: ${info.municipio || 'Sem Informação'}
-      • ESTADO: ${info.estado || 'Sem Informação'}
-      • CHASSI: ${info.chassi || 'Sem Informação'}
-      • RENAVAM: ${info.renavam || 'Sem Informação'}
-      ----------------------------------------
-      🔛
-    `;
-
-    res.json({ message: formattedMessage });
-
-  } catch (error) {
-    res.json({ message: "Erro ao consultar a placa. Tente novamente mais tarde." });
-  }
 });
+
 router.get('/nome-completo', async (req, res) => {
-  const nome = req.query.q;
-  if (!nome) return res.json({ message: "Faltando o parâmetro NOME!" });
+    let nome = req.query.q;
 
-  const url = `https://api.iblgroup.cloud/ibl-premium/nome?q=${encodeURIComponent(nome)}`;
-  
-  try {
-    const response = await fetch(url);
-    const data = await response.json();
+    if (!nome) return res.json({ message: "Faltando o parâmetro nome" });
 
-    if (!data.message) {
-      return res.json({ message: "Não foi possível obter informações sobre o nome." });
+    try {
+        let url = `https://api.iblgroup.cloud/ibl-premium/nome?q=${encodeURIComponent(nome)}`;
+        let response = await axios.get(url);
+
+        if (response.data.message) {
+            let dados = response.data.message.split("\n").map(linha => linha.trim()).filter(l => l !== "");
+            res.json(dados);
+        } else {
+            res.json({ message: "Nenhum dado encontrado para este nome" });
+        }
+
+    } catch (error) {
+        console.error(error);
+        res.json({ message: "Erro ao consultar a API" });
     }
-
-    // Extraindo e formatando as informações dinâmicas
-    const message = data.message;
-
-    // Separa as informações importantes da resposta da API
-    const info = message.split("\n").reduce((acc, line) => {
-      if (line.includes("• NOME:")) {
-        acc.nome = line.replace('• NOME: ', '').trim();
-      } else if (line.includes("• CPF:")) {
-        acc.cpf = line.replace('• CPF: ', '').trim();
-      } else if (line.includes("• SEXO:")) {
-        acc.sexo = line.replace('• SEXO: ', '').trim();
-      } else if (line.includes("• NASCIMENTO:")) {
-        acc.nascimento = line.replace('• NASCIMENTO: ', '').trim();
-      }
-      return acc;
-    }, {});
-
-    const formattedMessage = `
-      🔍 CONSULTA DE NOME 🔍
-      ----------------------------------------
-      • NOME: ${info.nome || 'Sem Informação'}
-      • CPF: ${info.cpf || 'Sem Informação'}
-      • SEXO: ${info.sexo || 'Sem Informação'}
-      • NASCIMENTO: ${info.nascimento || 'Sem Informação'}
-      ----------------------------------------
-      🔛
-    `;
-
-    res.json({ message: formattedMessage });
-
-  } catch (error) {
-    res.json({ message: "Erro ao consultar o nome. Tente novamente mais tarde." });
-  }
 });
+
 router.get('/email', async (req, res) => {
-  const email = req.query.q;
-  if (!email) return res.json({ message: "Faltando o parâmetro E-MAIL!" });
+    let email = req.query.q;
 
-  const url = `https://api.iblgroup.cloud/ibl-premium/email?q=${encodeURIComponent(email)}`;
-  
-  try {
-    const response = await fetch(url);
-    const data = await response.json();
+    if (!email) return res.json({ message: "Faltando o parâmetro email" });
 
-    if (!data.message) {
-      return res.json({ message: "Não foi possível obter informações sobre o e-mail." });
+    try {
+        let url = `https://api.iblgroup.cloud/ibl-premium/email?q=${encodeURIComponent(email)}`;
+        let response = await axios.get(url);
+
+        if (response.data.message) {
+            let dados = response.data.message.split("\n").map(linha => linha.trim()).filter(l => l !== "");
+            res.json(dados);
+        } else {
+            res.json({ message: "Nenhum dado encontrado para este e-mail" });
+        }
+
+    } catch (error) {
+        console.error(error);
+        res.json({ message: "Erro ao consultar a API" });
     }
-
-    // Extraindo e formatando as informações dinâmicas
-    const message = data.message;
-
-    // Separa as informações importantes da resposta da API
-    const info = message.split("\n").reduce((acc, line) => {
-      if (line.includes("• NOME:")) {
-        acc.nome = line.replace('• NOME: ', '').trim();
-      } else if (line.includes("• CPF/CNPJ:")) {
-        acc.cpfCnpj = line.replace('• CPF/CNPJ: ', '').trim();
-      } else if (line.includes("• SEXO:")) {
-        acc.sexo = line.replace('• SEXO: ', '').trim();
-      } else if (line.includes("• NASCIMENTO:")) {
-        acc.nascimento = line.replace('• NASCIMENTO: ', '').trim();
-      }
-      return acc;
-    }, {});
-
-    const formattedMessage = `
-      🔍 CONSULTA DE E-MAIL 🔍
-      ----------------------------------------
-      • NOME: ${info.nome || 'Sem Informação'}
-      • CPF/CNPJ: ${info.cpfCnpj || 'Sem Informação'}
-      • SEXO: ${info.sexo || 'Sem Informação'}
-      • NASCIMENTO: ${info.nascimento || 'Sem Informação'}
-      ----------------------------------------
-      🔛
-    `;
-
-    res.json({ message: formattedMessage });
-
-  } catch (error) {
-    res.json({ message: "Erro ao consultar o e-mail. Tente novamente mais tarde." });
-  }
 });
+
 router.get('/consultas', async (req, res) => {
   try {
     const type = req.query.type;
@@ -10706,7 +10812,7 @@ router.get('/gpsrc', async (req, res) => {
 });
 
 // Rota para stalkear Instagram
-router.get('/igstalk', async (req, res) => {
+router.get('/igstalk2', async (req, res) => {
   const { usuario } = req.query;
   if (!usuario) return res.status(400).json({ error: 'Nome de usuário é necessário.' });
 
@@ -11037,7 +11143,7 @@ router.get('/pesquisayt', async (req, res) => {
             duration: video.timestamp
         }));
 
-        res.json({ criador: 'Kuromi - Api', formattedVideos });
+        res.json({ criador: 'Redzin', formattedVideos });
     } catch (error) {
         console.error('Erro ao buscar vídeos do YouTube:', error.message);
         res.status(500).json({ error: 'Erro ao buscar vídeos do YouTube' });
@@ -11192,7 +11298,7 @@ router.get('/consulta/cep/:cep', async (req, res) => {
         const { state, city, neighborhood, street } = data;
 
         res.json({
-            criador: 'Kuromi - Api',
+            criador: 'Redzin',
             cep: cep,
             estado: state,
             cidade: city,
@@ -11222,7 +11328,7 @@ router.get('/api/consulta/ddd/:ddd', async (req, res) => {
         const cities = data.cities;
 
         res.json({
-            criador: 'Kuromi - Api',
+            criador: 'Redzin',
             state: state,
             cities: cities
         });
@@ -11256,7 +11362,7 @@ router.get('/api/consulta/clima/aeroporto/:codigoICAO', async (req, res) => {
 
         // Formata os dados conforme o modelo desejado
         const formattedData = {
-            criador: 'Kuromi - Api',
+            criador: 'Redzin',
             umidade: umidade,
             visibilidade: visibilidade,
             codigo_icao: codigo_icao,
@@ -11386,7 +11492,7 @@ router.get('/dados-pessoais', async (req, res) => {
             foto: userData.picture.large
         };
 
-        res.json({ criador: 'Kuromi - Api', resultado: personalData });
+        res.json({ criador: 'Redzin', resultado: personalData });
     } catch (error) {
         console.error('Erro ao obter dados do usuário:', error);
         res.status(500).json({ error: 'Erro ao obter dados do usuário' });
@@ -11396,7 +11502,7 @@ router.get('/dados-pessoais', async (req, res) => {
 // Rota para gerar CPF aleatório
 router.get('/gerar-cpf', (req, res) => {
     const cpf = gerarCPF();
-    res.json({ criador: 'Kuromi - Api', cpf: cpf });
+    res.json({ criador: 'Redzin', cpf: cpf });
 });
 router.get('/videozinhos', async (req, res) => {
     try {
@@ -14986,7 +15092,7 @@ router.get('/contasonly', (req, res) => {
         const randomLink = linksData[randomIndex];
 
         // Enviar o link e o nome como resposta
-        res.json({ criador: 'Kuromi - Api', nome: randomLink.nome, link: randomLink.link });
+        res.json({ criador: 'Redzin', nome: randomLink.nome, link: randomLink.link });
     } catch (error) {
         console.error('Erro ao obter o link aleatório:', error);
         res.status(500).json({ error: 'Erro ao obter o link aleatório' });
@@ -15013,7 +15119,7 @@ router.get('/metadinhas', (req, res) => {
 
         // Enviar os links masculinos e femininos como resposta
         res.json({
-            criador: 'Kuromi - Api',
+            criador: 'Redzin',
             masculina: randomLink.masculina,
             feminina: randomLink.feminina
         });

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>KUROMI TV</title>
+  <title>Player de Canais</title>
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <style>
     body {
@@ -27,9 +27,9 @@
 </head>
 <body>
 
-  <h1>Escolha Um Canal</h1>
+  <h1>Escolha um Canal</h1>
   <select id="canalSelect">
-    <option value="">Carregando Canais...</option>
+    <option value="">Carregando canais...</option>
   </select>
   <button onclick="carregarIframe()">Assistir</button>
 
@@ -43,7 +43,7 @@
       .then(response => {
         const canais = response.data;
         const select = document.getElementById('canalSelect');
-        select.innerHTML = '<option value="">Selecione Um Canal</option>';
+        select.innerHTML = '<option value="">Selecione um canal</option>';
 
         canais.forEach(canal => {
           const option = document.createElement('option');
@@ -53,13 +53,13 @@
         });
       })
       .catch(error => {
-        console.error('Erro Ao Carregar Canais:', error);
+        console.error('Erro ao carregar canais:', error);
       });
 
     function carregarIframe() {
       const canalUrl = document.getElementById('canalSelect').value;
       if (!canalUrl) {
-        alert("Escolha Um Canal Primeiro!");
+        alert("Escolha um canal primeiro!");
         return;
       }
 
@@ -70,8 +70,8 @@
           iframe.style.display = "block";  // Exibe o iframe
         })
         .catch(error => {
-          console.error("Erro Ao Carregar O Iframe:", error);
-          alert("Erro Ao Carregar O Canal.");
+          console.error("Erro ao carregar o iframe:", error);
+          alert("Erro ao carregar o canal.");
         });
     }
   </script>

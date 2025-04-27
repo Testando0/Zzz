@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Play TV Free</title>
+  <title>KUROMI TV</title>
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <style>
     body {
@@ -176,11 +176,11 @@
 <body>
 
 <header>
-  <h1>Play TV Free</h1>
+  <h1>KUROMI TV</h1>
   <div class="top-controls">
     <button id="menuBtn">☰</button>
     <div id="searchBar">
-      <input type="text" id="searchInput" placeholder="Buscar canal...">
+      <input type="text" id="searchInput" placeholder="Buscar Canal...">
       <button onclick="buscarCanal()">🔍</button>
     </div>
   </div>
@@ -277,7 +277,7 @@ function buscarCanal() {
   });
 
   if (!found) {
-    alert('Canal não encontrado.');
+    alert('Canal Não Encontrado.');
   }
 }
 
@@ -318,7 +318,7 @@ axios.get('https://kuromi-api.onrender.com/api/playertv')
       container.appendChild(postElement);
     });
   })
-  .catch(error => console.log('Erro ao carregar canais:', error));
+  .catch(error => console.log('Erro Ao Carregar Canais:', error));
 </script>
 
 </body>

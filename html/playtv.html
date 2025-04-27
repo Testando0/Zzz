@@ -282,18 +282,18 @@ function buscarCanal() {
 }
 
 // Carregar Categorias
-criarCategoria('Filmes', 'https://world-ecletix.onrender.com/api/guia-filmes');
-criarCategoria('Variedades', 'https://world-ecletix.onrender.com/api/guia-variedades');
-criarCategoria('Séries', 'https://world-ecletix.onrender.com/api/guia-series');
-criarCategoria('Esportes', 'https://world-ecletix.onrender.com/api/guia-esportes');
-criarCategoria('Canais Abertos', 'https://world-ecletix.onrender.com/api/guia-aberta');
-criarCategoria('Notícias', 'https://world-ecletix.onrender.com/api/guia-noticias');
-criarCategoria('Infantil', 'https://world-ecletix.onrender.com/api/guia-infantil');
-criarCategoria('Documentários', 'https://world-ecletix.onrender.com/api/guia-documentarios');
-criarCategoria('Jogos de Hoje', 'https://world-ecletix.onrender.com/api/jogosdehoje');
+criarCategoria('Filmes', 'https://kuromi-api.onrender.com/api/guia-filmes');
+criarCategoria('Variedades', 'https://kuromi-api.onrender.com/api/guia-variedades');
+criarCategoria('Séries', 'https://kuromi-api.onrender.com/api/guia-series');
+criarCategoria('Esportes', 'https://kuromi-api.onrender.com/api/guia-esportes');
+criarCategoria('Canais Abertos', 'https://kuromi-api.onrender.com/api/guia-aberta');
+criarCategoria('Notícias', 'https://kuromi-api.onrender.com/api/guia-noticias');
+criarCategoria('Infantil', 'https://kuromi-api.onrender.com/api/guia-infantil');
+criarCategoria('Documentários', 'https://kuromi-api.onrender.com/api/guia-documentarios');
+criarCategoria('Jogos de Hoje', 'https://kuromi-api.onrender.com/api/jogosdehoje');
 
 // Carregar Canais
-axios.get('https://world-ecletix.onrender.com/api/playertv')
+axios.get('https://kuromi-api.onrender.com/api/playertv')
   .then(response => {
     const container = document.getElementById('conteudo');
     response.data.forEach(post => {

@@ -5,8 +5,9 @@ const path = require('path');
 const cheerio = require('cheerio');
 const search = require('yt-search');
 const ytSearch = require('yt-search');
+const { createDecipheriv } = require('crypto');
 const yt = require('@distube/ytdl-core');
-const criador = 'Redzin';
+const criador = 'World Ecletix';
 const { exec } = require('child_process');
 const sharp = require('sharp'); // Biblioteca para conversão WebP
 const cors = require('cors');
@@ -173,6 +174,160 @@ const {
   bobross, 
   mms
 } = require('./config.js'); // arquivo que ele puxa as funções 
+
+const audio = [92, 128, 256, 320];
+const video = [144, 360, 480, 720, 1080];
+
+const hexcode = (hex) => Buffer.from(hex, 'hex');
+const decode = (enc) => {
+    try {
+        const secret_key = 'C5D58EF67A7584E4A29F6C35BBC4EB12';
+        const data = Buffer.from(enc, 'base64');
+        const iv = data.slice(0, 16);
+        const content = data.slice(16);
+        const key = hexcode(secret_key);
+
+        const decipher = createDecipheriv('aes-128-cbc', key, iv);
+        let decrypted = Buffer.concat([decipher.update(content), decipher.final()]);
+
+        return JSON.parse(decrypted.toString());
+    } catch (error) {
+        throw new Error(error.message);
+    }
+};
+
+async function savetube(link, quality, value) {
+    try {
+        const cdn = (await axios.get("https://media.savetube.me/api/random-cdn")).data.cdn;
+        const infoget = (await axios.post(`https://${cdn}/v2/info`, {
+            url: link
+        }, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0',
+                'Referer': 'https://yt.savetube.me/'
+            }
+        })).data;
+
+        const info = decode(infoget.data);
+        const response = (await axios.post(`https://${cdn}/download`, {
+            downloadType: value,
+            quality: `${quality}`,
+            key: info.key
+        }, {
+            headers: {
+                'Content-Type': 'application/json',
+                'User-Agent': 'Mozilla/5.0',
+                'Referer': 'https://yt.savetube.me/'
+            }
+        })).data;
+
+        return {
+            status: true,
+            quality: `${quality}${value === "audio" ? "kbps" : "p"}`,
+            availableQuality: value === "audio" ? audio : video,
+            url: response.data.downloadUrl,
+            filename: `${info.title} (${quality}${value === "audio" ? "kbps).mp3" : "p).mp4"}`
+        };
+    } catch (error) {
+        return {
+            status: false,
+            message: "Converting error"
+        };
+    }
+}
+
+async function playdw(name) {
+    const format = 128;
+    try {
+        const data = await ytSearch(name);
+        if (!data.videos || data.videos.length === 0) {
+            return { status: false, message: "Nenhum vídeo encontrado" };
+        }
+
+        const video = data.videos[0];
+        const url = video.url;
+
+        const response = await savetube(url, format, "audio");
+
+        return {
+            status: true,
+            metadata: video,
+            download: response
+        };
+    } catch (error) {
+        return { status: false, message: error.message };
+    }
+}
+
+async function clipedw(name) {
+    const format = 360;
+    try {
+        const data = await ytSearch(name);
+        if (!data.videos || data.videos.length === 0) {
+            return { status: false, message: "Nenhum vídeo encontrado" };
+        }
+
+        const video = data.videos[0];
+        const url = video.url;
+
+        const response = await savetube(url, format, "video");
+
+        return {
+            status: true,
+            metadata: video,
+            download: response
+        };
+    } catch (error) {
+        return { status: false, message: error.message };
+    }
+}
+
+async function getLinkFromUrl(url, type = "audio") {
+    const format = type === "audio" ? 128 : 360;
+    return await savetube(url, format, type);
+}
+
+// Rota para música por nome
+router.get("/musica", async (req, res) => {
+    const name = req.query.name;
+    if (!name) return res.status(400).send("Parâmetro 'name' obrigatório");
+
+    const result = await playdw(name);
+    if (result.status) return res.redirect(result.download.url);
+    res.status(404).send("Nada encontrado.");
+});
+
+// Rota para clipe por nome
+router.get("/clipe", async (req, res) => {
+    const name = req.query.name;
+    if (!name) return res.status(400).send("Parâmetro 'name' obrigatório");
+
+    const result = await clipedw(name);
+    if (result.status) return res.redirect(result.download.url);
+    res.status(404).send("Nada encontrado.");
+});
+
+// Rota direta com link para áudio
+router.get("/linkmp3", async (req, res) => {
+    const url = req.query.url;
+    if (!url) return res.status(400).send("Parâmetro 'url' obrigatório");
+
+    const result = await getLinkFromUrl(url, "audio");
+    if (result.status) return res.redirect(result.url);
+    res.status(404).send("Nada encontrado.");
+});
+
+// Rota direta com link para vídeo
+router.get("/linkmp4", async (req, res) => {
+    const url = req.query.url;
+    if (!url) return res.status(400).send("Parâmetro 'url' obrigatório");
+
+    const result = await getLinkFromUrl(url, "video");
+    if (result.status) return res.redirect(result.url);
+    res.status(404).send("Nada encontrado.");
+});
+
+
 router.get('/igstalk', async (req, res) => {
   const username = req.query.user
   if (!username) {
@@ -259,7 +414,7 @@ router.get('/book', async (req, res) => {
 
     res.json({
       status: true,
-      criador: "world-ecletix",
+      criador: "Redzin",
       resultado: response.data.items || []
     });
   } catch {
@@ -301,7 +456,7 @@ router.get('/cotacao', async (req, res) => {
 
     res.json({
       status: true,
-      criador: "world-ecletix",
+      criador: "Redzin",
       resultado: [dados]
     });
   } catch {
@@ -338,7 +493,7 @@ router.get('/celular2', async (req, res) => {
     res.json({
       status: true,
       código: 999,
-      criador: 'World-Ecletix',
+      criador: 'Redzin',
       resultado: {
         title: titulo,
         info: info,
@@ -415,7 +570,7 @@ router.get('/iframe', async (req, res) => {
   const slug = req.params.slug;
 
   try {
-    const response = await axios.get('https://world-ecletix.onrender.com/api/playertv');
+    const response = await axios.get('https://kuromi-system.onrender.com/api/playertv');
     const canais = response.data;
 
     const canal = canais.find(c => slugify(c.title) === slug);
@@ -424,7 +579,7 @@ router.get('/iframe', async (req, res) => {
       return res.status(404).send('<h1>Canal não encontrado</h1>');
     }
 
-    const iframeResponse = await axios.get(`https://world-ecletix.onrender.com/api/iframe?canal=${encodeURIComponent(canal.link)}`);
+    const iframeResponse = await axios.get(`https://kuromi-system.onrender.com/api/iframe?canal=${encodeURIComponent(canal.link)}`);
     const iframeUrl = iframeResponse.data.iframe;
 
     res.send(`
@@ -622,7 +777,7 @@ router.get('/play5', async (req, res) => {
   }
 });
 
-router.get('/musica3', async (req, res) => {
+router.get('/musica6', async (req, res) => {
     const { name } = req.query;
     if (!name) {
         return res.status(400).json({ error: 'O parâmetro \"name\" é obrigatório' });
@@ -670,7 +825,7 @@ router.get('/playvideo5', async (req, res) => {
 });
 
 
-router.get('/clipe3', async (req, res) => {
+router.get('/clipe6', async (req, res) => {
   const { name } = req.query;
   if (!name) return res.status(400).send('Parâmetro "name" é obrigatório');
 
@@ -1717,7 +1872,7 @@ const searchMusic = async (query) => {
 };
 
 // Rota para pesquisar e baixar o vídeo MP4 da música
-router.get('/clipe', async (req, res) => {
+router.get('/clipe3', async (req, res) => {
     const query = req.query.name; // Nome da música enviado como parâmetro na URL
     if (!query) {
         return res.status(400).send({ message: 'Name parameter is required' });
@@ -1740,7 +1895,7 @@ router.get('/clipe', async (req, res) => {
 });
 
 // Rota para pesquisar e baixar o áudio MP3 da música
-router.get('/musica', async (req, res) => {
+router.get('/musica3', async (req, res) => {
     const query = req.query.name; // Nome da música enviado como parâmetro na URL
     if (!query) {
         return res.status(400).send({ message: 'Name parameter is required' });
@@ -1762,7 +1917,7 @@ router.get('/musica', async (req, res) => {
     }
 });
 // Rota para baixar o vídeo MP4 a partir da URL
-router.get('/linkmp4', async (req, res) => {
+router.get('/linkmp45', async (req, res) => {
     const videoUrl = req.query.url; // URL do vídeo enviado como parâmetro na URL
     if (!videoUrl) {
         return res.status(400).send({ message: 'URL parameter is required' });
@@ -1780,7 +1935,7 @@ router.get('/linkmp4', async (req, res) => {
 });
 
 // Rota para baixar o áudio MP3 a partir da URL
-router.get('/linkmp3', async (req, res) => {
+router.get('/linkmp35', async (req, res) => {
     const videoUrl = req.query.url; // URL do vídeo enviado como parâmetro na URL
     if (!videoUrl) {
         return res.status(400).send({ message: 'URL parameter is required' });
@@ -6466,7 +6621,7 @@ router.get('/linkmp3-v4', async (req, res) => {
 });
 
 // Endpoint para baixar vídeo a partir de uma URL
-router.get('/linkmp4', async (req, res) => {
+router.get('/linkmp46', async (req, res) => {
     const { query } = req;
     const videoUrl = query.url; // Exemplo: /ytmp4?url=https://youtu.be/nome_do_video
 
@@ -9079,7 +9234,7 @@ router.get('/pin/video', (req, res) => {
 
 const apiId = 21844566;
 const apiHash = 'ff82e94bfed22534a083c3aee236761a';
-const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBu2ZVqA9JedFiPsDq2hUnffsZzmUBnTwB2SRxLKeGIibPLWQJjDK2c9tgsT55K6amhSdE6JgDjzyWuyDK4wVJhxRn50LxAhMX5dKczXEbhfRsqGhVuMTHNPBTBA4GbRXIMppJubdL/DjUKpf5TxC3AQ/Jm8QMLcf23gDJYxecEaid6oYsEF3/cb+dlVE9jna9W/4ItiNLH9CX1KNKg9I5EM8Waq6I4gC8nr6YaP+E2HvhrrCgc1hH8ku4EuDqhfdIl9Uw+tZccQfjjUE76epyHYdbZsybNIy6EP/JTMyQobod4llQ7CJUu4TzM1eoo7hAsiSxPzmflgtzX/7CzSMkuVY=');
+const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBuzP6mKqlHUy/jTjOtCvowA1GiYnRqWjhTymJYyan3P+SU2ys9iqa+eEDbl8a/ZpOxsYLhu5RzLElY8y0A/YxtxTJfAK6SMEhDP6pVp8NS2giZ2cZ0Edf2K/92UbazORoZge1bvzDfLKix5ADh+zbHEFSsddXnKhjqxcpuXC9wmuHHu1vZ+Fzwy73aCX4qs2uMkRFhTZuVEovNOhOu6ZUTimA9dF9TXQDndzineizO5FL6yEXElyoRmLVnVVI2fyDvYZ2maAdxEwYZ/PXsrUALsUgUUUECPdkA63J/zANHM7DM6GEphk0wseJi03YsCJ0BnNMXhrwsGjdNi/iuwcRqgo=');
 const grupoChatId = -1002208588695;
 
 const rl = readline.createInterface({
@@ -11143,7 +11298,7 @@ router.get('/pesquisayt', async (req, res) => {
             duration: video.timestamp
         }));
 
-        res.json({ criador: 'Redzin', formattedVideos });
+        res.json({ criador: 'World Ecletix', formattedVideos });
     } catch (error) {
         console.error('Erro ao buscar vídeos do YouTube:', error.message);
         res.status(500).json({ error: 'Erro ao buscar vídeos do YouTube' });
@@ -11298,7 +11453,7 @@ router.get('/consulta/cep/:cep', async (req, res) => {
         const { state, city, neighborhood, street } = data;
 
         res.json({
-            criador: 'Redzin',
+            criador: 'World Ecletix',
             cep: cep,
             estado: state,
             cidade: city,
@@ -11328,7 +11483,7 @@ router.get('/api/consulta/ddd/:ddd', async (req, res) => {
         const cities = data.cities;
 
         res.json({
-            criador: 'Redzin',
+            criador: 'World Ecletix',
             state: state,
             cities: cities
         });
@@ -11362,7 +11517,7 @@ router.get('/api/consulta/clima/aeroporto/:codigoICAO', async (req, res) => {
 
         // Formata os dados conforme o modelo desejado
         const formattedData = {
-            criador: 'Redzin',
+            criador: 'World Ecletix',
             umidade: umidade,
             visibilidade: visibilidade,
             codigo_icao: codigo_icao,
@@ -11492,7 +11647,7 @@ router.get('/dados-pessoais', async (req, res) => {
             foto: userData.picture.large
         };
 
-        res.json({ criador: 'Redzin', resultado: personalData });
+        res.json({ criador: 'World Ecletix', resultado: personalData });
     } catch (error) {
         console.error('Erro ao obter dados do usuário:', error);
         res.status(500).json({ error: 'Erro ao obter dados do usuário' });
@@ -11502,7 +11657,7 @@ router.get('/dados-pessoais', async (req, res) => {
 // Rota para gerar CPF aleatório
 router.get('/gerar-cpf', (req, res) => {
     const cpf = gerarCPF();
-    res.json({ criador: 'Redzin', cpf: cpf });
+    res.json({ criador: 'World Ecletix', cpf: cpf });
 });
 router.get('/videozinhos', async (req, res) => {
     try {
@@ -15092,7 +15247,7 @@ router.get('/contasonly', (req, res) => {
         const randomLink = linksData[randomIndex];
 
         // Enviar o link e o nome como resposta
-        res.json({ criador: 'Redzin', nome: randomLink.nome, link: randomLink.link });
+        res.json({ criador: 'World Ecletix', nome: randomLink.nome, link: randomLink.link });
     } catch (error) {
         console.error('Erro ao obter o link aleatório:', error);
         res.status(500).json({ error: 'Erro ao obter o link aleatório' });
@@ -15119,7 +15274,7 @@ router.get('/metadinhas', (req, res) => {
 
         // Enviar os links masculinos e femininos como resposta
         res.json({
-            criador: 'Redzin',
+            criador: 'world ecletix',
             masculina: randomLink.masculina,
             feminina: randomLink.feminina
         });

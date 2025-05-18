@@ -7,7 +7,7 @@ const search = require('yt-search');
 const ytSearch = require('yt-search');
 const { createDecipheriv } = require('crypto');
 const yt = require('@distube/ytdl-core');
-const criador = 'World Ecletix';
+const criador = 'Redzin';
 const { exec } = require('child_process');
 const sharp = require('sharp'); // Biblioteca para conversão WebP
 const cors = require('cors');
@@ -400,6 +400,270 @@ router.get('/igstalk', async (req, res) => {
     res.status(500).json({ error: 'Erro interno no servidor' })
   }
 })
+
+router.get('/jogo/:slug', async (req, res) => {
+  const { slug } = req.params;
+
+  try {
+    const response = await axios.get('https://world-ecletix.onrender.com/api/futemax');
+    const jogos = response.data;
+
+    const jogo = jogos.find(j => {
+      const path = j.link.replace('https://futemax.loan/', '').replace(/\/$/, '').toLowerCase();
+      return path.includes(slug.toLowerCase());
+    });
+
+    if (!jogo) {
+      return res.status(404).send('Jogo não encontrado');
+    }
+
+    const futplay = await axios.get(`https://world-ecletix.onrender.com/api/futplay?url=${encodeURIComponent(jogo.link)}`);
+    const { title, description, thumbnail, players } = futplay.data;
+
+    const html = `
+      <html>
+        <head>
+          <title>${title}</title>
+          <style>
+            body {
+              margin: 0;
+              padding: 20px;
+              background: url('https://files.catbox.moe/daejby.jpg') no-repeat center center fixed;
+              background-size: cover;
+              color: #fff;
+              font-family: Arial, sans-serif;
+              text-align: center;
+            }
+            h1 {
+              font-size: 28px;
+              margin-bottom: 10px;
+            }
+            p {
+              font-size: 18px;
+              margin-bottom: 20px;
+            }
+            img {
+              max-width: 90%;
+              border-radius: 8px;
+              margin-bottom: 20px;
+            }
+            button {
+              margin: 10px 5px;
+              padding: 14px 24px;
+              background: #ff4444;
+              color: #fff;
+              border: none;
+              border-radius: 10px;
+              cursor: pointer;
+              font-size: 18px;
+              transition: background 0.3s;
+            }
+            button:hover {
+              background: #cc0000;
+            }
+            iframe {
+              width: 100%;
+              max-width: 100%;
+              height: 60vh;
+              border: none;
+              border-radius: 12px;
+              margin-top: 20px;
+            }
+          </style>
+        </head>
+        <body>
+          <h1>${title}</h1>
+          <p>${description}</p>
+          <img src="${thumbnail}" alt="${title}" />
+          <div>
+            ${players.map((p, i) => `<button onclick="loadPlayer('${p.link}')">${p.label}</button>`).join('')}
+          </div>
+          <div id="player-container">
+            <iframe id="player" src="" allowfullscreen></iframe>
+          </div>
+          <script>
+            function loadPlayer(link) {
+              document.getElementById('player').src = link;
+            }
+          </script>
+        </body>
+      </html>
+    `;
+
+    res.send(html);
+
+  } catch (err) {
+    res.status(500).send('Erro ao carregar o jogo');
+  }
+});    
+
+router.get('/futemax', async (req, res) => {
+  const baseUrl = 'https://futemax.loan/';
+
+  try {
+    const { data } = await axios.get(baseUrl, {
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/90.0.4430.212 Safari/537.36',
+        'Accept-Language': 'pt-BR,pt;q=0.9',
+        'Referer': 'https://www.google.com'
+      }
+    });
+
+    const $ = cheerio.load(data);
+    const jogos = [];
+
+    $('.ultp-block-item').each((_, el) => {
+      const title = $(el).find('.ultp-block-title a').text().trim();
+      const link = $(el).find('.ultp-block-title a').attr('href');
+      const imgSrc = $(el).find('img.ultp-block-image-content').attr('src');
+
+      if (title && link && imgSrc) {
+        // Corrige imagem relativa para absoluta
+        const image = imgSrc.startsWith('http') ? imgSrc : baseUrl + imgSrc.replace(/^\/?/, '');
+        jogos.push({ title, link, image });
+      }
+    });
+
+    res.json(jogos);
+
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao buscar dados da página inicial.', details: err.message });
+  }
+});
+
+router.get('/futplay', async (req, res) => {
+  const { url } = req.query;
+  if (!url) {
+    return res.status(400).json({ error: 'URL é obrigatória.' });
+  }
+  try {
+    const { data } = await axios.get(url, {
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/90.0.4430.212 Safari/537.36',
+        'Accept-Language': 'pt-BR,pt;q=0.9',
+        'Referer': 'https://www.google.com'
+      }
+    });
+
+    const $ = cheerio.load(data);
+
+    // Thumbnail
+    const thumbnailMatch = data.match(/"thumbnailUrl":"(https:\/\/img\.futemax\.loan[^"]+)/);
+    const thumbnail = thumbnailMatch ? thumbnailMatch[1] : null;
+
+    // Metadados
+    const title = $('meta[property="og:title"]').attr('content') || null;
+    const description = $('meta[property="og:description"]').attr('content') || null;
+    const canonical = $('link[rel="canonical"]').attr('href') || null;
+
+    // Players
+    const players = [];
+    $('.btn-player button').each((_, el) => {
+      const label = $(el).text().trim();
+      const link = $(el).attr('data-src');
+      if (link) {
+        players.push({ label, link });
+      }
+    });
+
+    res.json({
+      title,
+      description,
+      thumbnail,
+      canonical,
+      players
+    });
+
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao buscar dados do Futemax.', details: err.message });
+  }
+});
+
+router.get('/assistir', async (req, res) => {
+  const query = req.query.oq;
+  if (!query) return res.status(400).json({ error: 'Parâmetro "oq" é obrigatório.' });
+
+  const searchUrl = `https://multicanais.global/?s=${encodeURIComponent(query)}`;
+  try {
+    const searchRes = await axios.get(searchUrl, {
+      headers: { 'User-Agent': 'Mozilla/5.0' }
+    });
+
+    const $ = cheerio.load(searchRes.data);
+    const firstPost = $('article.vlog-post').first();
+    const postLink = firstPost.find('h2.entry-title a').attr('href');
+    const imagem = firstPost.find('.entry-image img').attr('src');
+
+    if (!postLink) return res.status(404).json({ error: 'Jogo não encontrado.' });
+
+    const postRes = await axios.get(postLink, {
+      headers: { 'User-Agent': 'Mozilla/5.0' }
+    });
+
+    const $$ = cheerio.load(postRes.data);
+    const titulo = $$('h2.wp-block-heading').first().text();
+
+    const links = $$('.links a[data-id]')
+      .map((i, el) => $$(el).attr('data-id'))
+      .get()
+      .filter(Boolean);
+
+    if (links.length === 0) return res.status(404).json({ error: 'Nenhum player encontrado.' });
+
+    res.json({
+      titulo,
+      imagem,
+      links
+    });
+
+  } catch (err) {
+    console.error('Erro ao buscar:', err.message);
+    res.status(500).json({ error: 'Erro ao buscar dados.' });
+  }
+});
+
+
+router.get('/assistir2', async (req, res) => {
+  const query = req.query.oq;
+  if (!query) return res.status(400).json({ error: 'Parâmetro "oq" é obrigatório.' });
+
+  const searchUrl = `https://multicanais.global/?s=${encodeURIComponent(query)}`;
+  try {
+    const searchRes = await axios.get(searchUrl, {
+      headers: { 'User-Agent': 'Mozilla/5.0' }
+    });
+
+    const $ = cheerio.load(searchRes.data);
+    const firstPost = $('article.vlog-post').first();
+    const postLink = firstPost.find('h2.entry-title a').attr('href');
+    const imagem = firstPost.find('.entry-image img').attr('src');
+
+    if (!postLink) return res.status(404).json({ error: 'Jogo não encontrado.' });
+
+    const postRes = await axios.get(postLink, {
+      headers: { 'User-Agent': 'Mozilla/5.0' }
+    });
+
+    const $$ = cheerio.load(postRes.data);
+    const firstPlayer = $$('.links a[data-id]').first().attr('data-id');
+    const titulo = $$('h2.wp-block-heading').first().text();
+
+    if (!firstPlayer) return res.status(404).json({ error: 'Nenhum player encontrado.' });
+
+    res.json({
+      titulo,
+      imagem,
+      link: firstPlayer
+    });
+
+  } catch (err) {
+    console.error('Erro ao buscar:', err.message);
+    res.status(500).json({ error: 'Erro ao buscar dados.' });
+  }
+});
+
 router.get('/book', async (req, res) => {
   const { livro } = req.query;
   if (!livro) return res.json({ status: false, erro: "Informe o parâmetro: livro" });
@@ -414,7 +678,7 @@ router.get('/book', async (req, res) => {
 
     res.json({
       status: true,
-      criador: "Redzin",
+      criador: "world-ecletix",
       resultado: response.data.items || []
     });
   } catch {
@@ -456,7 +720,7 @@ router.get('/cotacao', async (req, res) => {
 
     res.json({
       status: true,
-      criador: "Redzin",
+      criador: "world-ecletix",
       resultado: [dados]
     });
   } catch {
@@ -493,7 +757,7 @@ router.get('/celular2', async (req, res) => {
     res.json({
       status: true,
       código: 999,
-      criador: 'Redzin',
+      criador: 'World-Ecletix',
       resultado: {
         title: titulo,
         info: info,
@@ -538,6 +802,62 @@ router.get('/playertv', async (req, res) => {
     res.status(500).json({ error: 'Erro ao buscar o conteúdo.' });
   }
 });
+router.get('/playertv2', async (req, res) => {
+  try {
+    const { data } = await axios.get('https://playertv.net/c/max/uefa.php');
+    const $ = cheerio.load(data);
+    const resultados = [];
+
+    $('.col-lg-3').each((_, el) => {
+      const card = $(el);
+      const titulo = card.find('.card-title').text().trim();
+      const horario = card.find('.btn.btn-primary').first().text().trim();
+      const assistirHref = card.find('.btn.btn-danger').attr('href');
+      const iframe = card.find('input.form-control').val();
+      const imagem = card.find('img').attr('src');
+
+      resultados.push({
+        titulo,
+        horario,
+        imagem,
+        iframe,
+        assistir: `https://playertv.net/c/max/${assistirHref}`
+      });
+    });
+
+    res.json(resultados);
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao capturar dados', details: err.message });
+  }
+});
+router.get('/playertv3', async (req, res) => {
+  try {
+    const { data } = await axios.get('https://playertv.net/c/one/one.php');
+    const $ = cheerio.load(data);
+    const resultados = [];
+
+    $('.col-lg-3').each((_, el) => {
+      const card = $(el);
+      const titulo = card.find('.card-title').text().trim();
+      const horario = card.find('.btn.btn-primary').first().text().trim();
+      const assistirHref = card.find('.btn.btn-danger').attr('href');
+      const iframe = card.find('input.form-control').val();
+      const imagem = card.find('img').attr('src');
+
+      resultados.push({
+        titulo,
+        horario,
+        imagem,
+        iframe,
+        assistir: `https://playertv.net/c/one/${assistirHref}`
+      });
+    });
+
+    res.json(resultados);
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao capturar dados', details: err.message });
+  }
+});
 
 router.get('/iframe', async (req, res) => {
   const canalUrl = req.query.canal;
@@ -570,7 +890,7 @@ router.get('/iframe', async (req, res) => {
   const slug = req.params.slug;
 
   try {
-    const response = await axios.get('https://kuromi-system.onrender.com/api/playertv');
+    const response = await axios.get('https://world-ecletix.onrender.com/api/playertv');
     const canais = response.data;
 
     const canal = canais.find(c => slugify(c.title) === slug);
@@ -579,7 +899,7 @@ router.get('/iframe', async (req, res) => {
       return res.status(404).send('<h1>Canal não encontrado</h1>');
     }
 
-    const iframeResponse = await axios.get(`https://kuromi-system.onrender.com/api/iframe?canal=${encodeURIComponent(canal.link)}`);
+    const iframeResponse = await axios.get(`https://world-ecletix.onrender.com/api/iframe?canal=${encodeURIComponent(canal.link)}`);
     const iframeUrl = iframeResponse.data.iframe;
 
     res.send(`
@@ -1737,7 +2057,45 @@ router.get('/eventos', async (req, res) => {
         res.status(500).json({ error: 'Erro ao obter eventos', details: error.message });
     }
 });
+router.get('/info-ff', async (req, res) => {
+    const { id } = req.query;
 
+    if (!id) {
+        return res.status(400).json({ error: 'O parâmetro "id" é obrigatório.' });
+    }
+
+    try {
+        const response = await axios.get(`http://system.ffgarena.cloud/api/info_avatar?uid=${id}&region=br`);
+        const data = response.data;
+
+        const info = data.basicInfo;
+        const pet = data.petInfo;
+        const clan = data.clanBasicInfo;
+        const avatarUrl = data.avatars;
+
+        const formatted = {
+            "Apelido": info.nickname,
+            "ID": info.accountId,
+            "Região": info.region,
+            "Nível": info.level,
+            "Experiência": info.exp.toLocaleString(),
+            "Pontos de Ranking": info.rankingPoints,
+            "Rank Atual": info.rank,
+            "Rank CS": info.csRank,
+            "Likes": info.liked.toLocaleString(),
+            "Possui Passe Elite": info.hasElitePass ? 'Sim' : 'Não',
+            "Clã": clan ? clan.clanName : 'Sem clã',
+            "Level do Clã": clan ? clan.clanLevel : '—',
+            "Mascote": pet ? pet.petName : 'Nenhum',
+            "Level do Mascote": pet ? pet.level : '—',
+            "Avatar": avatarUrl
+        };
+
+        res.json(formatted);
+    } catch (error) {
+        res.status(500).json({ error: 'Erro ao buscar informações do jogador.', details: error.message });
+    }
+});
 router.get('/info-player', async (req, res) => {
     const playerId = req.query.id;
 
@@ -1761,17 +2119,17 @@ router.get('/likeff', async (req, res) => {
     }
 
     try {
-        const response = await axios.get(`https://likes.ffgarena.cloud/api/likeidszbeta?uid=${id}&quantity=${quantity}`);
+        const response = await axios.get(`https://likes.ffgarena.cloud/api/freefire/likes?uid=${id}&quantity=${quantity}`);
         const data = response.data;
 
         const formattedResponse = {
-            "Apelido do Jogador": data.PlayerNickname,
-            "Região": data.PlayerRegion,
-            "Nível": data.PlayerLevel,
-            "Experiência": data.PlayerEXP.toLocaleString(),
-            "Likes Antes": data.Likes_Antes.toLocaleString(),
-            "Likes Depois": data.Likes_Depois.toLocaleString(),
-            "Likes Enviados pelo Bot": data.BotSend
+            "Apelido do Jogador": data.nickname,
+            "Região": data.region,
+            "Nível": data.level,
+            "Experiência": data.exp.toLocaleString(),
+            "Likes Antes": data.likes_before.toLocaleString(),
+            "Likes Depois": data.likes_after.toLocaleString(),
+            "Likes Enviados pelo Bot": data.sent
         };
 
         res.json(formattedResponse);
@@ -2842,7 +3200,7 @@ router.get('/guia-series', async (req, res) => {
 
 router.get('/jogosdodia', async (req, res) => {
   try {
-    const { data } = await axios.get('https://multicanais.asia/');
+    const { data } = await axios.get('https://multicanais.global/');
     const $ = cheerio.load(data);
     const jogos = [];
 
@@ -3548,9 +3906,224 @@ router.get('/jogosdehoje', async (req, res) => {
   }
 });
 
+router.get('/info-times', async (req, res) => {
+  const time = req.query.time;
+  if (!time) return res.status(400).json({ error: 'Informe o nome do time com ?time=nome' });
+
+  try {
+    // 1. Buscar o link do time
+    const searchUrl = `https://onefootball.com/pt-br/busca?q=${encodeURIComponent(time)}`;
+    const searchRes = await axios.get(searchUrl);
+    const $search = cheerio.load(searchRes.data);
+
+    const teamLink = $search('a')
+      .map((_, el) => $search(el).attr('href'))
+      .get()
+      .find(href => href && href.includes('/time/'));
+
+    if (!teamLink) return res.status(404).json({ error: 'Time não encontrado.' });
+
+    // 2. Ir para a página do time
+    const teamUrl = `https://onefootball.com${teamLink}`;
+    const teamPageRes = await axios.get(teamUrl);
+    const $ = cheerio.load(teamPageRes.data);
+
+    const resultados = [];
+
+    $('ul.MatchCardsList_matches__8_UwB li').each((_, el) => {
+      const match = $(el);
+      const equipes = match.find('span.SimpleMatchCardTeam_simpleMatchCardTeam__name__7Ud8D').map((_, e) => $(e).text()).get();
+      const placares = match.find('span.SimpleMatchCardTeam_simpleMatchCardTeam__score__UYMc_').map((_, e) => $(e).text()).get();
+      const data = match.find('time').text();
+      const status = match.find('span.SimpleMatchCard_simpleMatchCard__infoMessage___NJqW').text();
+      const campeonato = match.find('p.SimpleMatchCard_simpleMatchCard__competitionName__hAGjw').text();
+
+      if (equipes.length === 2 && placares.length === 2) {
+        resultados.push({
+          equipe_casa: equipes[0],
+          placar_casa: placares[0],
+          equipe_fora: equipes[1],
+          placar_fora: placares[1],
+          data,
+          status,
+          campeonato
+        });
+      }
+    });
+
+    res.json({ time, resultados });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erro ao buscar resultados.' });
+  }
+});
+
+router.get('/resultados', async (req, res) => {
+  const time = req.query.time;
+  if (!time) return res.status(400).json({ error: 'Informe o nome do time com ?time=nome' });
+
+  try {
+    // 1. Buscar o link do time
+    const searchUrl = `https://onefootball.com/pt-br/busca?q=${encodeURIComponent(time)}`;
+    const searchRes = await axios.get(searchUrl);
+    const $search = cheerio.load(searchRes.data);
+
+    const teamLink = $search('a')
+      .map((_, el) => $search(el).attr('href'))
+      .get()
+      .find(href => href && href.includes('/time/'));
+
+    if (!teamLink) return res.status(404).json({ error: 'Time não encontrado.' });
+
+    // 2. Ir para a página do time
+    const teamUrl = `https://onefootball.com${teamLink}/resultados`;
+    const teamPageRes = await axios.get(teamUrl);
+    const $ = cheerio.load(teamPageRes.data);
+
+    const resultados = [];
+
+    $('ul.MatchCardsList_matches__8_UwB li').each((_, el) => {
+      const match = $(el);
+      const equipes = match.find('span.SimpleMatchCardTeam_simpleMatchCardTeam__name__7Ud8D').map((_, e) => $(e).text()).get();
+      const placares = match.find('span.SimpleMatchCardTeam_simpleMatchCardTeam__score__UYMc_').map((_, e) => $(e).text()).get();
+      const data = match.find('time').text();
+      const status = match.find('span.SimpleMatchCard_simpleMatchCard__infoMessage___NJqW').text();
+      const campeonato = match.find('p.SimpleMatchCard_simpleMatchCard__competitionName__hAGjw').text();
+
+      if (equipes.length === 2 && placares.length === 2) {
+        resultados.push({
+          equipe_casa: equipes[0],
+          placar_casa: placares[0],
+          equipe_fora: equipes[1],
+          placar_fora: placares[1],
+          data,
+          status,
+          campeonato
+        });
+      }
+    });
+
+    res.json({ time, resultados });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erro ao buscar resultados.' });
+  }
+});
+router.get('/elenco', async (req, res) => {
+  const time = req.query.time;
+  if (!time) return res.status(400).json({ error: 'Informe o nome do time com ?time=nome' });
+
+  try {
+    // 1. Buscar o link do time
+    const searchUrl = `https://onefootball.com/pt-br/busca?q=${encodeURIComponent(time)}`;
+    const searchRes = await axios.get(searchUrl);
+    const $search = cheerio.load(searchRes.data);
+    
+    // 2. Encontrar o primeiro link de time
+    const teamLink = $search('a')
+      .map((i, el) => $search(el).attr('href'))
+      .get()
+      .find(href => href && href.includes('/time/'));
+
+    if (!teamLink) return res.status(404).json({ error: 'Time não encontrado.' });
+
+    const elencoUrl = `https://onefootball.com${teamLink}/elenco`;
+
+    // 3. Buscar elenco
+    const elencoRes = await axios.get(elencoUrl);
+    const $ = cheerio.load(elencoRes.data);
+
+    const elenco = [];
+
+    $('article').each((_, article) => {
+      const posicao = $(article).find('header').text().trim();
+      const jogadores = [];
+
+      $(article).find('li').each((_, li) => {
+        const nomeNumero = $(li).find('p.title-7-bold').text().trim();
+        const imagem = $(li).find('img').attr('src') || '';
+        const match = nomeNumero.match(/(.+)\s(\d+)/);
+
+        jogadores.push({
+          nome: match ? match[1] : nomeNumero,
+          numero: match ? parseInt(match[2]) : null,
+          imagem: imagem.replace(/^images\//, 'https://onefootball.com/images/')
+        });
+      });
+
+      elenco.push({ posicao, jogadores });
+    });
+
+    res.json({ time, elenco });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erro ao buscar elenco.' });
+  }
+});
+
+router.get('/prox-jogos', async (req, res) => {
+  const time = req.query.time;
+  if (!time) return res.status(400).json({ error: 'Informe o nome do time com ?time=nome' });
+
+  try {
+    // 1. Buscar o link do time
+    const searchUrl = `https://onefootball.com/pt-br/busca?q=${encodeURIComponent(time)}`;
+    const searchRes = await axios.get(searchUrl);
+    const $search = cheerio.load(searchRes.data);
+
+    const teamLink = $search('a')
+      .map((_, el) => $search(el).attr('href'))
+      .get()
+      .find(href => href && href.includes('/time/'));
+
+    if (!teamLink) return res.status(404).json({ error: 'Time não encontrado.' });
+
+    // 2. Ir para a página do time
+    const teamUrl = `https://onefootball.com${teamLink}/jogos`;
+    const teamPageRes = await axios.get(teamUrl);
+    const $ = cheerio.load(teamPageRes.data);
+
+    const resultados = [];
+
+    $('ul.MatchCardsList_matches__8_UwB li').each((_, el) => {
+  const match = $(el);
+  const equipes = match.find('span.SimpleMatchCardTeam_simpleMatchCardTeam__name__7Ud8D').map((_, e) => $(e).text()).get();
+  const placares = match.find('span.SimpleMatchCardTeam_simpleMatchCardTeam__score__UYMc_').map((_, e) => $(e).text()).get();
+  
+  const data = match.find('time').first().text(); // Pega a data
+  const hora = match.find('time').last().text(); // Pega a hora
+  const dataHora = `${data} ${hora}`; // Combina data e hora com espaço
+  
+  const status = match.find('span.SimpleMatchCard_simpleMatchCard__infoMessage___NJqW').text() || "";
+  const campeonato = match.find('p.SimpleMatchCard_simpleMatchCard__competitionName__hAGjw').text();
+
+  if (equipes.length === 2) {
+    resultados.push({
+      equipe_casa: equipes[0],
+      placar_casa: placares[0] || "",
+      equipe_fora: equipes[1],
+      placar_fora: placares[1] || "",
+      data: dataHora,
+      status,
+      campeonato
+    });
+  }
+});
+
+    res.json({ time, resultados });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erro ao buscar resultados.' });
+  }
+});
+
 router.get('/ufc', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.asia/categoria/ufc-ao-vivo/';
+    const siteUrl = 'https://multicanais.global/jogo-ao-vivo/ufc-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -3581,7 +4154,7 @@ router.get('/ufc', async (req, res) => {
 // Rota para a API bbb25
 router.get('/bbb25', (req, res) => {
   const resultado = [
-    "https://multicanais.asia/assistir-bbb-ao-vivo-online-24-horas/",
+    "https://multicanais.global/assistir-bbb-ao-vivo-online-24-horas/",
     "https://globoplay.gratis/"
   ];
   
@@ -3590,7 +4163,7 @@ router.get('/bbb25', (req, res) => {
 
 router.get('/basquete', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.asia/categoria/categoria/nba-ao-vivo//';
+    const siteUrl = 'https://multicanais.global/categoria/jogo-ao-vivo/nba-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -3622,7 +4195,7 @@ router.get('/basquete', async (req, res) => {
 
 router.get('/nfl', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.asia/categoria/nfl-ao-vivo/';
+    const siteUrl = 'https://multicanais.global/jogo-ao-vivo/nfl-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -3653,7 +4226,7 @@ router.get('/nfl', async (req, res) => {
 
  router.get('/ucl', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.asia/categoria/champions-league-ao-vivo/';
+    const siteUrl = 'https://multicanais.global/jogo-ao-vivo/champions-league-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -3684,7 +4257,7 @@ router.get('/nfl', async (req, res) => {
 
 router.get('/brasileirao', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.asia/categoria/brasileiro-ao-vivo/';
+    const siteUrl = 'https://multicanais.global/jogo-ao-vivo/brasileiro-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -3714,7 +4287,7 @@ router.get('/brasileirao', async (req, res) => {
 });
 router.get('/tv', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.asia/categoria/tv-online/';
+    const siteUrl = 'https://multicanais.global/jogo-ao-vivo/tv-online-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -3744,7 +4317,7 @@ router.get('/tv', async (req, res) => {
 });
 router.get('/esportedodia', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.asia/categoria/esportes-ao-vivo/';
+    const siteUrl = 'https://multicanais.global/jogo-ao-vivo/canais-de-esportes/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -3775,7 +4348,7 @@ router.get('/esportedodia', async (req, res) => {
 });
 router.get('/futebol', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.asia/categoria/futebol-ao-vivo/';
+    const siteUrl = 'https://multicanais.global/jogo-ao-vivo/futebol-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -6448,7 +7021,7 @@ router.get('/netersg', async (req, res) => {
         res.status(500).json({ status: false, mensagem: "Erro interno ao processar a solicitação." });
     }
 });
-//gerar imagem by Redzin 
+//gerar imagem by Redzin
 
 // Rota para gerar a imagem usando um parâmetro de consulta
 router.get('/gerar-imagem', async (req, res) => {
@@ -9234,7 +9807,7 @@ router.get('/pin/video', (req, res) => {
 
 const apiId = 21844566;
 const apiHash = 'ff82e94bfed22534a083c3aee236761a';
-const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBuzP6mKqlHUy/jTjOtCvowA1GiYnRqWjhTymJYyan3P+SU2ys9iqa+eEDbl8a/ZpOxsYLhu5RzLElY8y0A/YxtxTJfAK6SMEhDP6pVp8NS2giZ2cZ0Edf2K/92UbazORoZge1bvzDfLKix5ADh+zbHEFSsddXnKhjqxcpuXC9wmuHHu1vZ+Fzwy73aCX4qs2uMkRFhTZuVEovNOhOu6ZUTimA9dF9TXQDndzineizO5FL6yEXElyoRmLVnVVI2fyDvYZ2maAdxEwYZ/PXsrUALsUgUUUECPdkA63J/zANHM7DM6GEphk0wseJi03YsCJ0BnNMXhrwsGjdNi/iuwcRqgo=');
+const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBuy/6xegWM2JqmqUwcUqKz5lvqHEFmBiUpjYd1tXGvqTRSNlybPDnF7zhwKlZU4BEXG2J5qdLQseuz1MDOKkzqM2MW3WlYo2xbgRKBzIiHeUUNl84xR+y/Z3H9l1AIFieZekqa5ND4jwdhL6on4bxfsSO250RtK4gnu1x3SWdFkjjGF8dYCivlWrjTL3nvlN9+j+W8zKmE2YUD1e41hip/1+MAqv8jgfMyz6zK+PcQgR6r6chxMoPe4S6vQT3R5xejKlsT2KvgcLfEGpXhcjgMUaVPtVW0sQd/yo66N/ZpFyQaQ+Ax5olApZjG/Mf/S6VWMnlAihkuUHYXQ2EdeAkpmY=');
 const grupoChatId = -1002208588695;
 
 const rl = readline.createInterface({
@@ -9674,12 +10247,25 @@ router.get('/infoff', async (req, res) => {
     }
 
     try {
-        const response = await axios.get(`https://freefireinfo.squareweb.app/api/info_player?uid=${id}`);
+        const response = await axios.get(`https://system.ffgarena.cloud/api/info_avatar?uid=${id}&region=br`);
+
+        // Verifica se retornou erro
+        if (response.data.error) {
+            return res.status(404).json({
+                error: response.data.error,
+                message: response.data.message || 'Jogador não encontrado.'
+            });
+        }
+
         res.json(response.data);
     } catch (error) {
-        res.status(500).json({ error: 'Erro ao buscar informações do jogador.', details: error.message });
+        res.status(500).json({
+            error: 'Erro ao buscar informações do jogador.',
+            details: error.message
+        });
     }
 });
+
 
 router.get('/infoff2', async (req, res) => { try { const id = req.query.id; if (!id) { console.log('Parâmetro id ausente na requisição'); return res.json({ status: false, resultado: 'Cadê o parâmetro id?' }); }
 
@@ -11298,7 +11884,7 @@ router.get('/pesquisayt', async (req, res) => {
             duration: video.timestamp
         }));
 
-        res.json({ criador: 'World Ecletix', formattedVideos });
+        res.json({ criador: 'Redzin', formattedVideos });
     } catch (error) {
         console.error('Erro ao buscar vídeos do YouTube:', error.message);
         res.status(500).json({ error: 'Erro ao buscar vídeos do YouTube' });
@@ -11453,7 +12039,7 @@ router.get('/consulta/cep/:cep', async (req, res) => {
         const { state, city, neighborhood, street } = data;
 
         res.json({
-            criador: 'World Ecletix',
+            criador: 'Redzin',
             cep: cep,
             estado: state,
             cidade: city,
@@ -11483,7 +12069,7 @@ router.get('/api/consulta/ddd/:ddd', async (req, res) => {
         const cities = data.cities;
 
         res.json({
-            criador: 'World Ecletix',
+            criador: 'Redzin',
             state: state,
             cities: cities
         });
@@ -11517,7 +12103,7 @@ router.get('/api/consulta/clima/aeroporto/:codigoICAO', async (req, res) => {
 
         // Formata os dados conforme o modelo desejado
         const formattedData = {
-            criador: 'World Ecletix',
+            criador: 'Redzin',
             umidade: umidade,
             visibilidade: visibilidade,
             codigo_icao: codigo_icao,
@@ -11647,7 +12233,7 @@ router.get('/dados-pessoais', async (req, res) => {
             foto: userData.picture.large
         };
 
-        res.json({ criador: 'World Ecletix', resultado: personalData });
+        res.json({ criador: 'Redzin', resultado: personalData });
     } catch (error) {
         console.error('Erro ao obter dados do usuário:', error);
         res.status(500).json({ error: 'Erro ao obter dados do usuário' });
@@ -11657,7 +12243,7 @@ router.get('/dados-pessoais', async (req, res) => {
 // Rota para gerar CPF aleatório
 router.get('/gerar-cpf', (req, res) => {
     const cpf = gerarCPF();
-    res.json({ criador: 'World Ecletix', cpf: cpf });
+    res.json({ criador: 'Redzin', cpf: cpf });
 });
 router.get('/videozinhos', async (req, res) => {
     try {
@@ -15247,7 +15833,7 @@ router.get('/contasonly', (req, res) => {
         const randomLink = linksData[randomIndex];
 
         // Enviar o link e o nome como resposta
-        res.json({ criador: 'World Ecletix', nome: randomLink.nome, link: randomLink.link });
+        res.json({ criador: 'Redzin', nome: randomLink.nome, link: randomLink.link });
     } catch (error) {
         console.error('Erro ao obter o link aleatório:', error);
         res.status(500).json({ error: 'Erro ao obter o link aleatório' });
@@ -15274,7 +15860,7 @@ router.get('/metadinhas', (req, res) => {
 
         // Enviar os links masculinos e femininos como resposta
         res.json({
-            criador: 'world ecletix',
+            criador: 'Redzin',
             masculina: randomLink.masculina,
             feminina: randomLink.feminina
         });

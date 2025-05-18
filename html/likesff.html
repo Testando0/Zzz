@@ -4,6 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Likes FF</title>
+  <!-- Inclua a biblioteca Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <!-- Adicionando referências para favicons de diferentes tamanhos e tipos -->
+    <link rel="icon" href="./icones/favicon-32x32.png" type="image/png" sizes="32x32">
+    <link rel="icon" href="./icones/favicon-16x16.png" type="image/png" sizes="16x16">
+    <link rel="icon" href="./icones/android-chrome-192x192.png" type="image/png" sizes="192x192">
+    <link rel="icon" href="./icones/android-chrome-512x512.png" type="image/png" sizes="512x512">
+    <link rel="apple-touch-icon" href="./icones/apple-touch-icon.png">
+    <link rel="manifest" href="./site.webmanifest">
   <style>
     /* Estilo Geral */
     body {
@@ -126,46 +135,44 @@
     Redzin
   </div>
 
-  <script>
-    function enviarLikes() {
-      const userId = document.getElementById('userId').value;
-      const messageElement = document.getElementById('message');
+<script>
+  function enviarLikes() {
+    const userId = document.getElementById('userId').value;
+    const messageElement = document.getElementById('message');
 
-      if (!userId) {
-        alert('Por Favor, Insira Um ID Válido!');
-        return;
-      }
-
-      messageElement.style.display = 'none';
-
-      fetch(`https://world-ecletix.onrender.com/api/likes?id=${userId}`)
-        .then(response => response.json())
-        .then(data => {
-          if (data.status) {
-            messageElement.className = 'message success';
-            messageElement.textContent = '✅ Likes Enviados Com Sucesso!';
-          } else {
-            const match = data.resultado.match(/Tente Novamente Em (\d+) Horas E (\d+) Minutos/);
-            if (match) {
-              const horas = match[1];
-              const minutos = match[2];
-              messageElement.className = 'message error';
-              messageElement.textContent = `⏳ Esse ID Já Recebeu Likes. Tente Novamente Em ${horas}h E ${minutos}Min.`;
-            } else {
-              messageElement.className = 'message error';
-              messageElement.textContent = '❌ Erro Ao Enviar Likes! Verifique O ID.';
-            }
-          }
-          messageElement.style.display = 'block';
-        })
-        .catch(() => {
-          messageElement.className = 'message error';
-          messageElement.textContent = '⚠️ Erro Ao Conectar Com A API. Tente Novamente Mais Tarde.';
-          messageElement.style.display = 'block';
-        });
+    if (!userId) {
+      alert('Por Favor, Insira Um ID Válido!');
+      return;
     }
-  </script>
 
+    messageElement.style.display = 'none';
+
+    fetch(`https://kuromi-systemx.onrender.com/api/likesff2?id=${userId}`)
+      .then(response => response.json())
+      .then(data => {
+        if (data["Likes Enviados"] !== undefined) {
+          messageElement.className = 'message success';
+          messageElement.textContent =
+            `✅ Likes Enviados Com Sucesso!\n\n` +
+            `• Apelido: ${data["Apelido"]}\n` +
+            `• Região: ${data["Região"]}\n` +
+            `• Nível: ${data["Nível"]}\n` +
+            `• Likes Antes: ${data["Likes Antes"]}\n` +
+            `• Likes Depois: ${data["Likes Depois"]}\n` +
+            `• Likes Enviados: ${data["Likes Enviados"]}`;
+        } else {
+          messageElement.className = 'message error';
+          messageElement.textContent = '❌ Erro Ao Enviar Likes! Verifique O ID.';
+        }
+        messageElement.style.display = 'block';
+      })
+      .catch(() => {
+        messageElement.className = 'message error';
+        messageElement.textContent = '⚠️ Erro Ao Conectar Com A API. Tente Novamente Mais Tarde.';
+        messageElement.style.display = 'block';
+      });
+  }
+</script>
   <audio autoplay loop>
     <source src="./musicas/likesff.mp3" type="audio/mpeg">
     Seu navegador não suporta áudio HTML5.

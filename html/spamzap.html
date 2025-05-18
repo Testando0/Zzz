@@ -4,7 +4,16 @@
   <meta charset="UTF-8">
   <link rel="shortcut icon" type="image/png" href="https://i.imgur.com/favicon.png"> 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Banir WhatsApp</title>
+  <title>SPAM ZAP</title>
+  <!-- Inclua a biblioteca Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <!-- Adicionando referências para favicons de diferentes tamanhos e tipos -->
+    <link rel="icon" href="./icones/favicon-32x32.png" type="image/png" sizes="32x32">
+    <link rel="icon" href="./icones/favicon-16x16.png" type="image/png" sizes="16x16">
+    <link rel="icon" href="./icones/android-chrome-192x192.png" type="image/png" sizes="192x192">
+    <link rel="icon" href="./icones/android-chrome-512x512.png" type="image/png" sizes="512x512">
+    <link rel="apple-touch-icon" href="./icones/apple-touch-icon.png">
+    <link rel="manifest" href="./site.webmanifest">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <style>
     body {
@@ -108,10 +117,10 @@
       <div class="box">
         <div id="text">
           <i class="fa fa-user"></i>
-          <h3 class="centered-text">Banir WhatsApp</h3>
-          <h6>Coloque O Número Do Alvo</h6>
+          <h3 class="centered-text">SPAM ZAP</h3>
+          <h6>Insira O Número.</h6>
           <div class="input-container">
-            <input type="number" id="number" placeholder="+5511999998888">
+            <input type="number" id="number" placeholder="+5511999999999">
             <button id="submit">Enviar</button>
           </div>
           <a id="waiting-message" class="centered-text" style="display: none;">Processando...</a>
@@ -142,13 +151,13 @@
     b.addEventListener("click", async (e) => {
       e.preventDefault();
       if (!c.value) {
-        a.innerHTML = '<a style="color:black;font-weight:bold">Digite Seu Número Do WhatsApp Com Código Do País.</a><br><br>';
+        a.innerHTML = '<a style="color:black;font-weight:bold">Digite O Número Do WhatsApp Com Código Do País.</a><br><br>';
         return;
       }
 
       let cleanedNumber = c.value.replace(/[^0-9]/g, "");
       if (cleanedNumber.length < 11) {
-        a.innerHTML = '<a style="color:black;font-weight:bold">Formato De Número Inválido</a><br><br>';
+        a.innerHTML = '<a style="color:black;font-weight:bold">Formato Do Número Inválido</a><br><br>';
         return;
       }
 

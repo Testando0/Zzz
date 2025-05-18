@@ -4,6 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Download/Upload De Arquivos</title>
+    <!-- Inclua a biblioteca Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <!-- Adicionando referências para favicons de diferentes tamanhos e tipos -->
+    <link rel="icon" href="./icones/favicon-32x32.png" type="image/png" sizes="32x32">
+    <link rel="icon" href="./icones/favicon-16x16.png" type="image/png" sizes="16x16">
+    <link rel="icon" href="./icones/android-chrome-192x192.png" type="image/png" sizes="192x192">
+    <link rel="icon" href="./icones/android-chrome-512x512.png" type="image/png" sizes="512x512">
+    <link rel="apple-touch-icon" href="./icones/apple-touch-icon.png">
+    <link rel="manifest" href="./site.webmanifest">
     <style>
         body {
             margin: 0;
@@ -93,8 +102,8 @@
                     <option value="videoByLink">Pelo Link</option>
                 </optgroup>
                 <optgroup label="Baixar Vídeo Do Instagram 🎥">
-                    <option value="instagramByLink">Vídeo Pelo Link</option>
-                    <option value="instagramStoryByLink">Story Pelo Link</option>
+                    <option value="instagramByLink">Pelo Link</option>
+                    <option value="instagramStoryByLink">Baixar Story</option>
                     <option value="instagramSearch">Pesquisar Instagram</option>
                     <option value="instaByNewApi">Baixar Reels</option>
                 </optgroup>
@@ -135,19 +144,19 @@
 
             switch(option) {
                 case 'musicByName':
-                    apiUrl = `https://world-ecletix.onrender.com/api/play?name=${encodeURIComponent(query)}`;
+                    apiUrl = `https://kuromi-systemx.onrender.com/api/play?name=${encodeURIComponent(query)}`;
                     break;
                 case 'musicByLink':
-                    apiUrl = `https://world-ecletix.onrender.com/api/ytmp3?url=${encodeURIComponent(query)}`;
+                    apiUrl = `https://kuromi-systemx.onrender.com/api/ytmp3?url=${encodeURIComponent(query)}`;
                     break;
                 case 'videoByName':
-                    apiUrl = `https://world-ecletix.onrender.com/api/ytmp4?url=${encodeURIComponent(query)}`;
+                    apiUrl = `https://kuromi-systemx.onrender.com/api/ytmp4?url=${encodeURIComponent(query)}`;
                     break;
                 case 'videoByLink':
-                    apiUrl = `https://world-ecletix.onrender.com/api/ytmp4?url=${encodeURIComponent(query)}`;
+                    apiUrl = `https://kuromi-systemx.onrender.com/api/ytmp4?url=${encodeURIComponent(query)}`;
                     break;
                 case 'instagramByLink':
-                    apiUrl = `https://world-ecletix.onrender.com/api/insta?url=${encodeURIComponent(query)}`;
+                    apiUrl = `https://kuromi-systemx.onrender.com/api/insta?url=${encodeURIComponent(query)}`;
                     break;
                 case 'instagramStoryByLink':
                     apiUrl = `https://api-aswin-sparky.koyeb.app/api/downloader/story?url=${encodeURIComponent(query)}`;
@@ -156,13 +165,13 @@
                     apiUrl = `https://api-aswin-sparky.koyeb.app/api/search/ig?search=${encodeURIComponent(query)}`;
                     break;
                 case 'facebookByLink1':
-                    apiUrl = `https://world-ecletix.onrender.com/api/facebook?link=${encodeURIComponent(query)}`;
+                    apiUrl = `https://kuromi-systemx.onrender.com/api/facebook?link=${encodeURIComponent(query)}`;
                     break;
                 case 'facebookByLink2':
                     apiUrl = `https://api-aswin-sparky.koyeb.app/api/downloader/fbdl?url=${encodeURIComponent(query)}`;
                     break;
                 case 'tiktokByLinkVideo':
-                    apiUrl = `https://world-ecletix.onrender.com/api/tiktok?query=${encodeURIComponent(query)}`;
+                    apiUrl = `https://kuromi-systemx.onrender.com/api/tiktok?query=${encodeURIComponent(query)}`;
                     break;
                 case 'tiktokByLinkAudio':
                     apiUrl = `https://clover-t-bot-r0wt.onrender.com/download/tiktok?url=${encodeURIComponent(query)}`;
@@ -173,10 +182,10 @@
                     window.open('https://imgur.com/', '_blank');
                     return;
                 case 'pinterestVideo':
-                    apiUrl = `https://world-ecletix.onrender.com/api/pinvideo?url=${encodeURIComponent(query)}`;
+                    apiUrl = `https://kuromi-systemx.onrender.com/api/pinvideo?url=${encodeURIComponent(query)}`;
                     break;
                 case 'pinterestImage':
-                    apiUrl = `https://world-ecletix.onrender.com/api/pinimagem?url=${encodeURIComponent(query)}`;
+                    apiUrl = `https://kuromi-systemx.onrender.com/api/pinimagem?url=${encodeURIComponent(query)}`;
                     break;
                 case 'instaByNewApi':
                     apiUrl = `https://api-aswin-sparky.koyeb.app/api/downloader/igdl?url=${encodeURIComponent(query)}`;

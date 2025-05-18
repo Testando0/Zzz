@@ -4,6 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Clima Atual</title>
+    <!-- Inclua a biblioteca Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <!-- Adicionando referências para favicons de diferentes tamanhos e tipos -->
+    <link rel="icon" href="./icones/favicon-32x32.png" type="image/png" sizes="32x32">
+    <link rel="icon" href="./icones/favicon-16x16.png" type="image/png" sizes="16x16">
+    <link rel="icon" href="./icones/android-chrome-192x192.png" type="image/png" sizes="192x192">
+    <link rel="icon" href="./icones/android-chrome-512x512.png" type="image/png" sizes="512x512">
+    <link rel="apple-touch-icon" href="./icones/apple-touch-icon.png">
+    <link rel="manifest" href="./site.webmanifest">
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -73,7 +82,7 @@
 <body>
     <div class="container">
         <h1>Clima Atual</h1>
-        <input type="text" id="city" placeholder="Digite A Cidade">
+        <input type="text" id="city" placeholder="Digite a cidade">
         <button id="getWeatherBtn">Obter Clima</button>
 
         <div class="weather-info" id="weatherInfo">
@@ -96,7 +105,7 @@
             if (city) {
                 getWeather(city);
             } else {
-                alert("Por Favor Informe A Cidade!");
+                alert("Por favor, digite o nome de uma cidade!");
             }
         });
 
@@ -109,11 +118,11 @@
                     if (data.cod === 200) {
                         displayWeather(data);
                     } else {
-                        alert("Cidade Não Encontrada!");
+                        alert("Cidade não encontrada!");
                     }
                 })
                 .catch(error => {
-                    console.error("Erro Ao Obter Os Dados: ", error);
+                    console.error("Erro ao obter os dados: ", error);
                 });
         }
 

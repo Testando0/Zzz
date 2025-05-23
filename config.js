@@ -6,6 +6,7 @@ const cheerio = require("cheerio");
 const request = require('request');
 const yts = require("yt-search")
 const qs = require("qs")
+const JXR = require('jxr-canvas');
 const fs = require('fs-extra')
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args))
 const encodeUrl = require('encodeurl');
@@ -67,6 +68,43 @@ async function comunismo(imageUrl) {
     throw new Error('Erro ao gerar imagem: ' + err.message);
   }
 }
+
+async function welcome({ nome, guilda, perfil, membro, avatar, fundo }) {
+  try {
+    if (!nome) throw new Error('Faltando o parâmetro "nome"');
+    if (!guilda) throw new Error('Faltando o parâmetro "guilda"');
+    if (!perfil) throw new Error('Faltando o parâmetro "perfil"');
+    if (!membro) throw new Error('Faltando o parâmetro "membro"');
+    if (!avatar) throw new Error('Faltando o parâmetro "avatar"');
+    if (!fundo) throw new Error('Faltando o parâmetro "fundo"');
+
+    const image = await new JXR.Welcome()
+      .setUsername(nome)
+      .setGuildName(guilda)
+      .setGuildIcon(perfil)
+      .setMemberCount(`${membro}`)
+      .setAvatar(avatar)
+      .setBackground(fundo)
+      .toAttachment();
+
+    const buffer = image.toBuffer();
+
+    const dirPath = path.join(__dirname, 'assets');
+    if (!fs.existsSync(dirPath)) {
+      await fs.promises.mkdir(dirPath, { recursive: true });
+    }
+
+    const fileName = `welcome-${Date.now()}.png`;
+    const filePath = path.join(dirPath, fileName);
+
+    await fs.promises.writeFile(filePath, buffer);
+
+    return filePath;
+  } catch (error) {
+    throw new Error('Erro ao gerar imagem: ' + error.message);
+  }
+}
+
 async function bolsonaro(imageUrl) {
   try {
     if (!imageUrl) {
@@ -2687,7 +2725,7 @@ async function hentaihome(nome) {
         })
         }
       });
-      resolve({status: 200, autor: 'Kuromi Api', resultado: postagem})
+      resolve({status: 200, autor: 'Redzin', resultado: postagem})
     })
     .catch(e => {
       reject({status: 500, msg: `Erro no módulo`})
@@ -2710,7 +2748,7 @@ async function lojadomecanico(nome) {
           link: "https:" + $(e).find('div > div > a').attr('href'),
         });
       });
-      resolve({status: 200, autor: 'Kuromi Api', resultado: dados})
+      resolve({status: 200, autor: 'Redzin', resultado: dados})
     })
     .catch(e => {
       reject({status: 500, msg: `Erro no módulo`})
@@ -2735,7 +2773,7 @@ async function animesFireSearch(nome) {
           link: $(e).find('a').attr('href')
         });
       });
-      resolve({status: 200, autor: 'Kuromi Api', resultado: dados})
+      resolve({status: 200, autor: 'Redzin', resultado: dados})
     })
     .catch(e => {
       console.log(e)
@@ -2769,7 +2807,7 @@ async function animesFireEps(link) {
       })
       json = {
       status: 200,
-      autor: 'Kuromi Api',
+      autor: 'Redzin',
       imagem: imagem,
       titulo: titulo,
       sinopse: `${desc.startsWith('Sinopse: ') ? desc.slice(9)?.trim() : desc?.trim()}`,
@@ -2815,7 +2853,7 @@ async function animeFireDownload(link) {
     const thumb = $('meta[itemprop="thumbnailUrl"]').attr('content')
     json = {
       status: 200,
-      autor: 'Kuromi Api',
+      autor: 'Redzin',
       nome: nome,
       sinopse: `${desc.startsWith('Sinopse:') ? desc.slice(9)?.trim() : desc?.trim()}`,
       thumb: thumb,
@@ -2863,7 +2901,7 @@ async function hentaitube(nome) {
         link: $(e).find('a').attr('href').trim()
         })
       });
-      resolve({status: 200, autor: 'Kuromi Api', resultado: dados})
+      resolve({status: 200, autor: 'Redzin', resultado: dados})
 
     })
     .catch(e => {
@@ -2914,7 +2952,7 @@ async function randomGrupos(categoria) {
       } catch {}
       }
       
-      resolve({status: 200, criador: 'Kuromi Api', resultado: dados2})
+      resolve({status: 200, criador: 'Redzin', resultado: dados2})
     })
     .catch(e => {
       reject(e)
@@ -2935,7 +2973,7 @@ async function topFlix(query) {
           link: 'https://topflix.one'+$(e).find('h6 > a').attr('href')
         })
       })
-      resolve({status: 200, criador: 'Kuromi Api', resultado: dados})
+      resolve({status: 200, criador: 'Redzin', resultado: dados})
     })
     .catch(e => {
       reject(e)
@@ -2958,7 +2996,7 @@ async function topFlixDL(url) {
           link: 'https://topflix.one'+$(e).find('h6 > a').attr('href')
         })
       })
-      resolve({status: 200, criador: 'Kuromi Api', resultado: dados})
+      resolve({status: 200, criador: 'Redzin', resultado: dados})
     })
     .catch(e => {
       reject(e)
@@ -2974,7 +3012,7 @@ async function pinterestVideo(link) {
       const json = JSON.parse($('script[data-test-id="video-snippet"]').text())
       resolve({
         status: 200,
-        autor: 'Kuromi Api',
+        autor: 'Redzin',
         titulo: json.name,
         thumb: json.thumbnailUrl,
         video: json.contentUrl
@@ -3031,7 +3069,7 @@ async function ultimasNoticias() {
        link: $$('div[class="m2L3rb eLNT1d"]').find('a').attr('href')
      })
    }
-   resolve({status: 200, autor: 'Kuromi Api', resultado: dados2})
+   resolve({status: 200, autor: 'Redzin', resultado: dados2})
   })
    .catch(e => {
      reject(e)
@@ -3053,7 +3091,7 @@ async function uptodownsrc(query) {
           link: $(e).find('a').attr('href').split("uptodown.com/")[0]+"uptodown.com/"
         });
       });
-      resolve({status: 200, autor: 'Kuromi Api', resultado: dados})
+      resolve({status: 200, autor: 'Redzin', resultado: dados})
     })
     .catch(e => {
       reject(e)
@@ -3129,7 +3167,7 @@ async function xvideosSearch(q) {
           link: 'https://www.xvideos.com' + $(e).find('.thumb-under > p > a').attr('href')
         });
       });
-      resolve({status: res.status, criador: 'Kuromi Api', resultado: dados})
+      resolve({status: res.status, criador: 'Redzin', resultado: dados})
     })
     .catch(e => {
       reject(e)
@@ -3157,7 +3195,7 @@ async function mercadoLivreSearch(q) {
         }
         if(json.preco && json.imagem && json.link) dados.push(json);
       });
-      resolve({status: res.status, criador: 'Kuromi Api', resultado: dados})
+      resolve({status: res.status, criador: 'Redzin', resultado: dados})
     })
     .catch(e => {
       reject(e)
@@ -3178,7 +3216,7 @@ async function xvideosDownloader(url) {
       const dados1 = $('script[type="application/ld+json"]')
       resolve({
       status: res.status, 
-      admin: 'Kuromi Api', 
+      admin: 'Redzin', 
       resultado: {
       titulo: dados1.name, 
       descrição: dados1.description, 
@@ -3204,7 +3242,7 @@ async function hentaiimg(title) {
             })
             resolve({ 
             status: res.status, 
-            admin: 'Kuromi Api', 
+            admin: 'Redzin', 
             resultado: hasil })
         })
     })
@@ -3234,7 +3272,7 @@ async function hentaivid() {
             const random = hasil[Math.floor(Math.random() * hasil.length)]
             resolve({
                 status: data.status,
-                admin: 'Kuromi Api',
+                admin: 'Redzin',
                 resultado: random
             })
         })
@@ -3451,7 +3489,7 @@ async function iFunny() {
         json.imagem && dados.push(json);
         json2.video && json2.video.toLowerCase().includes("mp4") && dados2.push(json2);
       });
-      resolve({status: res.status, autor: 'Kuromi Api', imagens: dados, videos: dados2})
+      resolve({status: res.status, autor: 'Redzin', imagens: dados, videos: dados2})
     })
     .catch(e => {
       reject(e)
@@ -3502,7 +3540,7 @@ async function animesGoyabu(q) {
           link: $(e).find('a').attr('href')
         });
       });
-      resolve({status: res.status, criador: 'Kuromi Api', resultado: dados})
+      resolve({status: res.status, criador: 'Redzin', resultado: dados})
     })
     .catch(e => reject(e))
   });
@@ -3526,7 +3564,7 @@ async function animesGoyabu2(url) {
       });
       resolve({
         status: res.status,
-        criador: 'Kuromi Api',
+        criador: 'Redzin',
         titulo: $('.anime-title > h1').text(),
         imagem: $('.anime-bg2').find('img').attr('data-cfsrc'),
         sinopse: $('.anime-description').text().trim(),
@@ -3598,7 +3636,7 @@ async function gruposZap(url = `https://www.gruposdewhatss.com.br/grupos-de-what
           dados2.push({titulo: dados[i].titulo, imagem: dados[i].imagem, link: $$('a[class="btn btn-success w-100 mt-4 mb-4"]').attr('href')})
         } catch (e) { console.log(e) }
       }
-      resolve({status: res.status, autor: 'Kuromi Api', resultado: dados2})
+      resolve({status: res.status, autor: 'Redzin', resultado: dados2})
     })
     .catch(e => {
       reject(e)
@@ -3623,7 +3661,7 @@ async function partidoLiberal() {
           link: $(e).find('a:first').attr('href')
         });
       });
-      resolve({status: res.status, autor: 'Kuromi Api', resultado: dados})
+      resolve({status: res.status, autor: 'Redzin', resultado: dados})
     })
     .catch(e => {
       reject(e)
@@ -3674,7 +3712,7 @@ async function amazonSearch(query) {
           link: 'https://www.amazon.com.br' + $(e).find('a:first').attr('href')
         });
       });
-      resolve({status: res.status, autor: 'Kuromi Api', resultado: dados})
+      resolve({status: res.status, autor: 'Redzin', resultado: dados})
     })
     .catch(e => {
       reject(e)
@@ -3744,7 +3782,7 @@ const sambaPornoSearch = (q) => new Promise((resolve, reject) => {
         link: 'https://www.sambaporno.com' + $(e).find('a:first').attr('href')
       })
     })
-    resolve({status: res.status, autor: 'Kuromi Api', resultado: dados})
+    resolve({status: res.status, autor: 'Redzin', resultado: dados})
   })
   .catch(e => {
     reject(e)
@@ -3844,7 +3882,8 @@ trash,
 wanted, 
 wasted, 
 bobross, 
-mms
+mms,
+welcome
  
  };
 

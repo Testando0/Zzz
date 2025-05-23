@@ -172,8 +172,20 @@ const {
   wanted,
   wasted, 
   bobross, 
-  mms
+  mms,
+  welcome
 } = require('./config.js'); // arquivo que ele puxa as funções 
+
+// 677 rotas 18/05/2025 00:50
+
+router.get('/welcome', async (req, res) => {
+  try {
+    const filePath = await welcome(req.query);
+    res.sendFile(filePath);
+  } catch (err) {
+    res.status(400).json({ erro: err.message });
+  }
+});
 
 const audio = [92, 128, 256, 320];
 const video = [144, 360, 480, 720, 1080];
@@ -2138,7 +2150,38 @@ router.get('/likeff', async (req, res) => {
     }
 });
 
+
 router.get('/likesff', async (req, res) => {
+    const { id } = req.query;
+
+    if (!id) {
+        return res.status(400).json({ error: 'O parâmetro "id" é obrigatório.' });
+    }
+
+    try {
+        const apiUrl = `https://kryptorfree.squareweb.app/like?uid=${encodeURIComponent(id)}&quantity=100&key=bykryptor`;
+        const response = await axios.get(apiUrl);
+        const data = response.data;
+
+        const formattedResponse = {
+            "ID do Jogador": id,
+            "Apelido": data.PlayerNickname,
+            "Região": data.PlayerRegion,
+            "Nível": data.PlayerLevel,
+            "Likes Antes": data.Likes_Antes,
+            "Likes Depois": data.Likes_Depois,
+            "Likes Enviados": data.Likes_Enviados
+        };
+
+        res.json(formattedResponse);
+    } catch (error) {
+        res.status(500).json({ error: 'Erro ao buscar informações de likes.', details: error.message });
+    }
+});
+
+
+
+router.get('/likesff2', async (req, res) => {
     const { id, quantity = 10 } = req.query;
 
     if (!id) {
@@ -7021,7 +7064,7 @@ router.get('/netersg', async (req, res) => {
         res.status(500).json({ status: false, mensagem: "Erro interno ao processar a solicitação." });
     }
 });
-//gerar imagem by Redzin
+//gerar imagem
 
 // Rota para gerar a imagem usando um parâmetro de consulta
 router.get('/gerar-imagem', async (req, res) => {
@@ -7069,7 +7112,7 @@ router.get('/gerar-imagem', async (req, res) => {
 
 //fim 
 
-// play e playvideo by Redzin
+// play e playvideo
 
 const got = require('got');
 const ytsr = require('yt-search');
@@ -9807,7 +9850,7 @@ router.get('/pin/video', (req, res) => {
 
 const apiId = 21844566;
 const apiHash = 'ff82e94bfed22534a083c3aee236761a';
-const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBuy/6xegWM2JqmqUwcUqKz5lvqHEFmBiUpjYd1tXGvqTRSNlybPDnF7zhwKlZU4BEXG2J5qdLQseuz1MDOKkzqM2MW3WlYo2xbgRKBzIiHeUUNl84xR+y/Z3H9l1AIFieZekqa5ND4jwdhL6on4bxfsSO250RtK4gnu1x3SWdFkjjGF8dYCivlWrjTL3nvlN9+j+W8zKmE2YUD1e41hip/1+MAqv8jgfMyz6zK+PcQgR6r6chxMoPe4S6vQT3R5xejKlsT2KvgcLfEGpXhcjgMUaVPtVW0sQd/yo66N/ZpFyQaQ+Ax5olApZjG/Mf/S6VWMnlAihkuUHYXQ2EdeAkpmY=');
+const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBu0DVFJG4JmuG89qGV780+GhmzJ0tdlbwmiXLXFuS6RxzpOIFJ/WgkFbJ0ttyqAfWpJjx7tqDCeYEutYqn4WyleKT0HpVLUoEvbk3mpfuHSSynCuuG9NBHM81AOFDeZXogpefO8LCh1O/ViH4JhI5qr+gnkCs+MYsuirXN5tsmTAgjrZfaTaz43EAM4J4TeMuhMcYuRxhkmkwi/q9CPFujM1E9a7a+A37MLoQh9QvhH8YMQH1/34e5UkL68krGIHZRmqPRZG8bqh4OVZFMfTJIft96Fg7WnRiQ2vn6kAjUb61u+Th2gYNLrw/gMD5R37eL0DqNVilNMrNXomCIKQITPM=');
 const grupoChatId = -1002208588695;
 
 const rl = readline.createInterface({

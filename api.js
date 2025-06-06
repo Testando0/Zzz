@@ -1,13 +1,21 @@
+bla = process.cwd()
+__path = process.cwd()
 const express = require('express');
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
+const JXR = require("jxr-canvas");
+const canvacard = require("canvacard")
+const { musicCard, RankCard } = require("musicard-bun");
+const { Card } = require("welcomify")
+const Canvasfy = require("canvafy")
+const ffmpeg = require('fluent-ffmpeg');
 const cheerio = require('cheerio');
 const search = require('yt-search');
 const ytSearch = require('yt-search');
 const { createDecipheriv } = require('crypto');
 const yt = require('@distube/ytdl-core');
-const criador = 'Redzin';
+const criador = 'World Ecletix';
 const { exec } = require('child_process');
 const sharp = require('sharp'); // Biblioteca para conversão WebP
 const cors = require('cors');
@@ -172,20 +180,10 @@ const {
   wanted,
   wasted, 
   bobross, 
-  mms,
-  welcome
+  mms
 } = require('./config.js'); // arquivo que ele puxa as funções 
 
 // 677 rotas 18/05/2025 00:50
-
-router.get('/welcome', async (req, res) => {
-  try {
-    const filePath = await welcome(req.query);
-    res.sendFile(filePath);
-  } catch (err) {
-    res.status(400).json({ erro: err.message });
-  }
-});
 
 const audio = [92, 128, 256, 320];
 const video = [144, 360, 480, 720, 1080];
@@ -417,7 +415,7 @@ router.get('/jogo/:slug', async (req, res) => {
   const { slug } = req.params;
 
   try {
-    const response = await axios.get('https://world-ecletix.onrender.com/api/futemax');
+    const response = await axios.get('https://kuromi-systemxy.onrender.com/api/futemax');
     const jogos = response.data;
 
     const jogo = jogos.find(j => {
@@ -429,7 +427,7 @@ router.get('/jogo/:slug', async (req, res) => {
       return res.status(404).send('Jogo não encontrado');
     }
 
-    const futplay = await axios.get(`https://world-ecletix.onrender.com/api/futplay?url=${encodeURIComponent(jogo.link)}`);
+    const futplay = await axios.get(`https://kuromi-systemxy.onrender.com/api/futplay?url=${encodeURIComponent(jogo.link)}`);
     const { title, description, thumbnail, players } = futplay.data;
 
     const html = `
@@ -508,6 +506,57 @@ router.get('/jogo/:slug', async (req, res) => {
     res.status(500).send('Erro ao carregar o jogo');
   }
 });    
+
+
+router.get('/multicanais', async (req, res) => {
+  try {
+    const { data } = await axios.get('https://multicanais.casa');
+    const $ = cheerio.load(data);
+    const jogos = [];
+
+    $('.posts-grid-dark .post-esporte-card').each((i, el) => {
+      const link = $(el).find('a.post-link-dark').attr('href');
+      const titulo = $(el).find('h3.post-title-dark').text().trim();
+      const capa = $(el).find('img.post-img-dark').attr('src');
+      
+      // Verifica se está AO VIVO
+      const aoVivo = $(el).find('.post-status-live').length > 0;
+
+      let status = 'AGENDADO';
+      let data = null;
+      let hora = null;
+
+      if (aoVivo) {
+        status = 'AO VIVO';
+      } else {
+        // Extrai a data e hora do texto tipo "29/05 • 21:35"
+        const statusTime = $(el).find('.post-status-time').text().trim();
+        if (statusTime) {
+          // Dividindo pela "•"
+          const parts = statusTime.split('•').map(p => p.trim());
+          if (parts.length === 2) {
+            data = parts[0]; // "29/05"
+            hora = parts[1]; // "21:35"
+          }
+        }
+      }
+
+      jogos.push({
+        titulo,
+        capa: capa?.startsWith('http') ? capa : `https://multicanais.casa/${capa}`,
+        link,
+        status,
+        data,
+        hora,
+      });
+    });
+
+    res.json(jogos);
+  } catch (err) {
+    console.error('Erro ao buscar dados:', err.message);
+    res.status(500).json({ error: 'Erro ao buscar dados do multicanais.casa' });
+  }
+});
 
 router.get('/futemax', async (req, res) => {
   const baseUrl = 'https://futemax.loan/';
@@ -597,7 +646,7 @@ router.get('/assistir', async (req, res) => {
   const query = req.query.oq;
   if (!query) return res.status(400).json({ error: 'Parâmetro "oq" é obrigatório.' });
 
-  const searchUrl = `https://multicanais.global/?s=${encodeURIComponent(query)}`;
+  const searchUrl = `https://multicanais.casa/?s=${encodeURIComponent(query)}`;
   try {
     const searchRes = await axios.get(searchUrl, {
       headers: { 'User-Agent': 'Mozilla/5.0' }
@@ -641,7 +690,7 @@ router.get('/assistir2', async (req, res) => {
   const query = req.query.oq;
   if (!query) return res.status(400).json({ error: 'Parâmetro "oq" é obrigatório.' });
 
-  const searchUrl = `https://multicanais.global/?s=${encodeURIComponent(query)}`;
+  const searchUrl = `https://multicanais.casa/?s=${encodeURIComponent(query)}`;
   try {
     const searchRes = await axios.get(searchUrl, {
       headers: { 'User-Agent': 'Mozilla/5.0' }
@@ -676,6 +725,126 @@ router.get('/assistir2', async (req, res) => {
   }
 });
 
+router.get('/fut/:slug', async (req, res) => {
+  if (!req.params.slug) return res.status(400).send('Slug inválido.');
+
+  try {
+    const { data } = await axios.get('https://kuromi-systemxy.onrender.com/api/futopcoes?url=' + encodeURIComponent('https://multicanais.casa/' + req.params.slug));
+
+    res.send(`
+      <!DOCTYPE html>
+      <html lang="pt-BR">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>${data.titulo}</title>
+        <style>
+          body {
+            background: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            margin: 0;
+            text-align: center;
+          }
+          h1 {
+            margin-bottom: 10px;
+          }
+          .buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+          }
+          .buttons button {
+            background-color: #00ccff;
+            color: #000;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+          }
+          .buttons button:hover {
+            background-color: #0099cc;
+          }
+          iframe {
+            width: 100%;
+            height: 500px;
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 0 10px #00ccff55;
+            margin-top: 20px;
+          }
+          img {
+            max-width: 100%;
+            border-radius: 10px;
+            margin-bottom: 15px;
+          }
+          .desc {
+            color: #ccc;
+            font-size: 16px;
+            margin-bottom: 10px;
+          }
+        </style>
+      </head>
+      <body>
+        <h1>${data.titulo}</h1>
+        <div class="desc">${data.status === 'AO VIVO' ? '<strong style="color:red;">AO VIVO</strong>' : data.hora ? 'Horário: ' + data.hora : ''}</div>
+        <img src="${data.imagem}" alt="thumb" />
+        <div class="buttons">
+          ${data.links.map((link, i) => `<button onclick="setIframe('${link}')">OPÇÃO ${i + 1}</button>`).join('')}
+        </div>
+        <iframe id="player" src="${data.links[0]}" allowfullscreen></iframe>
+
+        <script>
+          function setIframe(url) {
+            document.getElementById('player').src = url;
+          }
+        </script>
+      </body>
+      </html>
+    `);
+  } catch (e) {
+    console.error(e);
+    res.status(500).send('Erro ao carregar dados do jogo.');
+  }
+});
+
+router.get('/futopcoes', async (req, res) => {
+  const { url } = req.query;
+  if (!url) return res.status(400).json({ error: 'Parâmetro "url" é obrigatório.' });
+
+  try {
+    const response = await axios.get(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0' }
+    });
+
+    const $ = cheerio.load(response.data);
+    const titulo = $('h2.wp-block-heading').first().text();
+    const imagem = $('.entry-image img').attr('src');
+
+    const links = $('.links a[data-id]')
+      .map((i, el) => $(el).attr('data-id'))
+      .get()
+      .filter(Boolean);
+
+    if (links.length === 0) return res.status(404).json({ error: 'Nenhum player encontrado.' });
+
+    res.json({
+      titulo,
+      imagem,
+      links
+    });
+  } catch (err) {
+    console.error('Erro ao buscar:', err.message);
+    res.status(500).json({ error: 'Erro ao buscar dados.' });
+  }
+});
+
+
 router.get('/book', async (req, res) => {
   const { livro } = req.query;
   if (!livro) return res.json({ status: false, erro: "Informe o parâmetro: livro" });
@@ -690,7 +859,7 @@ router.get('/book', async (req, res) => {
 
     res.json({
       status: true,
-      criador: "world-ecletix",
+      criador: "Kuromi System",
       resultado: response.data.items || []
     });
   } catch {
@@ -732,7 +901,7 @@ router.get('/cotacao', async (req, res) => {
 
     res.json({
       status: true,
-      criador: "world-ecletix",
+      criador: "Kuromi System",
       resultado: [dados]
     });
   } catch {
@@ -769,7 +938,7 @@ router.get('/celular2', async (req, res) => {
     res.json({
       status: true,
       código: 999,
-      criador: 'World-Ecletix',
+      criador: 'Kuromi System',
       resultado: {
         title: titulo,
         info: info,
@@ -902,7 +1071,7 @@ router.get('/iframe', async (req, res) => {
   const slug = req.params.slug;
 
   try {
-    const response = await axios.get('https://world-ecletix.onrender.com/api/playertv');
+    const response = await axios.get('https://kuromi-systemxy.onrender.com/api/playertv');
     const canais = response.data;
 
     const canal = canais.find(c => slugify(c.title) === slug);
@@ -911,7 +1080,7 @@ router.get('/iframe', async (req, res) => {
       return res.status(404).send('<h1>Canal não encontrado</h1>');
     }
 
-    const iframeResponse = await axios.get(`https://world-ecletix.onrender.com/api/iframe?canal=${encodeURIComponent(canal.link)}`);
+    const iframeResponse = await axios.get(`https://kuromi-systemxy.onrender.com/api/iframe?canal=${encodeURIComponent(canal.link)}`);
     const iframeUrl = iframeResponse.data.iframe;
 
     res.send(`
@@ -3115,6 +3284,354 @@ router.get('/bobross', bobross)
 router.get('/karaba', bobross)
 router.get('/mms', mms)
 
+
+router.get('/welcome', async (req, res, next) => {
+if(!req.query.titulo) return res.json({ status: 404, error: 'Insira o parametro: titulo'})
+if(!req.query.perfil) return res.json({ status: 404, error: 'Insira o parametro: perfil'})
+if(!req.query.fundo) return res.json({ status: 404, error: 'Insira o parametro: fundo'})
+if(!req.query.desc) return res.json({ status: 404, error: 'Insira o parametro: desc'})
+let wewelcomeer = await new Canvasfy.WelcomeLeave()
+  .setAvatar(req.query.perfil)
+  .setBackground("image", req.query.fundo)
+  .setTitle(req.query.titulo)
+  .setDescription(req.query.desc)
+  .setBorder("#2a2e35")
+  .setAvatarBorder("#2a2e35")
+  .setOverlayOpacity(0.6)
+  .build();
+require('fs').writeFileSync(bla + '/assets/Tempo/welkom.png', wewelcomeer, 'base64')
+res.sendFile(bla + '/assets/Tempo/welkom.png')
+})
+
+router.get('/top', async (req, res, next) => {
+  var { message, fundo, foto1, foto2, foto3, foto4, foto5, foto6, foto7, foto8, foto9, foto10, nome1, nome2, nome3, nome4, nome5, nome6, nome7, nome8, nome9, nome10, xp1, xp2, xp3, xp4, xp5, xp6, xp7, xp8, xp9, xp10 } = req.query
+  database = [
+    {top: 1, avatar: foto1, tag: nome1, score: Number(xp1)},
+    {top: 2, avatar: foto2, tag: nome2, score: Number(xp2)},
+    {top: 3, avatar: foto3, tag: nome3, score: Number(xp3)},
+    {top: 4, avatar: foto4, tag: nome4, score: Number(xp4)},
+    {top: 5, avatar: foto5, tag: nome5, score: Number(xp5)},
+    {top: 6, avatar: foto6, tag: nome6, score: Number(xp6)},
+    {top: 7, avatar: foto7, tag: nome7, score: Number(xp7)},
+    {top: 8, avatar: foto8, tag: nome8, score: Number(xp8)},
+    {top: 9, avatar: foto9, tag: nome9, score: Number(xp9)},
+    {top: 10, avatar: foto10, tag: nome10, score: Number(xp10)}
+    ]
+  const top10 = await new Canvasfy.Top()
+  .setOpacity(0.6)
+  .setScoreMessage(message)
+  .setabbreviateNumber(true)
+  .setBackground("image", fundo)
+  .setColors({box: "#212121", username: "#ffffff", score: "#ffffff", firstRank: "#f7c716", secondRank: "#9e9e9e", thirdRank: "#94610f"})
+  .setUsersData(database)
+  .build();
+
+require('fs').writeFileSync(bla + '/assets/Tempo/welkom.png', top10, 'base64')
+res.sendFile(bla + '/assets/Tempo/welkom.png')
+})
+
+router.get('/level', async (req, res, next) => {
+var { foto, nome, expnow, expall, level, fundo } = req.query
+if(!foto) return res.json({message: "Faltando o parâmetro foto"})
+if(!nome) return res.json({message: "Faltando o parâmetro nome"})
+if(!expnow) return res.json({message: "Faltando o parâmetro XP atual"})
+if(!expall) return res.json({message: "Faltando o parâmetro XP total"})
+if(!level) return res.json({message: "Faltando o parâmetro level"})
+if(!fundo) return res.json({message: "Faltando o parâmetro fundo"})
+let rank1 = await new Canvasfy.Rank()
+    .setAvatar(foto)
+    .setBackground("image", fundo)
+    .setUsername(nome)
+    .setBorder("#fff")
+    .setBarColor("#00ffff")
+    .setStatus("online")
+    .setLevel(Number(level))
+    .setLevelColor({text:"#00ffff",number:"#fff"})
+    .setRank(Number(expnow), "XP")
+    .setRankColor({text:"#00ffff",number:"#fff"})
+    .setCurrentXp(Number(expnow))
+    .setRequiredXp(Number(expall))
+    .build();
+
+require('fs').writeFileSync(bla + '/assets/Tempo/welkom.png', rank1, 'base64')
+res.sendFile(bla + '/assets/Tempo/welkom.png')
+})
+
+router.get('/levelup', async (req, res, next) => {
+var { foto, nome, lvb, lva, fundo } = req.query
+if(!foto) return res.json({message: "Faltando o parâmetro foto"})
+if(!nome) return res.json({message: "Faltando o parâmetro nome"})
+if(!lvb) return res.json({message: "Faltando o parâmetro level before"})
+if(!lva) return res.json({message: "Faltando o parâmetro level after"})
+if(!fundo) return res.json({message: "Faltando o parâmetro fundo"})
+let lvup = await new Canvasfy.LevelUp()
+    .setAvatar(foto)
+    .setBackground("image", fundo)
+    .setUsername(nome)
+    .setBorder("#000000")
+    .setAvatarBorder("#00ffff")
+    .setOverlayOpacity(0.7)
+    .setLevels(Number(lvb), Number(lva))
+    .build();
+
+require('fs').writeFileSync(bla + '/assets/Tempo/welkom.png', lvup, 'base64')
+res.sendFile(bla + '/assets/Tempo/welkom.png')
+})
+
+router.get('/levelup2', async (req, res, next) => {
+var { foto, nome, lvb, lva, fundo } = req.query
+if(!foto) return res.json({message: "Faltando o parâmetro foto"})
+if(!nome) return res.json({message: "Faltando o parâmetro nome"})
+if(!lvb) return res.json({message: "Faltando o parâmetro level before"})
+if(!lva) return res.json({message: "Faltando o parâmetro level after"})
+if(!fundo) return res.json({message: "Faltando o parâmetro fundo"})
+let lvup2 = await new Canvasfy.LevelUp()
+    .setAvatar(foto)
+    .setBackground("image", fundo)
+    .setUsername(nome)
+    .setBorder("#000000")
+    .setAvatarBorder("#ff0000")
+    .setOverlayOpacity(0.7)
+    .setLevels(Number(lvb), Number(lva))
+    .build();
+
+require('fs').writeFileSync(bla + '/assets/Tempo/welkom.png', lvup2, 'base64')
+res.sendFile(bla + '/assets/Tempo/welkom.png')
+})
+
+router.get('/ship', async (req, res, next) => {
+var { foto1, foto2, fundo, mat } = req.query
+if(!foto1) return res.json({message: "Faltando o parâmetro foto 1"})
+if(!foto2) return res.json({message: "Faltando o parâmetro foto 2"})
+if(!mat) return res.json({message: "Faltando o parâmetro mat"})
+if(!fundo) return res.json({message: "Faltando o parâmetro fundo"})
+let shiplv = await new Canvasfy.Ship()
+    .setAvatars(foto1, foto2)
+    .setBackground("image", fundo)
+    .setBorder("#f0f0f0")
+    .setOverlayOpacity(0.2)
+    .setCustomNumber(Number(mat))
+    .build();
+
+require('fs').writeFileSync(bla + '/assets/Tempo/welkom.png', shiplv, 'base64')
+res.sendFile(bla + '/assets/Tempo/welkom.png')
+})
+
+router.get('/tweed', async (req, res, next) => {
+var { theme, name, username, verified, message, perfil } = req.query
+th = theme.toLowerCase()
+let tweedcv = await new Canvasfy.Tweet()
+.setTheme((th == `black` || th == `preto`) ? `dark` : (th == `white` || white == `branco`) ? `light` : `dim`)//"dark", "light" and "dim"
+.setUser({displayName: name, username: username})
+.setVerified(verified && (verified == `s` || verified == `y`) ? true : false)
+.setComment(message)
+.setAvatar(perfil)
+.build();
+
+require('fs').writeFileSync(bla + '/assets/Tempo/welkom.png', tweedcv, 'base64')
+res.sendFile(bla + '/assets/Tempo/welkom.png')
+})
+
+router.get('/welcome4', async (req, res, next) => {
+if (!req.query.titulo) return res.json({ status: 404, error: 'Insira o parametro: titulo'})
+if (!req.query.nome) return res.json({ status: 404, error: 'Insira o parametro: nome'})
+if (!req.query.perfil) return res.json({ status: 404, error: 'Insira o parametro: perfil'})
+if (!req.query.fundo) return res.json({ status: 404, error: 'Insira o parametro: fundo'})
+if (!req.query.grupo) return res.json({ status: 404, error: 'Insira o parametro: grupo'})
+
+let welcomer = await new canvasx.Welcome()
+.setUsername(req.query.nome)
+.setDiscriminator("2024")
+.setText("title", req.query.titulo)
+.setText("message", req.query.grupo)
+.setAvatar(req.query.perfil)
+.setColor('border', '#00100C')
+.setColor('username-box', '#00100C')
+.setColor('discriminator-box', '#00100C')
+.setColor('message-box', '#00100C')
+.setColor('title', '#00FFFF')
+.setBackground(req.query.fundo)
+.toAttachment()
+let base64 = `${welcomer.toBuffer().toString('base64')}`
+require('fs').writeFileSync(bla+'/assets/welkom.png', base64, 'base64')
+res.sendFile(bla+'/assets/welkom.png')
+})
+
+router.get('/welcome5', async (req, res, next) => {
+  var { nome, guilda, perfil, membro, avatar, fundo } = req.query
+  if(!nome) return res.json({resultado: "Faltando o parâmetro nome"})
+  if(!guilda) return res.json({resultado: "Faltando o parâmetro guilda"})
+  if(!perfil) return res.json({resultado: "Faltando o parâmetro perfil"})
+  if(!membro) return res.json({resultado: "Faltando o parâmetro membro"})
+  if(!avatar) return res.json({resultado: "Faltando o parâmetro avatar"})
+  if(!fundo) return res.json({resultado: "Faltando o parâmetro fundo"})
+  let imagejxr = await new JXR.Welcome()
+  .setUsername(nome)
+  .setGuildName(guilda)
+  .setGuildIcon(perfil)
+  .setMemberCount(`${membro}`)
+  .setAvatar(avatar)
+  .setBackground(fundo)
+  .toAttachment();
+
+  let datajxr = `${imagejxr.toBuffer().toString('base64')}`
+  require('fs').writeFileSync(bla+'/assets/welkom.png', datajxr, 'base64')
+  res.sendFile(bla+'/assets/welkom.png')
+})
+
+router.get('/welcome2', async (req, res, next) => {
+  var { nome, grupo, perfil, membro, fundo } = req.query
+  if(!nome) return res.json({resultado: "Faltando o parâmetro nome"})
+  if(!grupo) return res.json({resultado: "Faltando o parâmetro guilda"})
+  if(!perfil) return res.json({resultado: "Faltando o parâmetro perfil"})
+  if(!membro) return res.json({resultado: "Faltando o parâmetro membro"})
+  if(!fundo) return res.json({resultado: "Faltando o parâmetro fundo"})
+  var imagejxr2 = await new JXR.Welcome2()
+    .setAvatar(perfil)
+    .setUsername(nome)
+    .setBg(fundo)
+    .setGroupname(grupo)
+    .setMember(membro)
+    .toAttachment();
+
+  let datajxr2 = `${imagejxr2.toBuffer().toString('base64')}`
+  require('fs').writeFileSync(bla+'/assets/welkom.png', datajxr2, 'base64')
+  res.sendFile(bla+'/assets/welkom.png')
+})
+
+router.get('musicard-music', async (req, res, next) => {
+  var { nome, autor, tipo , opacity, thumb, progresso, start, end } = req.query
+  const cardmusic = new musicCard()
+        .setName(nome)
+        .setAuthor(autor)
+        .setColor("auto")
+        .setTheme(tipo == `space2` ? `space+` : tipo)
+        .setBrightness(Number(opacity))
+        .setThumbnail(thumb)
+        .setProgress(Number(progresso))
+        .setStartTime(start)
+        .setEndTime(end)
+        const cardBuffer = await cardmusic.build();
+        require('fs').writeFileSync(bla + '/assets/Tempo/welkom.png', cardBuffer, 'base64')
+        return res.sendFile(bla + '/assets/Tempo/welkom.png')
+})
+
+router.get('/level', async (req, res, next) => {
+  var { nome, level, brightness, perfil, rank, xpb, xpa, progresso } = req.query
+  const cardlvmb = new RankCard()
+  .setName(nome)
+  .setLevel(level)
+  .setColor("auto")
+  .setBrightness(Number(brightness))
+  .setAvatar(perfil)
+  .setProgress(Number(progresso))
+  .setRank(rank)
+  .setCurrentXp(xpb)
+  .setRequiredXp(xpa)
+  .setShowXp(true);
+        require('fs').writeFileSync(bla + '/assets/Tempo/welkom.png', (await cardlvmb.build()), 'base64')
+        return res.sendFile(bla + '/assets/Tempo/welkom.png')
+})
+
+router.get('/rank', async (req, res, next) => {
+  var { nome, level, stts, perfil, rank, xpb, xpa, fundo } = req.query
+  const rankcc = new canvacard.Rank()
+  .setAvatar(perfil)
+  .setBackground('IMAGE', fundo)
+  .setCurrentXP(Number(xpb), "#00BFFF")
+  .setRequiredXP(Number(xpa), "#00BFFF")
+  .setRank(Number(rank))
+  .setRankColor("#FFFFFF", "#00BFFF")
+  .setLevel(Number(level), `LEVEL `)
+  .setLevelColor("#FFFFFF", "#00BFFF")
+  .setStatus(stts, true)
+  .setOverlay("#23272A", 0.75, true)
+  .setProgressBar(["#1E90FF", "#00BFFF"], "GRADIENT")
+  .setProgressBarTrack("#000000")
+  .setUsername(nome)
+  .renderEmojis(true)
+
+        require('fs').writeFileSync(bla + '/assets/Tempo/welkom.png', (await rankcc.build()), 'base64')
+        return res.sendFile(bla + '/assets/Tempo/welkom.png')
+})
+
+router.get('/welcome3', async (req, res, next) => {
+  var { title, nome, hex, perfil, message, fundo } = req.query
+  const welcomifycard = new Card()
+    .setTitle(title)
+    .setName(nome)
+    .setAvatar(perfil)
+    .setMessage(message)
+    .setBackground(fundo)
+    .setColor(hex)
+
+        require('fs').writeFileSync(bla + '/assets/Tempo/welkom.png', (await welcomifycard.build()), 'base64')
+        return res.sendFile(bla + '/assets/Tempo/welkom.png')
+})
+
+router.get('/wppphoto', async (req, res, next) => {
+  var { nick, number, bio, ultimovisto, foto } = req.query
+  ABC = await fetchJson(`https://tohka.tech/api/canvas/perfilzap?nome=${nick}&numero=${number}&bio=${bio}&horas=${ultimovisto}&perfil=${foto}&apikey=matheuzinho2006`)
+
+        require('fs').writeFileSync(bla + '/assets/Tempo/welkom.png', ABC, 'base64')
+        return res.sendFile(bla + '/assets/Tempo/welkom.png')
+})
+
+router.get('/qrcode', async (req, res, next) => {
+var { texto, apikey } = req.query
+if(!texto || !apikey) return res.json({erro: "Link incompleto"})
+if(!key.map(i => i.apikey)?.includes(apikey))return res.sendFile(path.join(__dirname, "./public/", "apikey_invalida.html"))
+if(key[key.map(i => i?.apikey)?.indexOf(apikey)]?.request <= 0) return res.json({message: "Apikey inválida ou requests esgotados!"})
+RegisKey(apikey, req);
+try {
+    hasil = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${texto}`
+	  data = await fetch(hasil).then(v => v.buffer())   
+         await fs.writeFileSync(bla+'/assets/gostosinha.jpg', data)
+        res.sendFile(bla+'/assets/gostosinha.jpg') 
+} catch (error) {
+return res.status(404).json({resultado: `Erro`, status: 500});
+}
+}) 
+
+router.get('/leitor-qrcode', async(req, res, next) => {
+var { qrcode, apikey } = req.query
+if(!qrcode || !apikey) return res.json({erro: "Link incompleto"})
+if(!key.map(i => i.apikey)?.includes(apikey))return res.sendFile(path.join(__dirname, "./public/", "apikey_invalida.html"))
+if(key[key.map(i => i?.apikey)?.indexOf(apikey)]?.request <= 0) return res.json({message: "Apikey inválida ou requests esgotados!"})
+RegisKey(apikey, req);
+data = await fetchJson(`https://api.lolhuman.xyz/api/read-qr?apikey=GataDios&img=${qrcode}`)
+res.json({
+status: true,
+criador: `@m4thxyz_`,
+resultado: data.result
+})
+})
+
+router.get('/collage', async(req, res) => {
+var { url1, ulr2, url3, url4, url5 } = req.query
+try {
+var photo = {
+  width: '600px',
+  height: ['250px', '170px'],
+  layout: [1, 4],
+  photos: [
+    { source: url1 },
+    { source: url2 },
+    { source: url3 },
+    { source: url4 },
+    { source: url5 }
+  ],
+  showNumOfRemainingPhotos: true
+}
+data = await fetch(photo).then(v => v.buffer())
+await fs.writeFileSync(bla+'/assets/gostosinha.jpg', data)
+res.sendFile(bla+'/assets/gostosinha.jpg')
+} catch(e) {
+console.log(e)
+res.json({resultado: `Erro`})
+}
+})
+
 //fim do canvas
 // Rota GET para buscar resultados do Google (Raspagem)
 router.get('/google', async (req, res) => {
@@ -3243,7 +3760,7 @@ router.get('/guia-series', async (req, res) => {
 
 router.get('/jogosdodia', async (req, res) => {
   try {
-    const { data } = await axios.get('https://multicanais.global/');
+    const { data } = await axios.get('https://multicanais.casa/');
     const $ = cheerio.load(data);
     const jogos = [];
 
@@ -4166,7 +4683,7 @@ router.get('/prox-jogos', async (req, res) => {
 
 router.get('/ufc', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.global/jogo-ao-vivo/ufc-ao-vivo/';
+    const siteUrl = 'https://multicanais.casa/jogo-ao-vivo/ufc-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -4197,7 +4714,7 @@ router.get('/ufc', async (req, res) => {
 // Rota para a API bbb25
 router.get('/bbb25', (req, res) => {
   const resultado = [
-    "https://multicanais.global/assistir-bbb-ao-vivo-online-24-horas/",
+    "https://multicanais.casa/assistir-bbb-ao-vivo-online-24-horas/",
     "https://globoplay.gratis/"
   ];
   
@@ -4206,7 +4723,7 @@ router.get('/bbb25', (req, res) => {
 
 router.get('/basquete', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.global/categoria/jogo-ao-vivo/nba-ao-vivo/';
+    const siteUrl = 'https://multicanais.casa/categoria/jogo-ao-vivo/nba-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -4238,7 +4755,7 @@ router.get('/basquete', async (req, res) => {
 
 router.get('/nfl', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.global/jogo-ao-vivo/nfl-ao-vivo/';
+    const siteUrl = 'https://multicanais.casa/jogo-ao-vivo/nfl-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -4269,7 +4786,7 @@ router.get('/nfl', async (req, res) => {
 
  router.get('/ucl', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.global/jogo-ao-vivo/champions-league-ao-vivo/';
+    const siteUrl = 'https://multicanais.casa/jogo-ao-vivo/champions-league-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -4300,7 +4817,7 @@ router.get('/nfl', async (req, res) => {
 
 router.get('/brasileirao', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.global/jogo-ao-vivo/brasileiro-ao-vivo/';
+    const siteUrl = 'https://multicanais.casa/jogo-ao-vivo/brasileiro-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -4330,7 +4847,7 @@ router.get('/brasileirao', async (req, res) => {
 });
 router.get('/tv', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.global/jogo-ao-vivo/tv-online-ao-vivo/';
+    const siteUrl = 'https://multicanais.casa/jogo-ao-vivo/tv-online-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -4360,7 +4877,7 @@ router.get('/tv', async (req, res) => {
 });
 router.get('/esportedodia', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.global/jogo-ao-vivo/canais-de-esportes/';
+    const siteUrl = 'https://multicanais.casa/jogo-ao-vivo/canais-de-esportes/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -4391,7 +4908,7 @@ router.get('/esportedodia', async (req, res) => {
 });
 router.get('/futebol', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.global/jogo-ao-vivo/futebol-ao-vivo/';
+    const siteUrl = 'https://multicanais.casa/jogo-ao-vivo/futebol-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -7064,7 +7581,7 @@ router.get('/netersg', async (req, res) => {
         res.status(500).json({ status: false, mensagem: "Erro interno ao processar a solicitação." });
     }
 });
-//gerar imagem
+//gerar imagem by Redzin
 
 // Rota para gerar a imagem usando um parâmetro de consulta
 router.get('/gerar-imagem', async (req, res) => {
@@ -7112,7 +7629,7 @@ router.get('/gerar-imagem', async (req, res) => {
 
 //fim 
 
-// play e playvideo
+// play e playvideo by Redzin
 
 const got = require('got');
 const ytsr = require('yt-search');
@@ -9850,7 +10367,7 @@ router.get('/pin/video', (req, res) => {
 
 const apiId = 21844566;
 const apiHash = 'ff82e94bfed22534a083c3aee236761a';
-const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBu0DVFJG4JmuG89qGV780+GhmzJ0tdlbwmiXLXFuS6RxzpOIFJ/WgkFbJ0ttyqAfWpJjx7tqDCeYEutYqn4WyleKT0HpVLUoEvbk3mpfuHSSynCuuG9NBHM81AOFDeZXogpefO8LCh1O/ViH4JhI5qr+gnkCs+MYsuirXN5tsmTAgjrZfaTaz43EAM4J4TeMuhMcYuRxhkmkwi/q9CPFujM1E9a7a+A37MLoQh9QvhH8YMQH1/34e5UkL68krGIHZRmqPRZG8bqh4OVZFMfTJIft96Fg7WnRiQ2vn6kAjUb61u+Th2gYNLrw/gMD5R37eL0DqNVilNMrNXomCIKQITPM=');
+const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBuyzGktPj+e9F62QK4MbmrTNd0aBGZz76bguI+U0aU2VThr6qHHEJxf8kYtnW5a2XwSQ07oXxriag2Ckb2wX2fMorEfZZcejH9xI5Ydu7SW2SqegJEb7g2pVwH82PBmoDX5oqSOD0SSiakXLjZzUVT/8CXM4aqFkZmcM8NodUi1TYAjyiV1z/U+/sPhbbmENs6Nv3tBkk2qsbDHpHhWqMushbL0W3oo8+1hddo4XvRe7c3sTlzXJu6X+trc8wxoGJV/Ah1I7ROG0HmK4Jkv+YgM8ftrVoUWrAg2spy4oF073zIrFXQySYT5mA3QfTF0LNOn9u6RkdBz0upZah9jN9S0w=');
 const grupoChatId = -1002208588695;
 
 const rl = readline.createInterface({
@@ -10220,7 +10737,7 @@ router.get('/likes', async (req, res) => {
 
     try {
       // Envia a mensagem para o grupo com o comando de like
-      await client.sendMessage(grupoChatId, { message: `/like ${id}` });
+      await client.sendMessage(grupoChatId, { message: `/likes ${id}` });
       console.log(`Mensagem de like enviada para o grupo ${grupoChatId}: /like ${id}`);
 
       const handleResponse = new Promise((resolve, reject) => {
@@ -10310,7 +10827,7 @@ router.get('/infoff', async (req, res) => {
 });
 
 
-router.get('/infoff2', async (req, res) => { try { const id = req.query.id; if (!id) { console.log('Parâmetro id ausente na requisição'); return res.json({ status: false, resultado: 'Cadê o parâmetro id?' }); }
+router.get('/infoff3', async (req, res) => { try { const id = req.query.id; if (!id) { console.log('Parâmetro id ausente na requisição'); return res.json({ status: false, resultado: 'Cadê o parâmetro id?' }); }
 
 console.log(`[INFOID]: ID = ${id}`);
 
@@ -10422,6 +10939,29 @@ try {
 
 } catch (err) { console.error('Erro na rota /visitasid:', err); return res.json({ status: false, resultado: 'Erro interno do servidor.' }); } });
 
+
+
+// Rota /infoff
+router.get('/infoff2', async (req, res) => {
+  const id = req.query.id;
+
+  if (!id) {
+    return res.status(400).json({ error: 'Parâmetro "id" é obrigatório' });
+  }
+
+  try {
+    const response = await axios.get(`https://kryptorinfo.squareweb.app/api/player_info`, {
+      params: {
+        uid: id,
+        region: 'br'
+      }
+    });
+
+    res.json(response.data);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao buscar dados da API externa', details: error.message });
+  }
+});
 
 
 // Função para buscar wallpapers
@@ -11927,7 +12467,7 @@ router.get('/pesquisayt', async (req, res) => {
             duration: video.timestamp
         }));
 
-        res.json({ criador: 'Redzin', formattedVideos });
+        res.json({ criador: 'World Ecletix', formattedVideos });
     } catch (error) {
         console.error('Erro ao buscar vídeos do YouTube:', error.message);
         res.status(500).json({ error: 'Erro ao buscar vídeos do YouTube' });
@@ -12082,7 +12622,7 @@ router.get('/consulta/cep/:cep', async (req, res) => {
         const { state, city, neighborhood, street } = data;
 
         res.json({
-            criador: 'Redzin',
+            criador: 'World Ecletix',
             cep: cep,
             estado: state,
             cidade: city,
@@ -12112,7 +12652,7 @@ router.get('/api/consulta/ddd/:ddd', async (req, res) => {
         const cities = data.cities;
 
         res.json({
-            criador: 'Redzin',
+            criador: 'World Ecletix',
             state: state,
             cities: cities
         });
@@ -12146,7 +12686,7 @@ router.get('/api/consulta/clima/aeroporto/:codigoICAO', async (req, res) => {
 
         // Formata os dados conforme o modelo desejado
         const formattedData = {
-            criador: 'Redzin',
+            criador: 'World Ecletix',
             umidade: umidade,
             visibilidade: visibilidade,
             codigo_icao: codigo_icao,
@@ -12276,7 +12816,7 @@ router.get('/dados-pessoais', async (req, res) => {
             foto: userData.picture.large
         };
 
-        res.json({ criador: 'Redzin', resultado: personalData });
+        res.json({ criador: 'World Ecletix', resultado: personalData });
     } catch (error) {
         console.error('Erro ao obter dados do usuário:', error);
         res.status(500).json({ error: 'Erro ao obter dados do usuário' });
@@ -12286,7 +12826,7 @@ router.get('/dados-pessoais', async (req, res) => {
 // Rota para gerar CPF aleatório
 router.get('/gerar-cpf', (req, res) => {
     const cpf = gerarCPF();
-    res.json({ criador: 'Redzin', cpf: cpf });
+    res.json({ criador: 'World Ecletix', cpf: cpf });
 });
 router.get('/videozinhos', async (req, res) => {
     try {
@@ -15876,7 +16416,7 @@ router.get('/contasonly', (req, res) => {
         const randomLink = linksData[randomIndex];
 
         // Enviar o link e o nome como resposta
-        res.json({ criador: 'Redzin', nome: randomLink.nome, link: randomLink.link });
+        res.json({ criador: 'World Ecletix', nome: randomLink.nome, link: randomLink.link });
     } catch (error) {
         console.error('Erro ao obter o link aleatório:', error);
         res.status(500).json({ error: 'Erro ao obter o link aleatório' });
@@ -15903,7 +16443,7 @@ router.get('/metadinhas', (req, res) => {
 
         // Enviar os links masculinos e femininos como resposta
         res.json({
-            criador: 'Redzin',
+            criador: 'world ecletix',
             masculina: randomLink.masculina,
             feminina: randomLink.feminina
         });

@@ -144,19 +144,19 @@
 
             switch(option) {
                 case 'musicByName':
-                    apiUrl = `https://kuromi-systemxy.onrender.com/api/musica?name=${encodeURIComponent(query)}`;
+                    apiUrl = `https://kuromi-systemxy.onrender.com/api/musica?name=${q}`;
                     break;
                 case 'musicByLink':
                     apiUrl = `https://kuromi-systemxy.onrender.com/api/ytmp3?url=${q}`;
                     break;
                 case 'videoByName':
-                    apiUrl = `https://kuromi-systemxy.onrender.com/api/ytmp4?url=${encodeURIComponent(query)}`;
+                    apiUrl = `https://kuromi-systemxy.onrender.com/api/ytmp4?url=${q}`;
                     break;
                 case 'videoByLink':
-                    apiUrl = `https://kuromi-systemxy.onrender.com/api/ytmp4?url=${encodeURIComponent(query)}`;
+                    apiUrl = `https://kuromi-systemxy.onrender.com/api/ytmp4?url=${q}`;
                     break;
                 case 'instagramByLink':
-                    apiUrl = `https://kuromi-systemxy.onrender.com/api/insta?url=${encodeURIComponent(query)}`;
+                    apiUrl = `https://kuromi-systemxy.onrender.com/api/insta?url=${q}`;
                     break;
                 case 'instagramStoryByLink':
                     apiUrl = `https://api-aswin-sparky.koyeb.app/api/downloader/story?url=${encodeURIComponent(query)}`;

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Uploader de Imagens - ImgBB</title>
+  <title>Uploader De Imagens</title>
   <style>
     * {
       box-sizing: border-box;
@@ -13,7 +13,7 @@
 
     body {
       font-family: 'Inter', sans-serif;
-      background: url('https://i.pinimg.com/736x/d8/12/fa/d812fa89a04c9011ecafed61209d6a8a.jpg') no-repeat center center fixed;
+      background: url('https://i.ibb.co/8ngYW3qK/1002136382.jpg') no-repeat center center fixed;
       background-size: cover;
       color: #eee;
       min-height: 100vh;
@@ -133,9 +133,9 @@
 </head>
 <body>
   <div class="container">
-    <h1>Envio de Imagens - ImgBB</h1>
+    <h1>Envio De Imagens</h1>
     <input type="file" id="fileInput" accept="image/*" />
-    <button onclick="uploadImage()">Enviar Imagem</button>
+    <button onclick="uploadImage()">Upload</button>
     <div class="loader" id="loader">
       <span></span><span></span><span></span>
     </div>
@@ -149,18 +149,18 @@
       const loader = document.getElementById('loader');
 
       if (!fileInput.files.length) {
-        output.innerHTML = '<span style="color: red;">Selecione uma imagem primeiro.</span>';
+        output.innerHTML = '<span style="color: red;">Selecione Uma Imagem Primeiro.</span>';
         return;
       }
 
       const file = fileInput.files[0];
 
       if (!file.type.startsWith('image/')) {
-        output.innerHTML = '<span style="color: red;">Por favor, selecione um arquivo de imagem válido.</span>';
+        output.innerHTML = '<span style="color: red;">Por Favor, Selecione Um Arquivo De Imagem Válido.</span>';
         return;
       }
       if (file.size > 32 * 1024 * 1024) {
-        output.innerHTML = '<span style="color: red;">A imagem deve ter no máximo 32MB.</span>';
+        output.innerHTML = '<span style="color: red;">A Imagem Deve Ter No Máximo 32MB.</span>';
         return;
       }
 
@@ -187,12 +187,12 @@
           loader.style.display = 'none';
           output.innerHTML = `<strong>Link Gerado:</strong><br><a href="${data.data.url}" target="_blank">${data.data.url}</a>`;
         } else {
-          throw new Error(data.error?.message || 'Resposta inválida da API');
+          throw new Error(data.error?.message || 'Resposta Inválida Da API');
         }
       } catch (error) {
         loader.style.display = 'none';
-        output.innerHTML = `<span style="color: red;">Erro ao enviar imagem: ${error.message}</span>`;
-        console.error('Erro detalhado:', error);
+        output.innerHTML = `<span style="color: red;">Erro Ao Enviar Imagem: ${error.message}</span>`;
+        console.error('Erro Detalhado:', error);
       }
     }
   </script>

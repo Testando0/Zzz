@@ -1,7 +1,15 @@
+bla = process.cwd()
+__path = process.cwd()
 const express = require('express');
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
+const JXR = require("jxr-canvas");
+const canvacard = require("canvacard")
+const { musicCard, RankCard } = require("musicard-bun");
+const { Card } = require("welcomify")
+const Canvasfy = require("canvafy")
+const ffmpeg = require('fluent-ffmpeg');
 const cheerio = require('cheerio');
 const search = require('yt-search');
 const ytSearch = require('yt-search');
@@ -30,6 +38,11 @@ const getImageBuffer = async (url) => {
         throw new Error('Erro ao buscar imagem.');
     }
 };
+const API_KEY = "sk_55253a1928f65a03e8c680b002b1d5bf270044112e99516c";
+const ELEVEN_API = "https://api.elevenlabs.io/v1/text-to-speech";
+
+// 🔑 VoiceRSS API Key
+const VOICERSS_API_KEY = "1852b97120ed44b3a47ba647b2dcece6";
 
 // Função para gerar o User-Agent
 function userAgent() {
@@ -172,20 +185,133 @@ const {
   wanted,
   wasted, 
   bobross, 
-  mms,
-  welcome
+  mms
 } = require('./config.js'); // arquivo que ele puxa as funções 
 
-// 677 rotas 18/05/2025 00:50
+// 719 rotas 10/06/2025 18:38
 
-router.get('/welcome', async (req, res) => {
+
+async function generateAudio(res, voiceId, text) {
+  if (!text) return res.status(400).json({ erro: "Texto ausente" });
+
   try {
-    const filePath = await welcome(req.query);
-    res.sendFile(filePath);
+    const response = await axios.post(
+      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+      {
+        text,
+        model_id: "eleven_monolingual_v1",
+        voice_settings: {
+          stability: 0.5,
+          similarity_boost: 0.5
+        }
+      },
+      {
+        headers: {
+          "xi-api-key": API_KEY,
+          "Content-Type": "application/json"
+        },
+        responseType: "arraybuffer"
+      }
+    );
+
+    res.setHeader("Content-Type", "audio/mpeg");
+    res.send(response.data);
   } catch (err) {
-    res.status(400).json({ erro: err.message });
+    console.error("❌ Erro ao gerar áudio:", err.response?.data || err.message);
+    res.status(500).json({ erro: "Erro ao gerar áudio" });
   }
+}
+
+
+// 🎧 Rota VoiceRSS com idioma fixo pt-br e sem texto padrão
+router.get("/voicerss", (req, res) => {
+  const text = req.query.text;
+  if (!text) {
+    return res.status(400).json({ error: "Parâmetro 'text' é obrigatório." });
+  }
+
+  const encodedText = encodeURIComponent(text);
+  const url = `https://api.voicerss.org/?key=${VOICERSS_API_KEY}&hl=pt-br&c=MP3&f=48khz_16bit_stereo&src=${encodedText}`;
+
+  res.redirect(url);
 });
+
+// 🗣️ Rotas de vozes com IDs corretos da ElevenLabs
+router.get("/audio-aria", (req, res) =>
+  generateAudio(res, "NLXGN93c0fZldVoIxtNn", req.query.text)
+);
+
+router.get("/audio-sarah", (req, res) =>
+  generateAudio(res, "TxGEqnHWrfWFTfGW9XjX", req.query.text)
+);
+
+router.get("/audio-laura", (req, res) =>
+  generateAudio(res, "yoZ06aMxZJJ28mfd3POQ", req.query.text)
+);
+
+router.get("/audio-charlie", (req, res) =>
+  generateAudio(res, "XB0fDUnXU5powFXDhCwa", req.query.text)
+);
+
+router.get("/audio-george", (req, res) =>
+  generateAudio(res, "VR6AewLTigWG4xSOukaG", req.query.text)
+);
+
+router.get("/audio-callum", (req, res) =>
+  generateAudio(res, "N2lVS1w4EtoT3dr4eOWO", req.query.text)
+);
+
+router.get("/audio-river", (req, res) =>
+  generateAudio(res, "ZQe5CZNOzWyzPSCn5a3c", req.query.text)
+);
+
+router.get("/audio-liam", (req, res) =>
+  generateAudio(res, "MF3mGyEYCl7XYWbV9V6O", req.query.text)
+);
+
+router.get("/audio-charlotte", (req, res) =>
+  generateAudio(res, "LcfcDJNUP1GQjkzn1xUU", req.query.text)
+);
+
+router.get("/audio-alice", (req, res) =>
+  generateAudio(res, "TxGEqnHWrfWFTfGW9XjX", req.query.text) // Alice usa mesmo ID da Sarah
+);
+
+router.get("/audio-matilda", (req, res) =>
+  generateAudio(res, "EXAVITQu4vr4xnSDxMaL", req.query.text)
+);
+
+router.get("/audio-will", (req, res) =>
+  generateAudio(res, "jsCqWAovK2LkecY7zXl4", req.query.text)
+);
+
+router.get("/audio-jessica", (req, res) =>
+  generateAudio(res, "z9fAnlkpzviPz146aGWa", req.query.text)
+);
+
+router.get("/audio-eric", (req, res) =>
+  generateAudio(res, "ErXwobaYiN019PkySvjV", req.query.text)
+);
+
+router.get("/audio-chris", (req, res) =>
+  generateAudio(res, "pNInz6obpgDQGcFmaJgB", req.query.text)
+);
+
+router.get("/audio-brian", (req, res) =>
+  generateAudio(res, "AZnzlk1XvdvUeBnXmlld", req.query.text)
+);
+
+router.get("/audio-daniel", (req, res) =>
+  generateAudio(res, "onwK4e9ZLuTAKqWW03F9", req.query.text)
+);
+
+router.get("/audio-lily", (req, res) =>
+  generateAudio(res, "flq6f7yk4E4fJM5XTYuZ", req.query.text)
+);
+
+router.get("/audio-bill", (req, res) =>
+  generateAudio(res, "bVMeCyTHy58xNoL34h3p", req.query.text)
+);
 
 const audio = [92, 128, 256, 320];
 const video = [144, 360, 480, 720, 1080];
@@ -509,6 +635,47 @@ router.get('/jogo/:slug', async (req, res) => {
   }
 });    
 
+
+router.get('/multicanais', async (req, res) => {
+  try {
+    const { data } = await axios.get('https://multicanais.wiki/api/real-games.php');
+
+    if (data?.success && Array.isArray(data.jogos)) {
+      let jogos = data.jogos.map(jogo => ({
+        titulo: `${jogo.time1} vs ${jogo.time2}`,
+        campeonato: jogo.campeonato,
+        horario: jogo.horario,
+        data: jogo.data,
+        link: `https://multicanais.wiki/assistir/${jogo.slug}`,
+        time1: jogo.time1,
+        time2: jogo.time2,
+        time1_foto: `https://multicanais.wiki/api/team-logo.php?team=${encodeURIComponent(jogo.time1)}`,
+        time2_foto: `https://multicanais.wiki/api/team-logo.php?team=${encodeURIComponent(jogo.time2)}`,
+        transmissoes: jogo.transmissao // opcional
+      }));
+
+      return res.json({
+        success: true,
+        total: jogos.length,
+        jogos
+      });
+    }
+
+    return res.status(502).json({
+      success: false,
+      jogos: [],
+      error: 'A resposta da API oficial veio em formato inesperado.'
+    });
+  } catch (err) {
+    console.error('❌ Erro ao consultar a API do Multicanais:', err.message);
+    return res.status(500).json({
+      success: false,
+      jogos: [],
+      error: 'Erro ao acessar a API real-games.php do Multicanais'
+    });
+  }
+});
+
 router.get('/futemax', async (req, res) => {
   const baseUrl = 'https://futemax.loan/';
 
@@ -597,7 +764,7 @@ router.get('/assistir', async (req, res) => {
   const query = req.query.oq;
   if (!query) return res.status(400).json({ error: 'Parâmetro "oq" é obrigatório.' });
 
-  const searchUrl = `https://multicanais.global/?s=${encodeURIComponent(query)}`;
+  const searchUrl = `https://multicanais.wiki/?s=${encodeURIComponent(query)}`;
   try {
     const searchRes = await axios.get(searchUrl, {
       headers: { 'User-Agent': 'Mozilla/5.0' }
@@ -641,7 +808,7 @@ router.get('/assistir2', async (req, res) => {
   const query = req.query.oq;
   if (!query) return res.status(400).json({ error: 'Parâmetro "oq" é obrigatório.' });
 
-  const searchUrl = `https://multicanais.global/?s=${encodeURIComponent(query)}`;
+  const searchUrl = `https://multicanais.wiki/?s=${encodeURIComponent(query)}`;
   try {
     const searchRes = await axios.get(searchUrl, {
       headers: { 'User-Agent': 'Mozilla/5.0' }
@@ -673,6 +840,191 @@ router.get('/assistir2', async (req, res) => {
   } catch (err) {
     console.error('Erro ao buscar:', err.message);
     res.status(500).json({ error: 'Erro ao buscar dados.' });
+  }
+});
+
+router.get('/fut/:slug', async (req, res) => {
+  if (!req.params.slug) return res.status(400).send('Slug inválido.');
+
+  try {
+    const { data } = await axios.get('https://world-ecletix.onrender.com/api/futopcoes?url=' + encodeURIComponent('https://multicanais.wiki/assistir/' + req.params.slug));
+
+    res.send(`
+      <!DOCTYPE html>
+      <html lang="pt-BR">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>${data.titulo || 'Transmissão ao Vivo'}</title>
+        <style>
+          body {
+            background: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            margin: 0;
+            text-align: center;
+          }
+          h1 {
+            margin-bottom: 10px;
+          }
+          .buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+          }
+          .buttons button {
+            background-color: #00ccff;
+            color: #000;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+          }
+          .buttons button:hover {
+            background-color: #0099cc;
+          }
+          iframe {
+            width: 100%;
+            height: 500px;
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 0 10px #00ccff55;
+            margin-top: 20px;
+          }
+          .desc {
+            color: #ccc;
+            font-size: 16px;
+            margin-bottom: 10px;
+          }
+          .info {
+            color: #00ccff;
+            font-size: 14px;
+            margin-bottom: 15px;
+          }
+        </style>
+      </head>
+      <body>
+        <h1>${data.titulo || 'Transmissão ao Vivo'}</h1>
+        ${data.campeonato ? `<div class="info">${data.campeonato}</div>` : ''}
+        ${data.dataHora ? `<div class="desc">${data.dataHora}</div>` : ''}
+        <div class="buttons">
+          ${data.players && data.players.length > 0 ? 
+            data.players.map((player, i) => `<button onclick="setIframe('${player.link}')">${player.nome}</button>`).join('') :
+            '<button onclick="setIframe(\'${data.iframeLink}\')">PLAYER PRINCIPAL</button>'
+          }
+        </div>
+        <iframe id="player" src="${data.iframeLink || (data.players && data.players.length > 0 ? data.players[0].link : '')}" allowfullscreen></iframe>
+
+        <script>
+          function setIframe(url) {
+            document.getElementById('player').src = url;
+          }
+        </script>
+      </body>
+      </html>
+    `);
+  } catch (e) {
+    console.error(e);
+    res.status(500).send('Erro ao carregar dados do jogo.');
+  }
+});
+
+
+router.get("/futopcoes", async (req, res) => {
+  const { url } = req.query;
+
+  if (!url) {
+    return res.status(400).json({ error: "Parâmetro \"url\" é obrigatório." });
+  }
+
+  try {
+    const response = await axios.get(url, {
+      headers: { "User-Agent": "Mozilla/5.0" }
+    });
+
+    const $ = cheerio.load(response.data);
+
+    // Extrair título do meta tag ou title
+    let titulo = $("meta[property=\"og:title\"]").attr("content") || 
+                 $("title").text().trim() || 
+                 $("h1").first().text().trim() || "";
+    
+    // Limpar o título removendo " - Ao Vivo - Multicanais" se existir
+    titulo = titulo.replace(/\s*-\s*Ao Vivo.*$/i, "").trim();
+
+    // Extrair imagem do meta tag Open Graph
+    const imagem = $("meta[property=\"og:image\"]").attr("content") || null;
+
+    // Extrair campeonato
+    const campeonato = $(".info-item i.fa-trophy")
+      .parent()
+      .find("span")
+      .text()
+      .trim() || 
+      $(".info-item i.fa-trophy")
+      .parent()
+      .text()
+      .replace(/\s+/g, " ")
+      .trim();
+
+    // Extrair data e hora
+    const dataHora = $(".info-item i.fa-calendar")
+      .parent()
+      .find("span")
+      .text()
+      .trim() ||
+      $(".info-item i.fa-calendar")
+      .parent()
+      .text()
+      .replace(/\s+/g, " ")
+      .trim();
+
+    // Extrair link do iframe principal
+    const iframeLink = $("#player-iframe").attr("src") || $("iframe").first().attr("src") || null;
+
+    // Extrair links dos players
+    const players = [];
+    
+    // Buscar por todos os botões dentro de .stream-controls
+    $(".stream-controls button").each((i, el) => {
+      const onclickAttr = $(el).attr("onclick") || "";
+      const nomeCompleto = $(el).text().trim();
+      
+      // Extrair o link usando regex simples
+      const match = onclickAttr.match(/https?:\/\/[^'",\s]+/);
+      
+      if (match && match[0]) {
+        // Limpar o nome removendo ícones
+        let nome = nomeCompleto.replace(/^\s*\S+\s+/, "").trim();
+        
+        players.push({
+          nome: nome,
+          link: match[0]
+        });
+      }
+    });
+
+    // Retornar todas as informações
+    res.json({
+      titulo: titulo,
+      imagem: imagem,
+      campeonato: campeonato,
+      dataHora: dataHora,
+      iframeLink: iframeLink,
+      players: players
+    });
+
+  } catch (error) {
+    console.error("❌ Erro ao processar URL:", error.message);
+    res.status(500).json({ 
+      error: "Erro interno do servidor",
+      details: error.message 
+    });
   }
 });
 
@@ -2159,7 +2511,7 @@ router.get('/likesff', async (req, res) => {
     }
 
     try {
-        const apiUrl = `https://kryptorfree.squareweb.app/like?uid=${encodeURIComponent(id)}&quantity=100&key=bykryptor`;
+        const apiUrl = `https://kryptor-doido.squareweb.app/like?uid=${encodeURIComponent(id)}&quantity=100&key=Kryptor`;
         const response = await axios.get(apiUrl);
         const data = response.data;
 
@@ -2170,7 +2522,7 @@ router.get('/likesff', async (req, res) => {
             "Nível": data.PlayerLevel,
             "Likes Antes": data.Likes_Antes,
             "Likes Depois": data.Likes_Depois,
-            "Likes Enviados": data.Likes_Enviados
+            "Likes Enviados": data.BotSend
         };
 
         res.json(formattedResponse);
@@ -2178,7 +2530,6 @@ router.get('/likesff', async (req, res) => {
         res.status(500).json({ error: 'Erro ao buscar informações de likes.', details: error.message });
     }
 });
-
 
 
 router.get('/likesff2', async (req, res) => {
@@ -3115,6 +3466,354 @@ router.get('/bobross', bobross)
 router.get('/karaba', bobross)
 router.get('/mms', mms)
 
+
+router.get('/welcome', async (req, res, next) => {
+if(!req.query.titulo) return res.json({ status: 404, error: 'Insira o parametro: titulo'})
+if(!req.query.perfil) return res.json({ status: 404, error: 'Insira o parametro: perfil'})
+if(!req.query.fundo) return res.json({ status: 404, error: 'Insira o parametro: fundo'})
+if(!req.query.desc) return res.json({ status: 404, error: 'Insira o parametro: desc'})
+let wewelcomeer = await new Canvasfy.WelcomeLeave()
+  .setAvatar(req.query.perfil)
+  .setBackground("image", req.query.fundo)
+  .setTitle(req.query.titulo)
+  .setDescription(req.query.desc)
+  .setBorder("#2a2e35")
+  .setAvatarBorder("#2a2e35")
+  .setOverlayOpacity(0.6)
+  .build();
+require('fs').writeFileSync(bla + '/assets/Tempo/welkom.png', wewelcomeer, 'base64')
+res.sendFile(bla + '/assets/Tempo/welkom.png')
+})
+
+router.get('/top', async (req, res, next) => {
+  var { message, fundo, foto1, foto2, foto3, foto4, foto5, foto6, foto7, foto8, foto9, foto10, nome1, nome2, nome3, nome4, nome5, nome6, nome7, nome8, nome9, nome10, xp1, xp2, xp3, xp4, xp5, xp6, xp7, xp8, xp9, xp10 } = req.query
+  database = [
+    {top: 1, avatar: foto1, tag: nome1, score: Number(xp1)},
+    {top: 2, avatar: foto2, tag: nome2, score: Number(xp2)},
+    {top: 3, avatar: foto3, tag: nome3, score: Number(xp3)},
+    {top: 4, avatar: foto4, tag: nome4, score: Number(xp4)},
+    {top: 5, avatar: foto5, tag: nome5, score: Number(xp5)},
+    {top: 6, avatar: foto6, tag: nome6, score: Number(xp6)},
+    {top: 7, avatar: foto7, tag: nome7, score: Number(xp7)},
+    {top: 8, avatar: foto8, tag: nome8, score: Number(xp8)},
+    {top: 9, avatar: foto9, tag: nome9, score: Number(xp9)},
+    {top: 10, avatar: foto10, tag: nome10, score: Number(xp10)}
+    ]
+  const top10 = await new Canvasfy.Top()
+  .setOpacity(0.6)
+  .setScoreMessage(message)
+  .setabbreviateNumber(true)
+  .setBackground("image", fundo)
+  .setColors({box: "#212121", username: "#ffffff", score: "#ffffff", firstRank: "#f7c716", secondRank: "#9e9e9e", thirdRank: "#94610f"})
+  .setUsersData(database)
+  .build();
+
+require('fs').writeFileSync(bla + '/assets/Tempo/welkom.png', top10, 'base64')
+res.sendFile(bla + '/assets/Tempo/welkom.png')
+})
+
+router.get('/level', async (req, res, next) => {
+var { foto, nome, expnow, expall, level, fundo } = req.query
+if(!foto) return res.json({message: "Faltando o parâmetro foto"})
+if(!nome) return res.json({message: "Faltando o parâmetro nome"})
+if(!expnow) return res.json({message: "Faltando o parâmetro XP atual"})
+if(!expall) return res.json({message: "Faltando o parâmetro XP total"})
+if(!level) return res.json({message: "Faltando o parâmetro level"})
+if(!fundo) return res.json({message: "Faltando o parâmetro fundo"})
+let rank1 = await new Canvasfy.Rank()
+    .setAvatar(foto)
+    .setBackground("image", fundo)
+    .setUsername(nome)
+    .setBorder("#fff")
+    .setBarColor("#00ffff")
+    .setStatus("online")
+    .setLevel(Number(level))
+    .setLevelColor({text:"#00ffff",number:"#fff"})
+    .setRank(Number(expnow), "XP")
+    .setRankColor({text:"#00ffff",number:"#fff"})
+    .setCurrentXp(Number(expnow))
+    .setRequiredXp(Number(expall))
+    .build();
+
+require('fs').writeFileSync(bla + '/assets/Tempo/welkom.png', rank1, 'base64')
+res.sendFile(bla + '/assets/Tempo/welkom.png')
+})
+
+router.get('/levelup', async (req, res, next) => {
+var { foto, nome, lvb, lva, fundo } = req.query
+if(!foto) return res.json({message: "Faltando o parâmetro foto"})
+if(!nome) return res.json({message: "Faltando o parâmetro nome"})
+if(!lvb) return res.json({message: "Faltando o parâmetro level before"})
+if(!lva) return res.json({message: "Faltando o parâmetro level after"})
+if(!fundo) return res.json({message: "Faltando o parâmetro fundo"})
+let lvup = await new Canvasfy.LevelUp()
+    .setAvatar(foto)
+    .setBackground("image", fundo)
+    .setUsername(nome)
+    .setBorder("#000000")
+    .setAvatarBorder("#00ffff")
+    .setOverlayOpacity(0.7)
+    .setLevels(Number(lvb), Number(lva))
+    .build();
+
+require('fs').writeFileSync(bla + '/assets/Tempo/welkom.png', lvup, 'base64')
+res.sendFile(bla + '/assets/Tempo/welkom.png')
+})
+
+router.get('/levelup2', async (req, res, next) => {
+var { foto, nome, lvb, lva, fundo } = req.query
+if(!foto) return res.json({message: "Faltando o parâmetro foto"})
+if(!nome) return res.json({message: "Faltando o parâmetro nome"})
+if(!lvb) return res.json({message: "Faltando o parâmetro level before"})
+if(!lva) return res.json({message: "Faltando o parâmetro level after"})
+if(!fundo) return res.json({message: "Faltando o parâmetro fundo"})
+let lvup2 = await new Canvasfy.LevelUp()
+    .setAvatar(foto)
+    .setBackground("image", fundo)
+    .setUsername(nome)
+    .setBorder("#000000")
+    .setAvatarBorder("#ff0000")
+    .setOverlayOpacity(0.7)
+    .setLevels(Number(lvb), Number(lva))
+    .build();
+
+require('fs').writeFileSync(bla + '/assets/Tempo/welkom.png', lvup2, 'base64')
+res.sendFile(bla + '/assets/Tempo/welkom.png')
+})
+
+router.get('/ship', async (req, res, next) => {
+var { foto1, foto2, fundo, mat } = req.query
+if(!foto1) return res.json({message: "Faltando o parâmetro foto 1"})
+if(!foto2) return res.json({message: "Faltando o parâmetro foto 2"})
+if(!mat) return res.json({message: "Faltando o parâmetro mat"})
+if(!fundo) return res.json({message: "Faltando o parâmetro fundo"})
+let shiplv = await new Canvasfy.Ship()
+    .setAvatars(foto1, foto2)
+    .setBackground("image", fundo)
+    .setBorder("#f0f0f0")
+    .setOverlayOpacity(0.2)
+    .setCustomNumber(Number(mat))
+    .build();
+
+require('fs').writeFileSync(bla + '/assets/Tempo/welkom.png', shiplv, 'base64')
+res.sendFile(bla + '/assets/Tempo/welkom.png')
+})
+
+router.get('/tweed', async (req, res, next) => {
+var { theme, name, username, verified, message, perfil } = req.query
+th = theme.toLowerCase()
+let tweedcv = await new Canvasfy.Tweet()
+.setTheme((th == `black` || th == `preto`) ? `dark` : (th == `white` || white == `branco`) ? `light` : `dim`)//"dark", "light" and "dim"
+.setUser({displayName: name, username: username})
+.setVerified(verified && (verified == `s` || verified == `y`) ? true : false)
+.setComment(message)
+.setAvatar(perfil)
+.build();
+
+require('fs').writeFileSync(bla + '/assets/Tempo/welkom.png', tweedcv, 'base64')
+res.sendFile(bla + '/assets/Tempo/welkom.png')
+})
+
+router.get('/welcome4', async (req, res, next) => {
+if (!req.query.titulo) return res.json({ status: 404, error: 'Insira o parametro: titulo'})
+if (!req.query.nome) return res.json({ status: 404, error: 'Insira o parametro: nome'})
+if (!req.query.perfil) return res.json({ status: 404, error: 'Insira o parametro: perfil'})
+if (!req.query.fundo) return res.json({ status: 404, error: 'Insira o parametro: fundo'})
+if (!req.query.grupo) return res.json({ status: 404, error: 'Insira o parametro: grupo'})
+
+let welcomer = await new canvasx.Welcome()
+.setUsername(req.query.nome)
+.setDiscriminator("2024")
+.setText("title", req.query.titulo)
+.setText("message", req.query.grupo)
+.setAvatar(req.query.perfil)
+.setColor('border', '#00100C')
+.setColor('username-box', '#00100C')
+.setColor('discriminator-box', '#00100C')
+.setColor('message-box', '#00100C')
+.setColor('title', '#00FFFF')
+.setBackground(req.query.fundo)
+.toAttachment()
+let base64 = `${welcomer.toBuffer().toString('base64')}`
+require('fs').writeFileSync(bla+'/assets/welkom.png', base64, 'base64')
+res.sendFile(bla+'/assets/welkom.png')
+})
+
+router.get('/welcome5', async (req, res, next) => {
+  var { nome, guilda, perfil, membro, avatar, fundo } = req.query
+  if(!nome) return res.json({resultado: "Faltando o parâmetro nome"})
+  if(!guilda) return res.json({resultado: "Faltando o parâmetro guilda"})
+  if(!perfil) return res.json({resultado: "Faltando o parâmetro perfil"})
+  if(!membro) return res.json({resultado: "Faltando o parâmetro membro"})
+  if(!avatar) return res.json({resultado: "Faltando o parâmetro avatar"})
+  if(!fundo) return res.json({resultado: "Faltando o parâmetro fundo"})
+  let imagejxr = await new JXR.Welcome()
+  .setUsername(nome)
+  .setGuildName(guilda)
+  .setGuildIcon(perfil)
+  .setMemberCount(`${membro}`)
+  .setAvatar(avatar)
+  .setBackground(fundo)
+  .toAttachment();
+
+  let datajxr = `${imagejxr.toBuffer().toString('base64')}`
+  require('fs').writeFileSync(bla+'/assets/welkom.png', datajxr, 'base64')
+  res.sendFile(bla+'/assets/welkom.png')
+})
+
+router.get('/welcome2', async (req, res, next) => {
+  var { nome, grupo, perfil, membro, fundo } = req.query
+  if(!nome) return res.json({resultado: "Faltando o parâmetro nome"})
+  if(!grupo) return res.json({resultado: "Faltando o parâmetro guilda"})
+  if(!perfil) return res.json({resultado: "Faltando o parâmetro perfil"})
+  if(!membro) return res.json({resultado: "Faltando o parâmetro membro"})
+  if(!fundo) return res.json({resultado: "Faltando o parâmetro fundo"})
+  var imagejxr2 = await new JXR.Welcome2()
+    .setAvatar(perfil)
+    .setUsername(nome)
+    .setBg(fundo)
+    .setGroupname(grupo)
+    .setMember(membro)
+    .toAttachment();
+
+  let datajxr2 = `${imagejxr2.toBuffer().toString('base64')}`
+  require('fs').writeFileSync(bla+'/assets/welkom.png', datajxr2, 'base64')
+  res.sendFile(bla+'/assets/welkom.png')
+})
+
+router.get('musicard-music', async (req, res, next) => {
+  var { nome, autor, tipo , opacity, thumb, progresso, start, end } = req.query
+  const cardmusic = new musicCard()
+        .setName(nome)
+        .setAuthor(autor)
+        .setColor("auto")
+        .setTheme(tipo == `space2` ? `space+` : tipo)
+        .setBrightness(Number(opacity))
+        .setThumbnail(thumb)
+        .setProgress(Number(progresso))
+        .setStartTime(start)
+        .setEndTime(end)
+        const cardBuffer = await cardmusic.build();
+        require('fs').writeFileSync(bla + '/assets/Tempo/welkom.png', cardBuffer, 'base64')
+        return res.sendFile(bla + '/assets/Tempo/welkom.png')
+})
+
+router.get('/level', async (req, res, next) => {
+  var { nome, level, brightness, perfil, rank, xpb, xpa, progresso } = req.query
+  const cardlvmb = new RankCard()
+  .setName(nome)
+  .setLevel(level)
+  .setColor("auto")
+  .setBrightness(Number(brightness))
+  .setAvatar(perfil)
+  .setProgress(Number(progresso))
+  .setRank(rank)
+  .setCurrentXp(xpb)
+  .setRequiredXp(xpa)
+  .setShowXp(true);
+        require('fs').writeFileSync(bla + '/assets/Tempo/welkom.png', (await cardlvmb.build()), 'base64')
+        return res.sendFile(bla + '/assets/Tempo/welkom.png')
+})
+
+router.get('/rank', async (req, res, next) => {
+  var { nome, level, stts, perfil, rank, xpb, xpa, fundo } = req.query
+  const rankcc = new canvacard.Rank()
+  .setAvatar(perfil)
+  .setBackground('IMAGE', fundo)
+  .setCurrentXP(Number(xpb), "#00BFFF")
+  .setRequiredXP(Number(xpa), "#00BFFF")
+  .setRank(Number(rank))
+  .setRankColor("#FFFFFF", "#00BFFF")
+  .setLevel(Number(level), `LEVEL `)
+  .setLevelColor("#FFFFFF", "#00BFFF")
+  .setStatus(stts, true)
+  .setOverlay("#23272A", 0.75, true)
+  .setProgressBar(["#1E90FF", "#00BFFF"], "GRADIENT")
+  .setProgressBarTrack("#000000")
+  .setUsername(nome)
+  .renderEmojis(true)
+
+        require('fs').writeFileSync(bla + '/assets/Tempo/welkom.png', (await rankcc.build()), 'base64')
+        return res.sendFile(bla + '/assets/Tempo/welkom.png')
+})
+
+router.get('/welcome3', async (req, res, next) => {
+  var { title, nome, hex, perfil, message, fundo } = req.query
+  const welcomifycard = new Card()
+    .setTitle(title)
+    .setName(nome)
+    .setAvatar(perfil)
+    .setMessage(message)
+    .setBackground(fundo)
+    .setColor(hex)
+
+        require('fs').writeFileSync(bla + '/assets/Tempo/welkom.png', (await welcomifycard.build()), 'base64')
+        return res.sendFile(bla + '/assets/Tempo/welkom.png')
+})
+
+router.get('/wppphoto', async (req, res, next) => {
+  var { nick, number, bio, ultimovisto, foto } = req.query
+  ABC = await fetchJson(`https://tohka.tech/api/canvas/perfilzap?nome=${nick}&numero=${number}&bio=${bio}&horas=${ultimovisto}&perfil=${foto}&apikey=matheuzinho2006`)
+
+        require('fs').writeFileSync(bla + '/assets/Tempo/welkom.png', ABC, 'base64')
+        return res.sendFile(bla + '/assets/Tempo/welkom.png')
+})
+
+router.get('/qrcode', async (req, res, next) => {
+var { texto, apikey } = req.query
+if(!texto || !apikey) return res.json({erro: "Link incompleto"})
+if(!key.map(i => i.apikey)?.includes(apikey))return res.sendFile(path.join(__dirname, "./public/", "apikey_invalida.html"))
+if(key[key.map(i => i?.apikey)?.indexOf(apikey)]?.request <= 0) return res.json({message: "Apikey inválida ou requests esgotados!"})
+RegisKey(apikey, req);
+try {
+    hasil = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${texto}`
+	  data = await fetch(hasil).then(v => v.buffer())   
+         await fs.writeFileSync(bla+'/assets/gostosinha.jpg', data)
+        res.sendFile(bla+'/assets/gostosinha.jpg') 
+} catch (error) {
+return res.status(404).json({resultado: `Erro`, status: 500});
+}
+}) 
+
+router.get('/leitor-qrcode', async(req, res, next) => {
+var { qrcode, apikey } = req.query
+if(!qrcode || !apikey) return res.json({erro: "Link incompleto"})
+if(!key.map(i => i.apikey)?.includes(apikey))return res.sendFile(path.join(__dirname, "./public/", "apikey_invalida.html"))
+if(key[key.map(i => i?.apikey)?.indexOf(apikey)]?.request <= 0) return res.json({message: "Apikey inválida ou requests esgotados!"})
+RegisKey(apikey, req);
+data = await fetchJson(`https://api.lolhuman.xyz/api/read-qr?apikey=GataDios&img=${qrcode}`)
+res.json({
+status: true,
+criador: `@m4thxyz_`,
+resultado: data.result
+})
+})
+
+router.get('/collage', async(req, res) => {
+var { url1, ulr2, url3, url4, url5 } = req.query
+try {
+var photo = {
+  width: '600px',
+  height: ['250px', '170px'],
+  layout: [1, 4],
+  photos: [
+    { source: url1 },
+    { source: url2 },
+    { source: url3 },
+    { source: url4 },
+    { source: url5 }
+  ],
+  showNumOfRemainingPhotos: true
+}
+data = await fetch(photo).then(v => v.buffer())
+await fs.writeFileSync(bla+'/assets/gostosinha.jpg', data)
+res.sendFile(bla+'/assets/gostosinha.jpg')
+} catch(e) {
+console.log(e)
+res.json({resultado: `Erro`})
+}
+})
+
 //fim do canvas
 // Rota GET para buscar resultados do Google (Raspagem)
 router.get('/google', async (req, res) => {
@@ -3241,28 +3940,98 @@ router.get('/guia-series', async (req, res) => {
     }
 });
 
+router.get('/calendario', async (req, res) => { try { const { data } = await axios.get('https://multicanais.wiki/calendario'); const $ = cheerio.load(data);
+
+const dias = [];
+
+$('.section').each((_, el) => {
+  const tituloCompleto = $(el).find('.section-title').text().trim();
+  const [titulo, dia] = tituloCompleto.split(' - ');
+  const total_jogos = parseInt($(el).find('.section-badge').text()) || 0;
+
+  const jogos = [];
+
+  $(el).find('.game-card').each((_, jogoEl) => {
+    const link = $(jogoEl).attr('href');
+    const campeonato = $(jogoEl).find('.championship').text().trim();
+    const horario = $(jogoEl).find('.time-badge').text().trim();
+
+    const time1 = $(jogoEl).find('.team').first();
+    const time2 = $(jogoEl).find('.team').last();
+
+    const time1_nome = time1.find('.team-name').text().trim();
+    const time2_nome = time2.find('.team-name').text().trim();
+    const time1_img = time1.find('img').attr('src')?.startsWith('http') ? time1.find('img').attr('src') : `https://multicanais.wiki/${time1.find('img').attr('src')}`;
+    const time2_img = time2.find('img').attr('src')?.startsWith('http') ? time2.find('img').attr('src') : `https://multicanais.wiki/${time2.find('img').attr('src')}`;
+
+    const transmissoes = $(jogoEl)
+      .find('.transmission')
+      .text()
+      .replace(/^[^:]*?:?\s*/, '')
+      .split(',')
+      .map(t => t.trim())
+      .filter(t => t);
+
+    jogos.push({
+      titulo: `${time1_nome} x ${time2_nome}`,
+      link: `https://multicanais.wiki${link}`,
+      horario,
+      campeonato,
+      time1: time1_nome,
+      time1_img,
+      time2: time2_nome,
+      time2_img,
+      transmissoes
+    });
+  });
+
+  dias.push({ titulo, dia, total_jogos, jogos });
+});
+
+res.json({ success: true, dias });
+
+} catch (error) { console.error('Erro ao obter calendário:', error.message); res.status(500).json({ success: false, message: 'Erro ao obter o calendário.' }); } });
+
 router.get('/jogosdodia', async (req, res) => {
   try {
-    const { data } = await axios.get('https://multicanais.global/');
-    const $ = cheerio.load(data);
-    const jogos = [];
+    const { data } = await axios.get('https://multicanais.wiki/api/real-games.php');
 
-    $('.entry-image a').each((index, element) => {
-      const link = $(element).attr('href');
-      const titulo = $(element).attr('title');
-      const img = $(element).find('img').attr('src');
+    if (data?.success && Array.isArray(data.jogos)) {
+      const jogosComExtras = data.jogos.map(jogo => ({
+        titulo: `${jogo.time1} vs ${jogo.time2}`,
+        campeonato: jogo.campeonato,
+        data: jogo.data,
+        horario: jogo.horario,
+        link: `https://multicanais.wiki/assistir/${jogo.slug}`,
+        time1: jogo.time1,
+        time2: jogo.time2,
+        time1_foto: `https://multicanais.wiki/api/team-logo.php?team=${encodeURIComponent(jogo.time1)}`,
+        time2_foto: `https://multicanais.wiki/api/team-logo.php?team=${encodeURIComponent(jogo.time2)}`,
+        transmissoes: jogo.transmissao
+      }));
 
-      if (link && titulo && img) {
-        jogos.push({ Título: titulo, Img: img, Link: link });
-      }
+      return res.json({
+        success: true,
+        total: jogosComExtras.length,
+        jogos: jogosComExtras
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      jogos: [],
+      error: 'Formato inesperado da API de origem'
     });
-
-    res.json(jogos);
   } catch (error) {
-    console.error(error);
-    res.status(500).send('Erro ao processar a solicitação.');
+    console.error('❌ Erro na rota /jogosdodia:', error.message);
+    return res.status(500).json({
+      success: false,
+      jogos: [],
+      error: 'Erro ao acessar a API do Multicanais'
+    });
   }
 });
+
 router.get('/guia-esportes', async (req, res) => {
     try {
         const { data } = await axios.get('https://meuguia.tv/programacao/categoria/Esportes');
@@ -4166,7 +4935,7 @@ router.get('/prox-jogos', async (req, res) => {
 
 router.get('/ufc', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.global/jogo-ao-vivo/ufc-ao-vivo/';
+    const siteUrl = 'https://multicanais.wiki/jogo-ao-vivo/ufc-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -4197,7 +4966,7 @@ router.get('/ufc', async (req, res) => {
 // Rota para a API bbb25
 router.get('/bbb25', (req, res) => {
   const resultado = [
-    "https://multicanais.global/assistir-bbb-ao-vivo-online-24-horas/",
+    "https://multicanais.wiki/assistir-bbb-ao-vivo-online-24-horas/",
     "https://globoplay.gratis/"
   ];
   
@@ -4206,7 +4975,7 @@ router.get('/bbb25', (req, res) => {
 
 router.get('/basquete', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.global/categoria/jogo-ao-vivo/nba-ao-vivo/';
+    const siteUrl = 'https://multicanais.wiki/categoria/jogo-ao-vivo/nba-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -4238,7 +5007,7 @@ router.get('/basquete', async (req, res) => {
 
 router.get('/nfl', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.global/jogo-ao-vivo/nfl-ao-vivo/';
+    const siteUrl = 'https://multicanais.wiki/jogo-ao-vivo/nfl-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -4269,7 +5038,7 @@ router.get('/nfl', async (req, res) => {
 
  router.get('/ucl', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.global/jogo-ao-vivo/champions-league-ao-vivo/';
+    const siteUrl = 'https://multicanais.wiki/jogo-ao-vivo/champions-league-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -4300,7 +5069,7 @@ router.get('/nfl', async (req, res) => {
 
 router.get('/brasileirao', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.global/jogo-ao-vivo/brasileiro-ao-vivo/';
+    const siteUrl = 'https://multicanais.wiki/jogo-ao-vivo/brasileiro-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -4330,7 +5099,7 @@ router.get('/brasileirao', async (req, res) => {
 });
 router.get('/tv', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.global/jogo-ao-vivo/tv-online-ao-vivo/';
+    const siteUrl = 'https://multicanais.wiki/jogo-ao-vivo/tv-online-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -4360,7 +5129,7 @@ router.get('/tv', async (req, res) => {
 });
 router.get('/esportedodia', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.global/jogo-ao-vivo/canais-de-esportes/';
+    const siteUrl = 'https://multicanais.wiki/jogo-ao-vivo/canais-de-esportes/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -4391,7 +5160,7 @@ router.get('/esportedodia', async (req, res) => {
 });
 router.get('/futebol', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.global/jogo-ao-vivo/futebol-ao-vivo/';
+    const siteUrl = 'https://multicanais.wiki/jogo-ao-vivo/futebol-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -7064,7 +7833,7 @@ router.get('/netersg', async (req, res) => {
         res.status(500).json({ status: false, mensagem: "Erro interno ao processar a solicitação." });
     }
 });
-//gerar imagem
+//gerar imagem by Redzin
 
 // Rota para gerar a imagem usando um parâmetro de consulta
 router.get('/gerar-imagem', async (req, res) => {
@@ -7112,7 +7881,7 @@ router.get('/gerar-imagem', async (req, res) => {
 
 //fim 
 
-// play e playvideo
+// play e playvideo by Redzin
 
 const got = require('got');
 const ytsr = require('yt-search');
@@ -8331,7 +9100,7 @@ router.get('/pohub', async (req, res) => {
 
     try {
         // Verifique se `texto2` é opcional e trate isso conforme necessário
-        const data = await new Maker().Ephoto360("https://en.ephoto360.com/create-logo-3d-style-pohub-online-427.html", [texto, texto2]);
+        const data = await new Maker().Ephoto360("https://en.ephoto360.com/create-pornhub-style-logos-online-free-549.html", [texto, texto2]);
         res.json({
             status: true,
             resultado: data
@@ -9850,7 +10619,7 @@ router.get('/pin/video', (req, res) => {
 
 const apiId = 21844566;
 const apiHash = 'ff82e94bfed22534a083c3aee236761a';
-const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBu0DVFJG4JmuG89qGV780+GhmzJ0tdlbwmiXLXFuS6RxzpOIFJ/WgkFbJ0ttyqAfWpJjx7tqDCeYEutYqn4WyleKT0HpVLUoEvbk3mpfuHSSynCuuG9NBHM81AOFDeZXogpefO8LCh1O/ViH4JhI5qr+gnkCs+MYsuirXN5tsmTAgjrZfaTaz43EAM4J4TeMuhMcYuRxhkmkwi/q9CPFujM1E9a7a+A37MLoQh9QvhH8YMQH1/34e5UkL68krGIHZRmqPRZG8bqh4OVZFMfTJIft96Fg7WnRiQ2vn6kAjUb61u+Th2gYNLrw/gMD5R37eL0DqNVilNMrNXomCIKQITPM=');
+const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBu6yFmTUXXtWU7MwtoML+C+0NXKaV6mAyPjPaVfyne9HaRApFv31s5s+LkEPj3BbRPRZEYUd2+25sZ1dFd/dmWiyqEoyMJOktXbiYvv7QB5ptTihuXqLCzsby+SMbh0JJ+5Gkk0DqpGfmLF7HftFErBMlLPpqFLFFapzKlm6cIFNyyZ+fgXMajDVYL5N/HFIPDQvkq3sTQ2d+D7Sa67kbqNQzzsVk5E4fpCPp+LkM0Xy/yP1J57PyZ++tRd5waqTTT9g+JPxKWKCEaaCS9TyBl3+ll+eRsV+T6Ad1npdwDwfWN9I52mTa+sWg6jBcyLB7BMtQOHXQxs4vD1MppFNYsKQ=');
 const grupoChatId = -1002208588695;
 
 const rl = readline.createInterface({
@@ -10208,77 +10977,273 @@ console.log(`Mensagem de consulta enviada para o grupo ${grupoChatId}: /${type.t
   }
 });
 
+const idDoGrupoDeLikes = -1002257792086;
+
 router.get('/likes', async (req, res) => {
-  try {
-    const id = req.query.id;
-    if (!id) {
-      console.log('Parâmetro id ausente na requisição');
-      return res.json({ status: false, resultado: 'Cadê o parâmetro id?' });
-    }
+  const id = req.query.id;
+  const region = req.query.region || 'br';
 
-    console.log(`[LIKE]: ID = ${id}`);
+  if (!id) {
+    console.log('❌ Parâmetro id ausente');
+    return res.json({ status: false, resultado: 'Cadê o parâmetro id?' });
+  }
 
+  console.log(`📩 Enviando likes para ID = ${id}`);
+
+  const getUserInfo = async () => {
     try {
-      // Envia a mensagem para o grupo com o comando de like
-      await client.sendMessage(grupoChatId, { message: `/like ${id}` });
-      console.log(`Mensagem de like enviada para o grupo ${grupoChatId}: /like ${id}`);
-
-      const handleResponse = new Promise((resolve, reject) => {
-        const eventHandler = async (event) => {
-          try {
-            const message = event.message;
-            console.log('Nova mensagem recebida:', message);
-
-            if (message && message.message) {
-              const resposta = message.message;
-
-              // Verifica se o like já foi enviado recentemente
-              if (resposta.includes("JÁ RECEBEU LIKES")) {
-                console.log('Like já enviado recentemente:', resposta);
-                resolve({ status: false, resultado: resposta });
-              } 
-              // Ignora mensagens do tipo "LIKES SENDO ENVIADOS PARA A CONTA ..."
-              else if (resposta.includes("/")) {
-                console.log('Mensagem de envio de likes ignorada.');
-                return;
-              } 
-              else {
-                console.log('Resposta inesperada:', resposta);
-                resolve({ status: true, resultado: resposta });
-              }
-
-              client.removeEventHandler(eventHandler);
-            }
-          } catch (err) {
-            console.error('Erro ao processar nova mensagem:', err);
-          }
-        };
-
-        client.addEventHandler(eventHandler, new NewMessage({}));
-
-        setTimeout(() => {
-          reject({ status: false, resultado: 'Tempo de espera esgotado' });
-          client.removeEventHandler(eventHandler);
-        }, 30000); // Tempo máximo de espera: 30 segundos
-      });
-
-      try {
-        const resultado = await handleResponse;
-        console.log('Resposta recebida antes do timeout:', resultado);
-        return res.json(resultado);
-      } catch (error) {
-        console.error('Erro ao receber a resposta:', error);
-        return res.json({ status: false, resultado: 'Não foi possível registrar o like.' });
-      }
-    } catch (e) {
-      console.error('Erro ao enviar a mensagem de like ou processar a resposta:', e);
-      if (!res.headersSent) {
-        return res.json({ status: false, resultado: 'Erro ao tentar registrar o like.' });
-      }
+      const { data } = await axios.get(`https://system.ffgarena.cloud/api/info_avatar?uid=${id}&region=${region}`);
+      return {
+        liked: data.basicInfo?.liked || 0,
+        nickname: data.basicInfo?.nickname || 'Desconhecido',
+        level: data.basicInfo?.level || 0,
+        avatar: data.avatars || ''
+      };
+    } catch (err) {
+      console.error('❌ Erro na API:', err.message);
+      return null;
     }
+  };
+
+  const infoAntes = await getUserInfo();
+  if (!infoAntes) {
+    return res.json({ status: false, resultado: 'Erro ao consultar informações do jogador antes do envio.' });
+  }
+
+  try {
+    await client.sendMessage(idDoGrupoDeLikes, { message: `/like ${id}` });
+    console.log(`✅ Mensagem enviada: /like ${id}`);
+
+    let infoDepois = null;
+
+    for (let i = 0; i < 10; i++) {
+      await new Promise(resolve => setTimeout(resolve, 2000)); // espera 2 segundos
+      infoDepois = await getUserInfo();
+
+      if (!infoDepois) {
+        return res.json({ status: false, resultado: 'Erro ao consultar informações após envio.' });
+      }
+
+      if (infoDepois.liked > infoAntes.liked) break;
+    }
+
+    return res.json({
+      status: true,
+      resultado: {
+        likesAntes: infoAntes.liked,
+        likesDepois: infoDepois.liked,
+        likesGanhos: infoDepois.liked - infoAntes.liked,
+        nick: infoDepois.nickname,
+        nivel: infoDepois.level,
+        avatar: infoDepois.avatar,
+        região: region
+      }
+    });
+
   } catch (err) {
-    console.error('Erro na rota /likes:', err);
-    return res.json({ status: false, resultado: 'Erro interno do servidor.' });
+    console.error('❌ Erro na rota /likes:', err.message);
+    return res.json({ status: false, resultado: 'Erro ao tentar registrar os likes.' });
+  }
+});
+
+router.get('/calcularxp', (req, res) => {
+  const tabelaXP = [
+    0, 48, 202, 544, 1012, 1844, 2792, 3800, 4870, 6004,
+    7192, 8448, 9760, 11140, 12566, 14060, 15610, 17224, 18902, 20632,
+    22424, 24278, 26192, 28166, 30200, 32294, 34448, 37804, 41274, 44870,
+    48582, 53394, 58566, 64096, 69994, 76260, 83506, 91128, 99322, 108092,
+    120144, 133266, 147472, 162760, 179126, 196572, 215368, 235316, 257010, 279860,
+    304056, 348318, 394982, 444044, 495508, 549364, 633756, 721744, 813336, 908522,
+    1041438, 1180352, 1325266, 1476184, 1634300, 1840946, 2056594, 2281242, 2514880, 2757530,
+    3059506, 3372284, 3699456, 4041030, 4397002, 4829104, 5282204, 5756304, 6251404, 6767502,
+    7381324, 8043154, 8752982, 9510808, 10316638, 11277190, 12291748, 13360304, 14482858, 15659418,
+    17026708, 18453990, 19941280, 21488570, 23095858, 24763138, 26490428, 28277708, 30124996, 32032284
+  ];
+
+  const nivel = Number(req.query.nivel);
+
+  if (isNaN(nivel) || nivel < 1 || nivel > 100) {
+    return res.status(400).json({ error: 'Nível inválido. Informe um valor entre 1 e 100. Exemplo: /calcularxp?nivel=15' });
+  }
+
+  const xpNecessario = tabelaXP[nivel - 1]; // índice 0 = nível 1
+
+  return res.json({
+    nivel,
+    xpNecessario
+  });
+});
+
+// /xpff
+router.get('/xpff', async (req, res) => {
+  const id = req.query.id?.trim();
+  console.log(`[XPFF] Recebido id: ${id}`);
+
+  if (!id || !/^\d+$/.test(id)) {
+    console.log('[XPFF] ID inválido');
+    return res.status(400).json({ error: 'ID inválido. Exemplo: /xpff?id=123456' });
+  }
+
+  try {
+    const { data } = await axios.post(
+      'https://freefirejornal.com/ffstats/addxp.php',
+      new URLSearchParams({ idjogador: id, turnstileToken: '' }).toString(),
+      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+    );
+
+    console.log('[XPFF] Dados recebidos:', data);
+
+    if (data.erro) {
+      console.log('[XPFF] Erro retornado da API:', data.erro);
+      return res.status(400).json({ error: data.erro });
+    }
+    if (data.sucesso) {
+      console.log('[XPFF] Sucesso:', data.sucesso);
+      return res.json({ success: true, message: data.sucesso });
+    }
+
+    res.json({
+      success: true,
+      nickname: data.nickname,
+      regiao: data.regiao,
+      xp_atual: data.xp_atual,
+      nivel_atual: data.nivel_atual,
+      xp_falta_proximo: data.xp_falta_proximo,
+      xp_falta_nivel_100: data.xp_falta_nivel_100,
+      perfil: data.urlperfil
+    });
+  } catch (err) {
+    console.error('[XPFF] Erro ao buscar XP/Nível:', err);
+    res.status(500).json({ error: 'Erro ao buscar XP/Nível.' });
+  }
+});
+
+router.get('/datadaconta', async (req, res) => {
+  const id = req.query.id?.trim();
+  if (!id || !/^\d+$/.test(id)) {
+    return res.status(400).json({ error: 'ID inválido. Exemplo: /datadaconta?id=123456' });
+  }
+
+  try {
+    const { data } = await axios.post(
+      'https://freefirejornal.com/freefire/datacriacao/checknovo2025.php',
+      new URLSearchParams({ idjogador: id, lang: 'pt-br' }).toString(),
+      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+    );
+
+    if (!data.datadaconta) {
+      return res.status(404).json({ error: 'Nenhuma informação encontrada.' });
+    }
+
+    res.json({
+      success: true,
+      id,
+      datacriacao: data.datadaconta,
+      perfil: data.profileurl || null
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao buscar data da conta.' });
+  }
+});
+
+
+// /visitasff
+router.get('/visitasff', async (req, res) => {
+  const uid = req.query.id?.trim();
+  console.log(`[VisitasFF] Recebido id: ${uid}`);
+
+  if (!uid || !/^\d+$/.test(uid)) {
+    return res.status(400).json({ error: 'ID inválido. Exemplo: /visitasff?id=123456' });
+  }
+
+  try {
+    // Inicia o envio de visitas
+    const { data } = await axios.post('https://freefirejornal.com/freefire/visitas/ganhar.php', 
+      { id: uid }, 
+      { headers: { 'Content-Type': 'application/json' } }
+    );
+
+    if (!data.requestId) {
+      return res.status(500).json({ error: 'ID do pedido não retornado.' });
+    }
+
+    const requestId = data.requestId;
+
+    // Função para checar status com polling
+    async function checkStatus(elapsed = 0) {
+      if (elapsed >= 120) {
+        throw new Error('Tempo esgotado! Tente novamente mais tarde.');
+      }
+
+      const statusRes = await axios.post(
+        `https://freefirejornal.com/freefire/visitas/checar.php?time=${Date.now()}`,
+        { requestId },
+        { headers: { 'Content-Type': 'application/json' } }
+      );
+
+      const statusData = statusRes.data;
+      console.log(`[VisitasFF] Status:`, statusData);
+
+      if (statusData.error || statusData.status === '404') {
+        throw new Error('Conta não encontrada. Verifique o ID e tente novamente.');
+      }
+
+      if (statusData.status === 'completed') {
+        return true;
+      }
+
+      // Ainda processando, espera 3s e tenta de novo
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      return checkStatus(elapsed + 3);
+    }
+
+    await checkStatus();
+
+    return res.json({
+      success: true,
+      message: '✅ Visitas enviadas com sucesso! Receba visitas novamente em 10 minutos!'
+    });
+
+  } catch (err) {
+    console.error(`[VisitasFF] Erro:`, err.message || err);
+    return res.status(500).json({ error: err.message || 'Erro ao processar visitas.' });
+  }
+});
+
+// /primeff
+router.get('/primeff', async (req, res) => {
+  const id = req.query.id?.trim();
+  console.log(`[PrimeFF] Recebido id: ${id}`);
+
+  if (!id || !/^\d+$/.test(id)) {
+    console.log('[PrimeFF] ID inválido');
+    return res.status(400).json({ error: 'ID inválido. Exemplo: /primeff?id=123456' });
+  }
+
+  try {
+    const { data } = await axios.post(
+      'https://freefirejornal.com/ffstats/prime.php',
+      new URLSearchParams({ idjogador: id }).toString(),
+      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+    );
+
+    console.log('[PrimeFF] Dados recebidos:', data);
+
+    if (data.error) {
+      console.log('[PrimeFF] Erro retornado da API:', data.error);
+      return res.status(400).json({ error: data.error });
+    }
+
+    // Remove o campo ultima_vez da resposta
+    res.json({
+      success: true,
+      id,
+      addconta: data.addconta || null,
+      privilegios: Array.isArray(data.privilegios) ? data.privilegios : []
+    });
+  } catch (err) {
+    console.error('[PrimeFF] Erro ao verificar status Prime:', err);
+    res.status(500).json({ error: 'Erro ao verificar status Prime.' });
   }
 });
 
@@ -10310,7 +11275,7 @@ router.get('/infoff', async (req, res) => {
 });
 
 
-router.get('/infoff2', async (req, res) => { try { const id = req.query.id; if (!id) { console.log('Parâmetro id ausente na requisição'); return res.json({ status: false, resultado: 'Cadê o parâmetro id?' }); }
+router.get('/infoff3', async (req, res) => { try { const id = req.query.id; if (!id) { console.log('Parâmetro id ausente na requisição'); return res.json({ status: false, resultado: 'Cadê o parâmetro id?' }); }
 
 console.log(`[INFOID]: ID = ${id}`);
 
@@ -10361,7 +11326,7 @@ try {
 } catch (err) { console.error('Erro na rota /infoid:', err); return res.json({ status: false, resultado: 'Erro interno do servidor.' }); } });
 
 
-router.get('/visitasff', async (req, res) => { try { const id = req.query.id; if (!id) { console.log('Parâmetro id ausente na requisição'); return res.json({ status: false, resultado: 'Cadê o parâmetro id?' }); }
+router.get('/visitasff2', async (req, res) => { try { const id = req.query.id; if (!id) { console.log('Parâmetro id ausente na requisição'); return res.json({ status: false, resultado: 'Cadê o parâmetro id?' }); }
 
 console.log(`[VISITAS]: ID = ${id}`);
 
@@ -10422,6 +11387,29 @@ try {
 
 } catch (err) { console.error('Erro na rota /visitasid:', err); return res.json({ status: false, resultado: 'Erro interno do servidor.' }); } });
 
+
+
+// Rota /infoff
+router.get('/infoff2', async (req, res) => {
+  const id = req.query.id;
+
+  if (!id) {
+    return res.status(400).json({ error: 'Parâmetro "id" é obrigatório' });
+  }
+
+  try {
+    const response = await axios.get(`https://kryptorinfo.squareweb.app/api/player_info`, {
+      params: {
+        uid: id,
+        region: 'br'
+      }
+    });
+
+    res.json(response.data);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao buscar dados da API externa', details: error.message });
+  }
+});
 
 
 // Função para buscar wallpapers

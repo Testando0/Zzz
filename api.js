@@ -15,7 +15,7 @@ const search = require('yt-search');
 const ytSearch = require('yt-search');
 const { createDecipheriv } = require('crypto');
 const yt = require('@distube/ytdl-core');
-const criador = 'Redzin';
+const criador = 'Redzin;
 const { exec } = require('child_process');
 const sharp = require('sharp'); // Biblioteca para conversão WebP
 const cors = require('cors');
@@ -638,7 +638,7 @@ router.get('/jogo/:slug', async (req, res) => {
 
 router.get('/multicanais', async (req, res) => {
   try {
-    const { data } = await axios.get('https://multicanais.wiki/api/real-games.php');
+    const { data } = await axios.get('https://multicanais.forum/api/real-games.php');
 
     if (data?.success && Array.isArray(data.jogos)) {
       let jogos = data.jogos.map(jogo => ({
@@ -646,11 +646,11 @@ router.get('/multicanais', async (req, res) => {
         campeonato: jogo.campeonato,
         horario: jogo.horario,
         data: jogo.data,
-        link: `https://multicanais.wiki/assistir/${jogo.slug}`,
+        link: `https://multicanais.forum/assistir/${jogo.slug}`,
         time1: jogo.time1,
         time2: jogo.time2,
-        time1_foto: `https://multicanais.wiki/api/team-logo.php?team=${encodeURIComponent(jogo.time1)}`,
-        time2_foto: `https://multicanais.wiki/api/team-logo.php?team=${encodeURIComponent(jogo.time2)}`,
+        time1_foto: `https://multicanais.forum/api/team-logo.php?team=${encodeURIComponent(jogo.time1)}`,
+        time2_foto: `https://multicanais.forum/api/team-logo.php?team=${encodeURIComponent(jogo.time2)}`,
         transmissoes: jogo.transmissao // opcional
       }));
 
@@ -764,7 +764,7 @@ router.get('/assistir', async (req, res) => {
   const query = req.query.oq;
   if (!query) return res.status(400).json({ error: 'Parâmetro "oq" é obrigatório.' });
 
-  const searchUrl = `https://multicanais.wiki/?s=${encodeURIComponent(query)}`;
+  const searchUrl = `https://multicanais.forum/?s=${encodeURIComponent(query)}`;
   try {
     const searchRes = await axios.get(searchUrl, {
       headers: { 'User-Agent': 'Mozilla/5.0' }
@@ -808,7 +808,7 @@ router.get('/assistir2', async (req, res) => {
   const query = req.query.oq;
   if (!query) return res.status(400).json({ error: 'Parâmetro "oq" é obrigatório.' });
 
-  const searchUrl = `https://multicanais.wiki/?s=${encodeURIComponent(query)}`;
+  const searchUrl = `https://multicanais.forum/?s=${encodeURIComponent(query)}`;
   try {
     const searchRes = await axios.get(searchUrl, {
       headers: { 'User-Agent': 'Mozilla/5.0' }
@@ -847,7 +847,7 @@ router.get('/fut/:slug', async (req, res) => {
   if (!req.params.slug) return res.status(400).send('Slug inválido.');
 
   try {
-    const { data } = await axios.get('https://world-ecletix.onrender.com/api/futopcoes?url=' + encodeURIComponent('https://multicanais.wiki/assistir/' + req.params.slug));
+    const { data } = await axios.get('https://world-ecletix.onrender.com/api/futopcoes?url=' + encodeURIComponent(req.params.slug));
 
     res.send(`
       <!DOCTYPE html>
@@ -3940,7 +3940,7 @@ router.get('/guia-series', async (req, res) => {
     }
 });
 
-router.get('/calendario', async (req, res) => { try { const { data } = await axios.get('https://multicanais.wiki/calendario'); const $ = cheerio.load(data);
+router.get('/calendario', async (req, res) => { try { const { data } = await axios.get('https://multicanais.forum/calendario'); const $ = cheerio.load(data);
 
 const dias = [];
 
@@ -3961,8 +3961,8 @@ $('.section').each((_, el) => {
 
     const time1_nome = time1.find('.team-name').text().trim();
     const time2_nome = time2.find('.team-name').text().trim();
-    const time1_img = time1.find('img').attr('src')?.startsWith('http') ? time1.find('img').attr('src') : `https://multicanais.wiki/${time1.find('img').attr('src')}`;
-    const time2_img = time2.find('img').attr('src')?.startsWith('http') ? time2.find('img').attr('src') : `https://multicanais.wiki/${time2.find('img').attr('src')}`;
+    const time1_img = time1.find('img').attr('src')?.startsWith('http') ? time1.find('img').attr('src') : `https://multicanais.forum/${time1.find('img').attr('src')}`;
+    const time2_img = time2.find('img').attr('src')?.startsWith('http') ? time2.find('img').attr('src') : `https://multicanais.forum/${time2.find('img').attr('src')}`;
 
     const transmissoes = $(jogoEl)
       .find('.transmission')
@@ -3974,7 +3974,7 @@ $('.section').each((_, el) => {
 
     jogos.push({
       titulo: `${time1_nome} x ${time2_nome}`,
-      link: `https://multicanais.wiki${link}`,
+      link: `https://multicanais.forum${link}`,
       horario,
       campeonato,
       time1: time1_nome,
@@ -3994,7 +3994,7 @@ res.json({ success: true, dias });
 
 router.get('/jogosdodia', async (req, res) => {
   try {
-    const { data } = await axios.get('https://multicanais.wiki/api/real-games.php');
+    const { data } = await axios.get('https://multicanais.forum/api/real-games.php');
 
     if (data?.success && Array.isArray(data.jogos)) {
       const jogosComExtras = data.jogos.map(jogo => ({
@@ -4002,11 +4002,11 @@ router.get('/jogosdodia', async (req, res) => {
         campeonato: jogo.campeonato,
         data: jogo.data,
         horario: jogo.horario,
-        link: `https://multicanais.wiki/assistir/${jogo.slug}`,
+        link: `https://multicanais.forum/assistir/${jogo.slug}`,
         time1: jogo.time1,
         time2: jogo.time2,
-        time1_foto: `https://multicanais.wiki/api/team-logo.php?team=${encodeURIComponent(jogo.time1)}`,
-        time2_foto: `https://multicanais.wiki/api/team-logo.php?team=${encodeURIComponent(jogo.time2)}`,
+        time1_foto: `https://multicanais.forum/api/team-logo.php?team=${encodeURIComponent(jogo.time1)}`,
+        time2_foto: `https://multicanais.forum/api/team-logo.php?team=${encodeURIComponent(jogo.time2)}`,
         transmissoes: jogo.transmissao
       }));
 
@@ -4935,7 +4935,7 @@ router.get('/prox-jogos', async (req, res) => {
 
 router.get('/ufc', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.wiki/jogo-ao-vivo/ufc-ao-vivo/';
+    const siteUrl = 'https://multicanais.forum/jogo-ao-vivo/ufc-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -4966,7 +4966,7 @@ router.get('/ufc', async (req, res) => {
 // Rota para a API bbb25
 router.get('/bbb25', (req, res) => {
   const resultado = [
-    "https://multicanais.wiki/assistir-bbb-ao-vivo-online-24-horas/",
+    "https://multicanais.forum/assistir-bbb-ao-vivo-online-24-horas/",
     "https://globoplay.gratis/"
   ];
   
@@ -4975,7 +4975,7 @@ router.get('/bbb25', (req, res) => {
 
 router.get('/basquete', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.wiki/categoria/jogo-ao-vivo/nba-ao-vivo/';
+    const siteUrl = 'https://multicanais.forum/categoria/jogo-ao-vivo/nba-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -5007,7 +5007,7 @@ router.get('/basquete', async (req, res) => {
 
 router.get('/nfl', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.wiki/jogo-ao-vivo/nfl-ao-vivo/';
+    const siteUrl = 'https://multicanais.forum/jogo-ao-vivo/nfl-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -5038,7 +5038,7 @@ router.get('/nfl', async (req, res) => {
 
  router.get('/ucl', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.wiki/jogo-ao-vivo/champions-league-ao-vivo/';
+    const siteUrl = 'https://multicanais.forum/jogo-ao-vivo/champions-league-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -5069,7 +5069,7 @@ router.get('/nfl', async (req, res) => {
 
 router.get('/brasileirao', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.wiki/jogo-ao-vivo/brasileiro-ao-vivo/';
+    const siteUrl = 'https://multicanais.forum/jogo-ao-vivo/brasileiro-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -5099,7 +5099,7 @@ router.get('/brasileirao', async (req, res) => {
 });
 router.get('/tv', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.wiki/jogo-ao-vivo/tv-online-ao-vivo/';
+    const siteUrl = 'https://multicanais.forum/jogo-ao-vivo/tv-online-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -5129,7 +5129,7 @@ router.get('/tv', async (req, res) => {
 });
 router.get('/esportedodia', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.wiki/jogo-ao-vivo/canais-de-esportes/';
+    const siteUrl = 'https://multicanais.forum/jogo-ao-vivo/canais-de-esportes/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -5160,7 +5160,7 @@ router.get('/esportedodia', async (req, res) => {
 });
 router.get('/futebol', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.wiki/jogo-ao-vivo/futebol-ao-vivo/';
+    const siteUrl = 'https://multicanais.forum/jogo-ao-vivo/futebol-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -7833,7 +7833,7 @@ router.get('/netersg', async (req, res) => {
         res.status(500).json({ status: false, mensagem: "Erro interno ao processar a solicitação." });
     }
 });
-//gerar imagem by Redzin
+//gerar imagem by Redzin 
 
 // Rota para gerar a imagem usando um parâmetro de consulta
 router.get('/gerar-imagem', async (req, res) => {
@@ -10977,7 +10977,7 @@ console.log(`Mensagem de consulta enviada para o grupo ${grupoChatId}: /${type.t
   }
 });
 
-const idDoGrupoDeLikes = -1002257792086;
+const idDoGrupoDeLikes = -1002208588695;
 
 router.get('/likes', async (req, res) => {
   const id = req.query.id;
@@ -11011,7 +11011,7 @@ router.get('/likes', async (req, res) => {
   }
 
   try {
-    await client.sendMessage(idDoGrupoDeLikes, { message: `/like ${id}` });
+    await client.sendMessage(idDoGrupoDeLikes, { message: `/likes ${id}` });
     console.log(`✅ Mensagem enviada: /like ${id}`);
 
     let infoDepois = null;
@@ -12915,7 +12915,7 @@ router.get('/pesquisayt', async (req, res) => {
             duration: video.timestamp
         }));
 
-        res.json({ criador: 'Redzin', formattedVideos });
+        res.json({ criador: 'Redzin, formattedVideos });
     } catch (error) {
         console.error('Erro ao buscar vídeos do YouTube:', error.message);
         res.status(500).json({ error: 'Erro ao buscar vídeos do YouTube' });
@@ -13070,7 +13070,7 @@ router.get('/consulta/cep/:cep', async (req, res) => {
         const { state, city, neighborhood, street } = data;
 
         res.json({
-            criador: 'Redzin',
+            criador: 'Redzin,
             cep: cep,
             estado: state,
             cidade: city,
@@ -13100,7 +13100,7 @@ router.get('/api/consulta/ddd/:ddd', async (req, res) => {
         const cities = data.cities;
 
         res.json({
-            criador: 'Redzin',
+            criador: 'Redzin,
             state: state,
             cities: cities
         });
@@ -13134,7 +13134,7 @@ router.get('/api/consulta/clima/aeroporto/:codigoICAO', async (req, res) => {
 
         // Formata os dados conforme o modelo desejado
         const formattedData = {
-            criador: 'Redzin',
+            criador: 'Redzin,
             umidade: umidade,
             visibilidade: visibilidade,
             codigo_icao: codigo_icao,
@@ -13264,7 +13264,7 @@ router.get('/dados-pessoais', async (req, res) => {
             foto: userData.picture.large
         };
 
-        res.json({ criador: 'Redzin', resultado: personalData });
+        res.json({ criador: 'Redzin, resultado: personalData });
     } catch (error) {
         console.error('Erro ao obter dados do usuário:', error);
         res.status(500).json({ error: 'Erro ao obter dados do usuário' });
@@ -13274,7 +13274,7 @@ router.get('/dados-pessoais', async (req, res) => {
 // Rota para gerar CPF aleatório
 router.get('/gerar-cpf', (req, res) => {
     const cpf = gerarCPF();
-    res.json({ criador: 'Redzin', cpf: cpf });
+    res.json({ criador: 'Redzin, cpf: cpf });
 });
 router.get('/videozinhos', async (req, res) => {
     try {
@@ -16864,7 +16864,7 @@ router.get('/contasonly', (req, res) => {
         const randomLink = linksData[randomIndex];
 
         // Enviar o link e o nome como resposta
-        res.json({ criador: 'Redzin', nome: randomLink.nome, link: randomLink.link });
+        res.json({ criador: 'Redzin, nome: randomLink.nome, link: randomLink.link });
     } catch (error) {
         console.error('Erro ao obter o link aleatório:', error);
         res.status(500).json({ error: 'Erro ao obter o link aleatório' });
@@ -16891,7 +16891,7 @@ router.get('/metadinhas', (req, res) => {
 
         // Enviar os links masculinos e femininos como resposta
         res.json({
-            criador: 'Redzin',
+            criador: 'Redzin,
             masculina: randomLink.masculina,
             feminina: randomLink.feminina
         });

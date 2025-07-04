@@ -15,7 +15,7 @@ const search = require('yt-search');
 const ytSearch = require('yt-search');
 const { createDecipheriv } = require('crypto');
 const yt = require('@distube/ytdl-core');
-const criador = 'Redzin;
+const criador = 'Redzin';
 const { exec } = require('child_process');
 const sharp = require('sharp'); // Biblioteca para conversão WebP
 const cors = require('cors');
@@ -2511,9 +2511,11 @@ router.get('/likesff', async (req, res) => {
     }
 
     try {
-        const apiUrl = `https://kryptor-doido.squareweb.app/like?uid=${encodeURIComponent(id)}&quantity=100&key=Kryptor`;
+        const apiUrl = `https://likeskryptor.squareweb.app/api/likes?uid=${encodeURIComponent(id)}&quantity=100&key=bykryptor`;
         const response = await axios.get(apiUrl);
         const data = response.data;
+
+        const likesCalculado = data.Likes_Depois - data.Likes_Antes;
 
         const formattedResponse = {
             "ID do Jogador": id,
@@ -2522,7 +2524,7 @@ router.get('/likesff', async (req, res) => {
             "Nível": data.PlayerLevel,
             "Likes Antes": data.Likes_Antes,
             "Likes Depois": data.Likes_Depois,
-            "Likes Enviados": data.BotSend
+            "Likes Enviados": likesCalculado
         };
 
         res.json(formattedResponse);
@@ -7833,7 +7835,7 @@ router.get('/netersg', async (req, res) => {
         res.status(500).json({ status: false, mensagem: "Erro interno ao processar a solicitação." });
     }
 });
-//gerar imagem by Redzin 
+//gerar imagem by Redzin
 
 // Rota para gerar a imagem usando um parâmetro de consulta
 router.get('/gerar-imagem', async (req, res) => {
@@ -11210,6 +11212,70 @@ router.get('/visitasff', async (req, res) => {
   }
 });
 
+router.get('/guildaff', async (req, res) => {
+  const guildId = req.query.id;
+
+  if (!guildId) {
+    return res.status(400).json({ status: 'error', message: 'Parâmetro ?id= é obrigatório' });
+  }
+
+  try {
+    const url = `https://www.freefiremania.com.br/guilda-ff/${guildId}.html`;
+    const { data: html } = await axios.get(url);
+    const $ = cheerio.load(html);
+
+    const getText = (label) => {
+      const item = $(`li:contains("${label}")`).first();
+      return item.text().split(':')[1]?.trim() || null;
+    };
+
+    const nome = getText('Nome');
+    const regiao = getText('Região');
+    const slogan = getText('Slogan');
+    const nivel = getText('Nível da Guilda');
+    const capacidade = getText('Capacidade');
+    const membros = getText('Membros Atuais');
+    const capitao = getText('Capitão');
+    const verificada = getText('Verificada');
+    const inatividade = getText('Inatividade');
+    const data_criacao = getText('Data de Criação');
+    const recrutamento = getText('Tipo de Recrutamento');
+
+    // Etiquetas
+    const etiquetas = [];
+    $('.bg-light ul.list-group li').each((_, el) => {
+      etiquetas.push($(el).text().trim());
+    });
+
+    // Idade da guilda
+    const idade_descricao = $('.bg-warning p').text().trim();
+
+    res.json({
+      status: 'success',
+      guilda: {
+        id: guildId,
+        nome,
+        regiao,
+        data_criacao,
+        slogan,
+        nivel,
+        capacidade,
+        membros,
+        capitao,
+        verificada,
+        inatividade,
+        recrutamento,
+        etiquetas,
+        idade_descricao
+      }
+    });
+
+  } catch (error) {
+    console.error('Erro ao buscar dados da guilda:', error.message);
+    return res.status(500).json({ status: 'error', message: 'Erro ao buscar a guilda no site' });
+  }
+});
+
 // /primeff
 router.get('/primeff', async (req, res) => {
   const id = req.query.id?.trim();
@@ -12915,7 +12981,7 @@ router.get('/pesquisayt', async (req, res) => {
             duration: video.timestamp
         }));
 
-        res.json({ criador: 'Redzin, formattedVideos });
+        res.json({ criador: 'Redzin', formattedVideos });
     } catch (error) {
         console.error('Erro ao buscar vídeos do YouTube:', error.message);
         res.status(500).json({ error: 'Erro ao buscar vídeos do YouTube' });
@@ -13070,7 +13136,7 @@ router.get('/consulta/cep/:cep', async (req, res) => {
         const { state, city, neighborhood, street } = data;
 
         res.json({
-            criador: 'Redzin,
+            criador: 'Redzin',
             cep: cep,
             estado: state,
             cidade: city,
@@ -13100,7 +13166,7 @@ router.get('/api/consulta/ddd/:ddd', async (req, res) => {
         const cities = data.cities;
 
         res.json({
-            criador: 'Redzin,
+            criador: 'Redzin',
             state: state,
             cities: cities
         });
@@ -13134,7 +13200,7 @@ router.get('/api/consulta/clima/aeroporto/:codigoICAO', async (req, res) => {
 
         // Formata os dados conforme o modelo desejado
         const formattedData = {
-            criador: 'Redzin,
+            criador: 'Redzin',
             umidade: umidade,
             visibilidade: visibilidade,
             codigo_icao: codigo_icao,
@@ -13264,7 +13330,7 @@ router.get('/dados-pessoais', async (req, res) => {
             foto: userData.picture.large
         };
 
-        res.json({ criador: 'Redzin, resultado: personalData });
+        res.json({ criador: 'Redzin', resultado: personalData });
     } catch (error) {
         console.error('Erro ao obter dados do usuário:', error);
         res.status(500).json({ error: 'Erro ao obter dados do usuário' });
@@ -13274,7 +13340,7 @@ router.get('/dados-pessoais', async (req, res) => {
 // Rota para gerar CPF aleatório
 router.get('/gerar-cpf', (req, res) => {
     const cpf = gerarCPF();
-    res.json({ criador: 'Redzin, cpf: cpf });
+    res.json({ criador: 'Redzin', cpf: cpf });
 });
 router.get('/videozinhos', async (req, res) => {
     try {
@@ -16864,7 +16930,7 @@ router.get('/contasonly', (req, res) => {
         const randomLink = linksData[randomIndex];
 
         // Enviar o link e o nome como resposta
-        res.json({ criador: 'Redzin, nome: randomLink.nome, link: randomLink.link });
+        res.json({ criador: 'Redzin', nome: randomLink.nome, link: randomLink.link });
     } catch (error) {
         console.error('Erro ao obter o link aleatório:', error);
         res.status(500).json({ error: 'Erro ao obter o link aleatório' });
@@ -16891,7 +16957,7 @@ router.get('/metadinhas', (req, res) => {
 
         // Enviar os links masculinos e femininos como resposta
         res.json({
-            criador: 'Redzin,
+            criador: 'Redzin',
             masculina: randomLink.masculina,
             feminina: randomLink.feminina
         });

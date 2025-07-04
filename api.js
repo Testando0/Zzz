@@ -7,7 +7,6 @@ const path = require('path');
 const JXR = require("jxr-canvas");
 const canvacard = require("canvacard");
 const Canvasfy = require("canvafy");
-const ffmpeg = require('fluent-ffmpeg');
 const cheerio = require('cheerio');
 const search = require('yt-search');
 const ytSearch = require('yt-search');

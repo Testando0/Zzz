@@ -728,7 +728,7 @@ async function getNoticiasEsporte(termo = '') {
         throw error;
     }
 }
-const default_criador = '@World-Ecletix'; 
+const default_criador = 'Redzin'; 
 
 const unescapeHtml = (text) => typeof text === 'string' ? text
   .replace(/&amp;/g, '&')

@@ -5,14 +5,17 @@ const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 const JXR = require("jxr-canvas");
-const canvacard = require("canvacard");
-const Canvasfy = require("canvafy");
+const canvacard = require("canvacard")
+const { musicCard, RankCard } = require("musicard-bun");
+const { Card } = require("welcomify")
+const Canvasfy = require("canvafy")
+const ffmpeg = require('fluent-ffmpeg');
 const cheerio = require('cheerio');
 const search = require('yt-search');
 const ytSearch = require('yt-search');
 const { createDecipheriv } = require('crypto');
 const yt = require('@distube/ytdl-core');
-const criador = 'Redzin';
+const criador = 'World Ecletix';
 const { exec } = require('child_process');
 const sharp = require('sharp'); // Biblioteca para conversão WebP
 const cors = require('cors');
@@ -540,7 +543,7 @@ router.get('/jogo/:slug', async (req, res) => {
   const { slug } = req.params;
 
   try {
-    const response = await axios.get('https://world-ecletix.onrender.com/api/futemax');
+    const response = await axios.get('https://kuromi-system-ofc.onrender.com/api/futemax');
     const jogos = response.data;
 
     const jogo = jogos.find(j => {
@@ -552,7 +555,7 @@ router.get('/jogo/:slug', async (req, res) => {
       return res.status(404).send('Jogo não encontrado');
     }
 
-    const futplay = await axios.get(`https://world-ecletix.onrender.com/api/futplay?url=${encodeURIComponent(jogo.link)}`);
+    const futplay = await axios.get(`https://kuromi-system-ofc.onrender.com/api/futplay?url=${encodeURIComponent(jogo.link)}`);
     const { title, description, thumbnail, players } = futplay.data;
 
     const html = `
@@ -844,7 +847,7 @@ router.get('/fut/:slug', async (req, res) => {
   if (!req.params.slug) return res.status(400).send('Slug inválido.');
 
   try {
-    const { data } = await axios.get('https://world-ecletix.onrender.com/api/futopcoes?url=' + encodeURIComponent(req.params.slug));
+    const { data } = await axios.get('https://kuromi-system-ofc.onrender.com/api/futopcoes?url=' + encodeURIComponent(req.params.slug));
 
     res.send(`
       <!DOCTYPE html>
@@ -1039,7 +1042,7 @@ router.get('/book', async (req, res) => {
 
     res.json({
       status: true,
-      criador: "world-ecletix",
+      criador: "Redzin",
       resultado: response.data.items || []
     });
   } catch {
@@ -1081,7 +1084,7 @@ router.get('/cotacao', async (req, res) => {
 
     res.json({
       status: true,
-      criador: "world-ecletix",
+      criador: "Redzin",
       resultado: [dados]
     });
   } catch {
@@ -1118,7 +1121,7 @@ router.get('/celular2', async (req, res) => {
     res.json({
       status: true,
       código: 999,
-      criador: 'World-Ecletix',
+      criador: 'Redzin',
       resultado: {
         title: titulo,
         info: info,
@@ -1251,7 +1254,7 @@ router.get('/iframe', async (req, res) => {
   const slug = req.params.slug;
 
   try {
-    const response = await axios.get('https://world-ecletix.onrender.com/api/playertv');
+    const response = await axios.get('https://kuromi-system-ofc.onrender.com/api/playertv');
     const canais = response.data;
 
     const canal = canais.find(c => slugify(c.title) === slug);
@@ -1260,7 +1263,7 @@ router.get('/iframe', async (req, res) => {
       return res.status(404).send('<h1>Canal não encontrado</h1>');
     }
 
-    const iframeResponse = await axios.get(`https://world-ecletix.onrender.com/api/iframe?canal=${encodeURIComponent(canal.link)}`);
+    const iframeResponse = await axios.get(`https://kuromi-system-ofc.onrender.com/api/iframe?canal=${encodeURIComponent(canal.link)}`);
     const iframeUrl = iframeResponse.data.iframe;
 
     res.send(`
@@ -1342,6 +1345,96 @@ const sendMediaAsBuffer = async (res, url, type) => {
   }
 };
 
+// Função utilitária para tentar pegar qualquer link válido de áudio/vídeo
+function tentarOutrasQualidades(data) {
+  const qualidades = Object.values(data || {});
+  for (const item of qualidades) {
+    if (typeof item === 'string' && item.startsWith('http')) {
+      return item;
+    }
+  }
+  return null;
+}
+
+// Rota para baixar áudio do YouTube
+router.get('/audio', async (req, res) => {
+  const { query } = req.query;
+  if (!query) return res.status(400).json({ error: 'Parâmetro "query" não fornecido' });
+
+  try {
+    const url = `https://api.nexfuture.com.br/api/downloads/youtube/playaudio/v2?query=${encodeURIComponent(query)}`;
+    const response = await axios.get(url);
+
+    const downloads = response.data?.resultado?.result?.downloads?.audio;
+    let link = downloads?.any4k;
+
+    if (!link) {
+      link = tentarOutrasQualidades(downloads?.config);
+    }
+
+    if (!link) {
+      return res.status(404).json({ error: 'Nenhum link de áudio encontrado' });
+    }
+
+    res.redirect(link);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erro ao processar download de áudio', details: err.message });
+  }
+});
+
+// Rota para baixar vídeo do YouTube
+router.get('/video', async (req, res) => {
+  const { query } = req.query;
+  if (!query) return res.status(400).json({ error: 'Parâmetro "query" não fornecido' });
+
+  try {
+    const url = `https://api.nexfuture.com.br/api/downloads/youtube/playvideo/v2?query=${encodeURIComponent(query)}`;
+    const response = await axios.get(url);
+
+    const downloads = response.data?.resultado?.result?.downloads?.video;
+    let link = downloads?.any4k;
+
+    if (!link) {
+      link = tentarOutrasQualidades(downloads?.config);
+    }
+
+    if (!link) {
+      return res.status(404).json({ error: 'Nenhum link de vídeo encontrado' });
+    }
+
+    res.redirect(link);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erro ao processar download de vídeo', details: err.message });
+  }
+});
+
+router.get('/play-audio', async (req, res) => {
+  const { query } = req.query;
+  if (!query) return res.status(400).json({ error: 'Parâmetro "query" não fornecido' });
+
+  try {
+    const endpoint = `https://api.nexfuture.com.br/api/downloads/youtube/playaudio/v2?query=${encodeURIComponent(query)}`;
+    const response = await axios.get(endpoint);
+    res.json(response.data);
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao buscar áudio do YouTube', details: err.message });
+  }
+});
+
+router.get('/play-video', async (req, res) => {
+  const { query } = req.query;
+  if (!query) return res.status(400).json({ error: 'Parâmetro "query" não fornecido' });
+
+  try {
+    const endpoint = `https://api.nexfuture.com.br/api/downloads/youtube/playvideo/v2?query=${encodeURIComponent(query)}`;
+    const response = await axios.get(endpoint);
+    res.json(response.data);
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao buscar vídeo do YouTube', details: err.message });
+  }
+});
 
 // Baixar áudio pelo nome
 router.get('/play', async (req, res) => {
@@ -1604,6 +1697,45 @@ const response = await axios.get(`https://api.vreden.my.id/api/download/threads?
     res.status(500).json({ error: 'Failed to fetch data' });
 }
 
+});
+
+
+
+router.get('/facebook2', async (req, res) => {
+  const { url } = req.query;
+  if (!url) return res.status(400).json({ error: 'URL não fornecida' });
+
+  try {
+    const response = await axios.get(`https://api.vreden.my.id/api/fbdl?url=${encodeURIComponent(url)}`);
+    res.json(response.data);
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao buscar dados do Facebook', details: err.message });
+  }
+});
+
+router.get('/drive', async (req, res) => {
+  const { url } = req.query;
+  if (!url) return res.status(400).json({ error: 'URL não fornecida' });
+
+  try {
+    const response = await axios.get(`https://api.vreden.my.id/api/drive?url=${encodeURIComponent(url)}`);
+    res.json(response.data);
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao buscar dados do Drive', details: err.message });
+  }
+});
+
+router.get('/threads2', async (req, res) => {
+  const { url } = req.query;
+  if (!url) return res.status(400).json({ error: 'URL não fornecida' });
+
+  try {
+    const endpoint = `https://kamuiapi.shop/api/dl/threads?link=${encodeURIComponent(url)}&apikey=YT8q4bUNXV`;
+    const response = await axios.get(endpoint);
+    res.json(response.data);
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao buscar dados do Threads', details: err.message });
+  }
 });
 
 router.get('/capcut', async (req, res) => {
@@ -2805,7 +2937,7 @@ router.get('/clipe5', async (req, res) => {
 
 
 // Rota para buscar e baixar áudio
-router.get('/audio', async (req, res) => {
+router.get('/audio3', async (req, res) => {
   const { name } = req.query;  // Obtém o nome da música da query string
 
   if (!name) {
@@ -2822,7 +2954,7 @@ router.get('/audio', async (req, res) => {
 });
 
 // Rota para buscar e baixar vídeo
-router.get('/video', async (req, res) => {
+router.get('/video3', async (req, res) => {
   const { name } = req.query;  // Obtém o nome do vídeo da query string
 
   if (!name) {
@@ -12978,7 +13110,7 @@ router.get('/pesquisayt', async (req, res) => {
             duration: video.timestamp
         }));
 
-        res.json({ criador: 'Redzin', formattedVideos });
+        res.json({ criador: 'World Ecletix', formattedVideos });
     } catch (error) {
         console.error('Erro ao buscar vídeos do YouTube:', error.message);
         res.status(500).json({ error: 'Erro ao buscar vídeos do YouTube' });
@@ -13133,7 +13265,7 @@ router.get('/consulta/cep/:cep', async (req, res) => {
         const { state, city, neighborhood, street } = data;
 
         res.json({
-            criador: 'Redzin',
+            criador: 'World Ecletix',
             cep: cep,
             estado: state,
             cidade: city,
@@ -13163,7 +13295,7 @@ router.get('/api/consulta/ddd/:ddd', async (req, res) => {
         const cities = data.cities;
 
         res.json({
-            criador: 'Redzin',
+            criador: 'World Ecletix',
             state: state,
             cities: cities
         });
@@ -13197,7 +13329,7 @@ router.get('/api/consulta/clima/aeroporto/:codigoICAO', async (req, res) => {
 
         // Formata os dados conforme o modelo desejado
         const formattedData = {
-            criador: 'Redzin',
+            criador: 'World Ecletix',
             umidade: umidade,
             visibilidade: visibilidade,
             codigo_icao: codigo_icao,
@@ -13327,7 +13459,7 @@ router.get('/dados-pessoais', async (req, res) => {
             foto: userData.picture.large
         };
 
-        res.json({ criador: 'Redzin', resultado: personalData });
+        res.json({ criador: 'World Ecletix', resultado: personalData });
     } catch (error) {
         console.error('Erro ao obter dados do usuário:', error);
         res.status(500).json({ error: 'Erro ao obter dados do usuário' });
@@ -13337,7 +13469,7 @@ router.get('/dados-pessoais', async (req, res) => {
 // Rota para gerar CPF aleatório
 router.get('/gerar-cpf', (req, res) => {
     const cpf = gerarCPF();
-    res.json({ criador: 'Redzin', cpf: cpf });
+    res.json({ criador: 'World Ecletix', cpf: cpf });
 });
 router.get('/videozinhos', async (req, res) => {
     try {
@@ -16927,7 +17059,7 @@ router.get('/contasonly', (req, res) => {
         const randomLink = linksData[randomIndex];
 
         // Enviar o link e o nome como resposta
-        res.json({ criador: 'Redzin', nome: randomLink.nome, link: randomLink.link });
+        res.json({ criador: 'World Ecletix', nome: randomLink.nome, link: randomLink.link });
     } catch (error) {
         console.error('Erro ao obter o link aleatório:', error);
         res.status(500).json({ error: 'Erro ao obter o link aleatório' });
@@ -16954,7 +17086,7 @@ router.get('/metadinhas', (req, res) => {
 
         // Enviar os links masculinos e femininos como resposta
         res.json({
-            criador: 'Redzin',
+            criador: 'world ecletix',
             masculina: randomLink.masculina,
             feminina: randomLink.feminina
         });

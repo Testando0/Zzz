@@ -6,11 +6,12 @@ const fs = require('fs');
 const path = require('path');
 const JXR = require("jxr-canvas");
 const canvacard = require("canvacard")
+const morgan  = require("morgan");
+const { createDecipheriv } = require("crypto");
 const Canvasfy = require("canvafy")
 const cheerio = require('cheerio');
 const search = require('yt-search');
 const ytSearch = require('yt-search');
-const { createDecipheriv } = require('crypto');
 const yt = require('@distube/ytdl-core');
 const criador = 'Redzin';
 const { exec } = require('child_process');
@@ -310,157 +311,318 @@ router.get("/audio-bill", (req, res) =>
   generateAudio(res, "bVMeCyTHy58xNoL34h3p", req.query.text)
 );
 
-const audio = [92, 128, 256, 320];
-const video = [144, 360, 480, 720, 1080];
+function getYouTubeVideoId(url) {
+  const regex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|v\/|embed\/|user\/[^\/\n\s]+\/)?(?:watch\?v=|v%3D|embed%2F|video%2F)?|youtu\.be\/|youtube\.com\/watch\?v=|youtube\.com\/embed\/|youtube\.com\/v\/|youtube\.com\/shorts\/|youtube\.com\/playlist\?list=)([a-zA-Z0-9_-]{11})/;
+  const match = url.match(regex);
+  return match ? match[1] : null;
+}
 
-const hexcode = (hex) => Buffer.from(hex, 'hex');
+const audioQualities = [92, 128, 256, 320];
+const videoQualities = [144, 360, 480, 720, 1080];
+
+const hexcode = (hex) => Buffer.from(hex, "hex");
 const decode = (enc) => {
-    try {
-        const secret_key = 'C5D58EF67A7584E4A29F6C35BBC4EB12';
-        const data = Buffer.from(enc, 'base64');
-        const iv = data.slice(0, 16);
-        const content = data.slice(16);
-        const key = hexcode(secret_key);
+  try {
+    const secret_key = "C5D58EF67A7584E4A29F6C35BBC4EB12";
+    const data = Buffer.from(enc, "base64");
+    const iv = data.slice(0, 16);
+    const content = data.slice(16);
+    const key = hexcode(secret_key);
 
-        const decipher = createDecipheriv('aes-128-cbc', key, iv);
-        let decrypted = Buffer.concat([decipher.update(content), decipher.final()]);
+    const decipher = createDecipheriv("aes-128-cbc", key, iv);
+    const decrypted = Buffer.concat([decipher.update(content), decipher.final()]);
 
-        return JSON.parse(decrypted.toString());
-    } catch (error) {
-        throw new Error(error.message);
-    }
+    return JSON.parse(decrypted.toString());
+  } catch (error) {
+    throw new Error(error.message);
+  }
 };
 
-async function savetube(link, quality, value) {
-    try {
-        const cdn = (await axios.get("https://media.savetube.me/api/random-cdn")).data.cdn;
-        const infoget = (await axios.post(`https://${cdn}/v2/info`, {
-            url: link
-        }, {
-            headers: {
-                'User-Agent': 'Mozilla/5.0',
-                'Referer': 'https://yt.savetube.me/'
-            }
-        })).data;
-
-        const info = decode(infoget.data);
-        const response = (await axios.post(`https://${cdn}/download`, {
-            downloadType: value,
-            quality: `${quality}`,
-            key: info.key
-        }, {
-            headers: {
-                'Content-Type': 'application/json',
-                'User-Agent': 'Mozilla/5.0',
-                'Referer': 'https://yt.savetube.me/'
-            }
-        })).data;
-
-        return {
-            status: true,
-            quality: `${quality}${value === "audio" ? "kbps" : "p"}`,
-            availableQuality: value === "audio" ? audio : video,
-            url: response.data.downloadUrl,
-            filename: `${info.title} (${quality}${value === "audio" ? "kbps).mp3" : "p).mp4"}`
-        };
-    } catch (error) {
-        return {
-            status: false,
-            message: "Converting error"
-        };
-    }
-}
-
-async function playdw(name) {
-    const format = 128;
-    try {
-        const data = await ytSearch(name);
-        if (!data.videos || data.videos.length === 0) {
-            return { status: false, message: "Nenhum vídeo encontrado" };
+async function savetube(link, quality, type) {
+  try {
+    const cdn     = (await axios.get("https://media.savetube.me/api/random-cdn")).data.cdn;
+    const infoget = (
+      await axios.post(
+        `https://${cdn}/v2/info`,
+        { url: link },
+        {
+          headers: {
+            "User-Agent":
+              "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Mobile Safari/537.36",
+            Referer: "https://yt.savetube.me/1kejjj1?id=362796039",
+          },
         }
+      )
+    ).data;
 
-        const video = data.videos[0];
-        const url = video.url;
+    const info = decode(infoget.data);
 
-        const response = await savetube(url, format, "audio");
+    const { data: downloadResp } = await axios.post(
+      `https://${cdn}/download`,
+      { downloadType: type, quality: `${quality}`, key: info.key },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "User-Agent":
+            "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Mobile Safari/537.36",
+          Referer: "https://yt.savetube.me/start-download?from=1kejjj1%3Fid%3D362796039",
+        },
+      }
+    );
 
-        return {
-            status: true,
-            metadata: video,
-            download: response
-        };
-    } catch (error) {
-        return { status: false, message: error.message };
-    }
+    return {
+      status: true,
+      quality: `${quality}${type === "audio" ? "kbps" : "p"}`,
+      availableQuality: type === "audio" ? audioQualities : videoQualities,
+      url: downloadResp.data.downloadUrl,
+      filename: `${info.title} (${quality}${type === "audio" ? "kbps).mp3" : "p).mp4"}`,
+    };
+  } catch (error) {
+    console.error("Converting error:", error);
+    return { status: false, message: "Converting error" };
+  }
 }
 
-async function clipedw(name) {
-    const format = 360;
-    try {
-        const data = await ytSearch(name);
-        if (!data.videos || data.videos.length === 0) {
-            return { status: false, message: "Nenhum vídeo encontrado" };
-        }
+async function playmp3(link, quality = 128) {
+  const videoId = getYouTubeVideoId(link);
+  const q       = audioQualities.includes(+quality) ? +quality : 128;
 
-        const video = data.videos[0];
-        const url = video.url;
+  if (!videoId) return { status: false, message: "Invalid YouTube URL" };
 
-        const response = await savetube(url, format, "video");
+  const url       = `https://youtube.com/watch?v=${videoId}`;
+  const meta      = await yts(url);
+  const download  = await savetube(url, q, "audio");
 
-        return {
-            status: true,
-            metadata: video,
-            download: response
-        };
-    } catch (error) {
-        return { status: false, message: error.message };
-    }
+  return { status: true, creator: "@vreden/youtube_scraper", metadata: meta.all[0], download };
 }
 
-async function getLinkFromUrl(url, type = "audio") {
-    const format = type === "audio" ? 128 : 360;
-    return await savetube(url, format, type);
+async function playmp4(link, quality = 360) {
+  const videoId = getYouTubeVideoId(link);
+  const q       = videoQualities.includes(+quality) ? +quality : 360;
+
+  if (!videoId) return { status: false, message: "Invalid YouTube URL" };
+
+  const url       = `https://youtube.com/watch?v=${videoId}`;
+  const meta      = await yts(url);
+  const download  = await savetube(url, q, "video");
+
+  return { status: true, creator: "@vreden/youtube_scraper", metadata: meta.all[0], download };
 }
 
-// Rota para música por nome
-router.get("/musica", async (req, res) => {
-    const name = req.query.name;
-    if (!name) return res.status(400).send("Parâmetro 'name' obrigatório");
+async function fetchTranscript(link) {
+  try {
+    const { data } = await axios.get("https://ytb2mp4.com/api/fetch-transcript", {
+      params: { url: link },
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36",
+        Referer: "https://ytb2mp4.com/youtube-transcript",
+      },
+    });
+    return { status: true, creator: "@vreden/youtube_scraper", transcript: data.transcript };
+  } catch (error) {
+    return { status: false, message: error.message };
+  }
+}
 
-    const result = await playdw(name);
-    if (result.status) return res.redirect(result.download.url);
-    res.status(404).send("Nada encontrado.");
-});
+async function ytdlv2(link, quality) {
+  try {
+    const { data: meta } = await axios.get(`https://ytdl.vreden.web.id/metadata?url=${link}`);
 
-// Rota para clipe por nome
-router.get("/clipe", async (req, res) => {
-    const name = req.query.name;
-    if (!name) return res.status(400).send("Parâmetro 'name' obrigatório");
+    // Reutiliza nossas próprias funções para gerar URLs diretos
+    const mp3 = await playmp3(link, quality);
+    const mp4 = await playmp4(link, quality);
 
-    const result = await clipedw(name);
-    if (result.status) return res.redirect(result.download.url);
-    res.status(404).send("Nada encontrado.");
-});
+    meta.downloads.audio = mp3.download.url;
+    meta.downloads.video = mp4.download.url;
 
-// Rota direta com link para áudio
+    return { status: true, creator: "@vreden/youtube_scraper", ...meta };
+  } catch (error) {
+    return { status: false, message: error.message };
+  }
+}
+
+async function channel(teks) {
+  try {
+    const result = await axios.get(`https://ytdl.vreden.web.id/channel/${teks}`);
+    return {
+      status: true,
+      creator: "@vreden/youtube_scraper",
+      ...result.data
+    };
+  } catch (error) {
+    return {
+      status: false,
+      message: error.message
+    };
+  }
+}
+
+// 7) /ytmp3dl?url=...&quality=128  → redireciona p/ MP3
 router.get("/linkmp3", async (req, res) => {
-    const url = req.query.url;
-    if (!url) return res.status(400).send("Parâmetro 'url' obrigatório");
+  const { url, quality } = req.query;
+  if (!url) return res.status(400).json({ status: false, message: 'Parâmetro "url" ausente' });
 
-    const result = await getLinkFromUrl(url, "audio");
-    if (result.status) return res.redirect(result.url);
-    res.status(404).send("Nada encontrado.");
+  const result = await playmp3(url, quality || 128);
+  if (!result.status) return res.status(500).json(result);
+
+  res.redirect(result.download.url);
 });
 
-// Rota direta com link para vídeo
+// 8) /ytmp4dl?url=...&quality=360  → redireciona p/ MP4
 router.get("/linkmp4", async (req, res) => {
-    const url = req.query.url;
-    if (!url) return res.status(400).send("Parâmetro 'url' obrigatório");
+  const { url, quality } = req.query;
+  if (!url) return res.status(400).json({ status: false, message: 'Parâmetro "url" ausente' });
 
-    const result = await getLinkFromUrl(url, "video");
-    if (result.status) return res.redirect(result.url);
-    res.status(404).send("Nada encontrado.");
+  const result = await playmp4(url, quality || 360);
+  if (!result.status) return res.status(500).json(result);
+
+  res.redirect(result.download.url);
 });
+
+// 9) /musicadl?name=...&quality=128 → busca por nome e redireciona p/ MP3
+router.get("/musica", async (req, res) => {
+  const { name, quality } = req.query;
+  if (!name) return res.status(400).json({ status: false, message: 'Parâmetro "name" ausente' });
+
+  try {
+    const srch = await yts(name);
+    if (!srch.videos.length) return res.status(404).json({ status: false, message: "Nenhum resultado encontrado" });
+
+    const first = srch.videos[0].url;
+    const result = await playmp3(first, quality || 128);
+    if (!result.status) return res.status(500).json(result);
+
+    res.redirect(result.download.url);
+  } catch (err) {
+    res.status(500).json({ status: false, message: err.message });
+  }
+});
+
+// 10) /clipedl?name=...&quality=360 → busca por nome e redireciona p/ MP4
+router.get("/clipe", async (req, res) => {
+  const { name, quality } = req.query;
+  if (!name) return res.status(400).json({ status: false, message: 'Parâmetro "name" ausente' });
+
+  try {
+    const srch = await yts(name);
+    if (!srch.videos.length) return res.status(404).json({ status: false, message: "Nenhum resultado encontrado" });
+
+    const first = srch.videos[0].url;
+    const result = await playmp4(first, quality || 360);
+    if (!result.status) return res.status(500).json(result);
+
+    res.redirect(result.download.url);
+  } catch (err) {
+    res.status(500).json({ status: false, message: err.message });
+  }
+});
+
+// 5) /musica?name=...&quality=128         → devolve áudio MP3
+router.get("/musicadl", async (req, res) => {
+  const { name, quality } = req.query;
+  if (!name) {
+    return res.status(400).json({ status: false, message: 'Parâmetro "name" ausente' });
+  }
+
+  try {
+    // Procura o vídeo pelo nome
+    const searchResults = await yts(name);
+    if (!searchResults.videos.length) {
+      return res.status(404).json({ status: false, message: "Nenhum resultado encontrado" });
+    }
+
+    // Usa o primeiro vídeo
+    const firstVideoUrl = searchResults.videos[0].url;
+    const result = await playmp3(firstVideoUrl, quality || 128);
+    res.status(200).json({ ...result, fromQuery: name });
+  } catch (err) {
+    res.status(500).json({ status: false, message: err.message });
+  }
+});
+
+// 6) /clipe?name=...&quality=360         → devolve vídeo MP4
+router.get("/clipedl", async (req, res) => {
+  const { name, quality } = req.query;
+  if (!name) {
+    return res.status(400).json({ status: false, message: 'Parâmetro "name" ausente' });
+  }
+
+  try {
+    const searchResults = await yts(name);
+    if (!searchResults.videos.length) {
+      return res.status(404).json({ status: false, message: "Nenhum resultado encontrado" });
+    }
+
+    const firstVideoUrl = searchResults.videos[0].url;
+    const result = await playmp4(firstVideoUrl, quality || 360);
+    res.status(200).json({ ...result, fromQuery: name });
+  } catch (err) {
+    res.status(500).json({ status: false, message: err.message });
+  }
+});
+
+// 1) /ytmp3?url=...&quality=128
+router.get("/linkmp3dl", async (req, res) => {
+  const { url, quality } = req.query;
+  if (!url) return res.status(400).json({ status: false, message: 'Parâmetro "url" ausente' });
+
+  const result = await playmp3(url, quality || 128);
+  res.status(result.status ? 200 : 500).json(result);
+});
+
+// 2) /ytmp4?url=...&quality=360
+router.get("/linkmp4dl", async (req, res) => {
+  const { url, quality } = req.query;
+  if (!url) return res.status(400).json({ status: false, message: 'Parâmetro "url" ausente' });
+
+  const result = await playmp4(url, quality || 360);
+  res.status(result.status ? 200 : 500).json(result);
+});
+
+// 3) /transcript?url=...
+router.get("/transcript", async (req, res) => {
+  const { url } = req.query;
+  if (!url) return res.status(400).json({ status: false, message: 'Parâmetro "url" ausente' });
+
+  const result = await fetchTranscript(url);
+  res.status(result.status ? 200 : 500).json(result);
+});
+
+// 4) /ytdl?url=...&quality=360
+// (Devolve metadados + links diretos de áudio e vídeo)
+router.get("/ytdl", async (req, res) => {
+  const { url, quality } = req.query;
+  if (!url) return res.status(400).json({ status: false, message: 'Parâmetro "url" ausente' });
+
+  const result = await ytdlv2(url, quality || 360);
+  res.status(result.status ? 200 : 500).json(result);
+});
+
+
+// 11) /channel?name=UC_x5XG1OV2P6uZZ5FSM9Ttw   (ID ou “@handle”)
+router.get("/channel", async (req, res) => {
+  const { name } = req.query;
+  if (!name)
+    return res.status(400).json({ status: false, message: 'Parâmetro "name" ausente' });
+
+  const result = await channel(name);
+  res.status(result.status ? 200 : 500).json(result);
+});
+
+// 12) /channeldl?name=...
+router.get("/channeldl", async (req, res) => {
+  const { name } = req.query;
+  if (!name)
+    return res.status(400).json({ status: false, message: 'Parâmetro "name" ausente' });
+
+  const result = await channel(name);
+  if (!result.status || !result.url)               // a API retorna o link no campo "url"
+    return res.status(500).json(result);
+
+  res.redirect(result.url);                        // redireciona direto pro canal no YouTube
+});
+
 
 
 router.get('/igstalk', async (req, res) => {
@@ -540,7 +702,7 @@ router.get('/jogo/:slug', async (req, res) => {
   const { slug } = req.params;
 
   try {
-    const response = await axios.get('https://kuromi-system-ofc.onrender.com/api/futemax');
+    const response = await axios.get('https://world-ecletix.onrender.com/api/futemax');
     const jogos = response.data;
 
     const jogo = jogos.find(j => {
@@ -552,7 +714,7 @@ router.get('/jogo/:slug', async (req, res) => {
       return res.status(404).send('Jogo não encontrado');
     }
 
-    const futplay = await axios.get(`https://kuromi-system-ofc.onrender.com/api/futplay?url=${encodeURIComponent(jogo.link)}`);
+    const futplay = await axios.get(`https://world-ecletix.onrender.com/api/futplay?url=${encodeURIComponent(jogo.link)}`);
     const { title, description, thumbnail, players } = futplay.data;
 
     const html = `
@@ -635,7 +797,7 @@ router.get('/jogo/:slug', async (req, res) => {
 
 router.get('/multicanais', async (req, res) => {
   try {
-    const { data } = await axios.get('https://multicanais.forum/api/real-games.php');
+    const { data } = await axios.get('https://multicanais.casino/api/real-games.php');
 
     if (data?.success && Array.isArray(data.jogos)) {
       let jogos = data.jogos.map(jogo => ({
@@ -643,11 +805,11 @@ router.get('/multicanais', async (req, res) => {
         campeonato: jogo.campeonato,
         horario: jogo.horario,
         data: jogo.data,
-        link: `https://multicanais.forum/assistir/${jogo.slug}`,
+        link: `https://multicanais.casino/assistir/${jogo.slug}`,
         time1: jogo.time1,
         time2: jogo.time2,
-        time1_foto: `https://multicanais.forum/api/team-logo.php?team=${encodeURIComponent(jogo.time1)}`,
-        time2_foto: `https://multicanais.forum/api/team-logo.php?team=${encodeURIComponent(jogo.time2)}`,
+        time1_foto: `https://multicanais.casino/api/team-logo.php?team=${encodeURIComponent(jogo.time1)}`,
+        time2_foto: `https://multicanais.casino/api/team-logo.php?team=${encodeURIComponent(jogo.time2)}`,
         transmissoes: jogo.transmissao // opcional
       }));
 
@@ -761,7 +923,7 @@ router.get('/assistir', async (req, res) => {
   const query = req.query.oq;
   if (!query) return res.status(400).json({ error: 'Parâmetro "oq" é obrigatório.' });
 
-  const searchUrl = `https://multicanais.forum/?s=${encodeURIComponent(query)}`;
+  const searchUrl = `https://multicanais.casino/?s=${encodeURIComponent(query)}`;
   try {
     const searchRes = await axios.get(searchUrl, {
       headers: { 'User-Agent': 'Mozilla/5.0' }
@@ -805,7 +967,7 @@ router.get('/assistir2', async (req, res) => {
   const query = req.query.oq;
   if (!query) return res.status(400).json({ error: 'Parâmetro "oq" é obrigatório.' });
 
-  const searchUrl = `https://multicanais.forum/?s=${encodeURIComponent(query)}`;
+  const searchUrl = `https://multicanais.casino/?s=${encodeURIComponent(query)}`;
   try {
     const searchRes = await axios.get(searchUrl, {
       headers: { 'User-Agent': 'Mozilla/5.0' }
@@ -841,93 +1003,85 @@ router.get('/assistir2', async (req, res) => {
 });
 
 router.get('/fut/:slug', async (req, res) => {
-  if (!req.params.slug) return res.status(400).send('Slug inválido.');
+  const { slug } = req.params;
+  if (!slug) return res.status(400).send('Slug inválido.');
 
   try {
-    const { data } = await axios.get('https://kuromi-system-ofc.onrender.com/api/futopcoes?url=' + encodeURIComponent(req.params.slug));
+    // 🔑 1. Remonta a URL completa do jogo no Multicanais
+    const fullUrl = `https://multicanais.casino/assistir/${slug}/`;
 
-    res.send(`
+    // 🔑 2. Consulta a API já com a URL codificada
+    const apiURL =
+      'https://world-ecletix.onrender.com/api/futopcoes?url=' +
+      encodeURIComponent(fullUrl);
+
+    const { data } = await axios.get(apiURL);
+
+    // 🔑 3. Monta o HTML do player
+    res.send(/* html */ `
       <!DOCTYPE html>
       <html lang="pt-BR">
-      <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>${data.titulo || 'Transmissão ao Vivo'}</title>
-        <style>
-          body {
-            background: #000;
-            color: #fff;
-            font-family: Arial, sans-serif;
-            padding: 20px;
-            margin: 0;
-            text-align: center;
-          }
-          h1 {
-            margin-bottom: 10px;
-          }
-          .buttons {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 10px;
-            margin: 20px 0;
-          }
-          .buttons button {
-            background-color: #00ccff;
-            color: #000;
-            border: none;
-            padding: 10px 16px;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background 0.3s;
-          }
-          .buttons button:hover {
-            background-color: #0099cc;
-          }
-          iframe {
-            width: 100%;
-            height: 500px;
-            border: none;
-            border-radius: 10px;
-            box-shadow: 0 0 10px #00ccff55;
-            margin-top: 20px;
-          }
-          .desc {
-            color: #ccc;
-            font-size: 16px;
-            margin-bottom: 10px;
-          }
-          .info {
-            color: #00ccff;
-            font-size: 14px;
-            margin-bottom: 15px;
-          }
-        </style>
-      </head>
-      <body>
-        <h1>${data.titulo || 'Transmissão ao Vivo'}</h1>
-        ${data.campeonato ? `<div class="info">${data.campeonato}</div>` : ''}
-        ${data.dataHora ? `<div class="desc">${data.dataHora}</div>` : ''}
-        <div class="buttons">
-          ${data.players && data.players.length > 0 ? 
-            data.players.map((player, i) => `<button onclick="setIframe('${player.link}')">${player.nome}</button>`).join('') :
-            '<button onclick="setIframe(\'${data.iframeLink}\')">PLAYER PRINCIPAL</button>'
-          }
-        </div>
-        <iframe id="player" src="${data.iframeLink || (data.players && data.players.length > 0 ? data.players[0].link : '')}" allowfullscreen></iframe>
+        <head>
+          <meta charset="UTF-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <title>${data.titulo || 'Transmissão ao Vivo'}</title>
+          <style>
+            body{
+              background:#000;color:#fff;font-family:Arial,sans-serif;
+              margin:0;padding:20px;text-align:center
+            }
+            h1{margin-bottom:10px}
+            .info{color:#00ccff;font-size:14px;margin-bottom:8px}
+            .desc{color:#ccc;font-size:15px;margin-bottom:15px}
+            .buttons{
+              display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:20px 0
+            }
+            .buttons button{
+              background:#00ccff;color:#000;border:none;padding:10px 16px;
+              border-radius:8px;font-weight:bold;cursor:pointer;
+              transition:background .3s
+            }
+            .buttons button:hover{background:#0099cc}
+            iframe{
+              width:100%;max-width:950px;height:500px;border:none;
+              border-radius:10px;box-shadow:0 0 10px #00ccff55;margin:0 auto
+            }
+          </style>
+        </head>
+        <body>
+          <h1>${data.titulo || 'Transmissão ao Vivo'}</h1>
+          ${data.campeonato ? `<div class="info">${data.campeonato}</div>` : ''}
+          ${data.dataHora   ? `<div class="desc">${data.dataHora}</div>`   : ''}
 
-        <script>
-          function setIframe(url) {
-            document.getElementById('player').src = url;
-          }
-        </script>
-      </body>
+          <div class="buttons">
+            ${
+              data.players?.length
+                ? data.players
+                    .map(
+                      p =>
+                        `<button onclick="setIframe('${p.link}')">${p.nome}</button>`
+                    )
+                    .join('')
+                : `<button onclick="setIframe('${data.iframeLink}')">PLAYER PRINCIPAL</button>`
+            }
+          </div>
+
+          <iframe id="player"
+                  src="${
+                    data.iframeLink ||
+                    (data.players?.length ? data.players[0].link : '')
+                  }"
+                  allowfullscreen></iframe>
+
+          <script>
+            function setIframe(url){ document.getElementById('player').src = url; }
+          </script>
+        </body>
       </html>
     `);
-  } catch (e) {
-    console.error(e);
-    res.status(500).send('Erro ao carregar dados do jogo.');
+  } catch (err) {
+    console.error('Erro ao carregar dados do jogo:', err);
+    res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
 
@@ -1039,7 +1193,7 @@ router.get('/book', async (req, res) => {
 
     res.json({
       status: true,
-      criador: "Redzin",
+      criador: "world-ecletix",
       resultado: response.data.items || []
     });
   } catch {
@@ -1081,7 +1235,7 @@ router.get('/cotacao', async (req, res) => {
 
     res.json({
       status: true,
-      criador: "Redzin",
+      criador: "world-ecletix",
       resultado: [dados]
     });
   } catch {
@@ -1118,7 +1272,7 @@ router.get('/celular2', async (req, res) => {
     res.json({
       status: true,
       código: 999,
-      criador: 'Redzin',
+      criador: 'World-Ecletix',
       resultado: {
         title: titulo,
         info: info,
@@ -1251,7 +1405,7 @@ router.get('/iframe', async (req, res) => {
   const slug = req.params.slug;
 
   try {
-    const response = await axios.get('https://kuromi-system-ofc.onrender.com/api/playertv');
+    const response = await axios.get('https://world-ecletix.onrender.com/api/playertv');
     const canais = response.data;
 
     const canal = canais.find(c => slugify(c.title) === slug);
@@ -1260,7 +1414,7 @@ router.get('/iframe', async (req, res) => {
       return res.status(404).send('<h1>Canal não encontrado</h1>');
     }
 
-    const iframeResponse = await axios.get(`https://kuromi-system-ofc.onrender.com/api/iframe?canal=${encodeURIComponent(canal.link)}`);
+    const iframeResponse = await axios.get(`https://world-ecletix.onrender.com/api/iframe?canal=${encodeURIComponent(canal.link)}`);
     const iframeUrl = iframeResponse.data.iframe;
 
     res.send(`
@@ -4068,7 +4222,7 @@ router.get('/guia-series', async (req, res) => {
     }
 });
 
-router.get('/calendario', async (req, res) => { try { const { data } = await axios.get('https://multicanais.forum/calendario'); const $ = cheerio.load(data);
+router.get('/calendario', async (req, res) => { try { const { data } = await axios.get('https://multicanais.casino/calendario'); const $ = cheerio.load(data);
 
 const dias = [];
 
@@ -4089,8 +4243,8 @@ $('.section').each((_, el) => {
 
     const time1_nome = time1.find('.team-name').text().trim();
     const time2_nome = time2.find('.team-name').text().trim();
-    const time1_img = time1.find('img').attr('src')?.startsWith('http') ? time1.find('img').attr('src') : `https://multicanais.forum/${time1.find('img').attr('src')}`;
-    const time2_img = time2.find('img').attr('src')?.startsWith('http') ? time2.find('img').attr('src') : `https://multicanais.forum/${time2.find('img').attr('src')}`;
+    const time1_img = time1.find('img').attr('src')?.startsWith('http') ? time1.find('img').attr('src') : `https://multicanais.casino/${time1.find('img').attr('src')}`;
+    const time2_img = time2.find('img').attr('src')?.startsWith('http') ? time2.find('img').attr('src') : `https://multicanais.casino/${time2.find('img').attr('src')}`;
 
     const transmissoes = $(jogoEl)
       .find('.transmission')
@@ -4102,7 +4256,7 @@ $('.section').each((_, el) => {
 
     jogos.push({
       titulo: `${time1_nome} x ${time2_nome}`,
-      link: `https://multicanais.forum${link}`,
+      link: `https://multicanais.casino${link}`,
       horario,
       campeonato,
       time1: time1_nome,
@@ -4122,7 +4276,7 @@ res.json({ success: true, dias });
 
 router.get('/jogosdodia', async (req, res) => {
   try {
-    const { data } = await axios.get('https://multicanais.forum/api/real-games.php');
+    const { data } = await axios.get('https://multicanais.casino/api/real-games.php');
 
     if (data?.success && Array.isArray(data.jogos)) {
       const jogosComExtras = data.jogos.map(jogo => ({
@@ -4130,11 +4284,11 @@ router.get('/jogosdodia', async (req, res) => {
         campeonato: jogo.campeonato,
         data: jogo.data,
         horario: jogo.horario,
-        link: `https://multicanais.forum/assistir/${jogo.slug}`,
+        link: `https://multicanais.casino/assistir/${jogo.slug}`,
         time1: jogo.time1,
         time2: jogo.time2,
-        time1_foto: `https://multicanais.forum/api/team-logo.php?team=${encodeURIComponent(jogo.time1)}`,
-        time2_foto: `https://multicanais.forum/api/team-logo.php?team=${encodeURIComponent(jogo.time2)}`,
+        time1_foto: `https://multicanais.casino/api/team-logo.php?team=${encodeURIComponent(jogo.time1)}`,
+        time2_foto: `https://multicanais.casino/api/team-logo.php?team=${encodeURIComponent(jogo.time2)}`,
         transmissoes: jogo.transmissao
       }));
 
@@ -5063,7 +5217,7 @@ router.get('/prox-jogos', async (req, res) => {
 
 router.get('/ufc', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.forum/jogo-ao-vivo/ufc-ao-vivo/';
+    const siteUrl = 'https://multicanais.casino/jogo-ao-vivo/ufc-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -5094,7 +5248,7 @@ router.get('/ufc', async (req, res) => {
 // Rota para a API bbb25
 router.get('/bbb25', (req, res) => {
   const resultado = [
-    "https://multicanais.forum/assistir-bbb-ao-vivo-online-24-horas/",
+    "https://multicanais.casino/assistir-bbb-ao-vivo-online-24-horas/",
     "https://globoplay.gratis/"
   ];
   
@@ -5103,7 +5257,7 @@ router.get('/bbb25', (req, res) => {
 
 router.get('/basquete', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.forum/categoria/jogo-ao-vivo/nba-ao-vivo/';
+    const siteUrl = 'https://multicanais.casino/categoria/jogo-ao-vivo/nba-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -5135,7 +5289,7 @@ router.get('/basquete', async (req, res) => {
 
 router.get('/nfl', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.forum/jogo-ao-vivo/nfl-ao-vivo/';
+    const siteUrl = 'https://multicanais.casino/jogo-ao-vivo/nfl-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -5166,7 +5320,7 @@ router.get('/nfl', async (req, res) => {
 
  router.get('/ucl', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.forum/jogo-ao-vivo/champions-league-ao-vivo/';
+    const siteUrl = 'https://multicanais.casino/jogo-ao-vivo/champions-league-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -5197,7 +5351,7 @@ router.get('/nfl', async (req, res) => {
 
 router.get('/brasileirao', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.forum/jogo-ao-vivo/brasileiro-ao-vivo/';
+    const siteUrl = 'https://multicanais.casino/jogo-ao-vivo/brasileiro-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -5227,7 +5381,7 @@ router.get('/brasileirao', async (req, res) => {
 });
 router.get('/tv', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.forum/jogo-ao-vivo/tv-online-ao-vivo/';
+    const siteUrl = 'https://multicanais.casino/jogo-ao-vivo/tv-online-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -5257,7 +5411,7 @@ router.get('/tv', async (req, res) => {
 });
 router.get('/esportedodia', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.forum/jogo-ao-vivo/canais-de-esportes/';
+    const siteUrl = 'https://multicanais.casino/jogo-ao-vivo/canais-de-esportes/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -5288,7 +5442,7 @@ router.get('/esportedodia', async (req, res) => {
 });
 router.get('/futebol', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.forum/jogo-ao-vivo/futebol-ao-vivo/';
+    const siteUrl = 'https://multicanais.casino/jogo-ao-vivo/futebol-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -10747,7 +10901,7 @@ router.get('/pin/video', (req, res) => {
 
 const apiId = 21844566;
 const apiHash = 'ff82e94bfed22534a083c3aee236761a';
-const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBu6yFmTUXXtWU7MwtoML+C+0NXKaV6mAyPjPaVfyne9HaRApFv31s5s+LkEPj3BbRPRZEYUd2+25sZ1dFd/dmWiyqEoyMJOktXbiYvv7QB5ptTihuXqLCzsby+SMbh0JJ+5Gkk0DqpGfmLF7HftFErBMlLPpqFLFFapzKlm6cIFNyyZ+fgXMajDVYL5N/HFIPDQvkq3sTQ2d+D7Sa67kbqNQzzsVk5E4fpCPp+LkM0Xy/yP1J57PyZ++tRd5waqTTT9g+JPxKWKCEaaCS9TyBl3+ll+eRsV+T6Ad1npdwDwfWN9I52mTa+sWg6jBcyLB7BMtQOHXQxs4vD1MppFNYsKQ=');
+const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBu6PFqVLLbiFdwrnZodLTYD+cJaR0zEZA3LBu/ADOYrX3h5NS1Mdu2+s2PvIlfkI7gC1OMkWaylptw3NfkQciqn6JhS6lhwFEZ2Vu5bZNbADkKU4dG86elaie2pmnMrporVqNL2MlMuM6JZNUyv7C22y96a2Hi46nX1tLWWgPdcPQ4AeT981MWMX3QkOYIc00HbKMZ5XlM3AmmMF+J6rYcq2aQ3AKl0gtYPqK5jQ4CzILfhr32mngEWr6HkqnvKVKAtGYe+Ne9Nb1IXa8soMVaK5J8iP37GeasfjuwUo/szjX9vb4xAFD/cv0QLyEnPbOJMYk+G0YCJzZhRuwO9K7w+o=');
 const grupoChatId = -1002208588695;
 
 const rl = readline.createInterface({
@@ -11338,70 +11492,195 @@ router.get('/visitasff', async (req, res) => {
   }
 });
 
+router.get('/perfilff', async (req, res) => {
+  const playerId = req.query.id;
+  if (!playerId) {
+    return res.status(400).json({ status: 'error', message: 'Parâmetro ?id= é obrigatório' });
+  }
+
+  const perfilUrl = `https://www.freefiremania.com.br/perfil/${playerId}.html`;
+  const skinUrl = `https://www.freefiremania.com.br/paginas/dados-jogador-api-roupas.php?tag=${playerId}`;
+
+  try {
+    // Buscar HTML do perfil
+    const { data: html } = await axios.get(perfilUrl);
+    const $ = cheerio.load(html);
+
+    // Extrair bio pelo atributo data-original-bio
+    const bio = $('#bioContent').attr('data-original-bio') || null;
+
+    // Função auxiliar para extrair texto depois do <strong>
+    const getLiValue = (label) => {
+      const li = $(`li strong:contains("${label}")`).first().parent();
+      if (!li) return null;
+      // Pega só o texto dos nós tipo texto, sem filhos <small> etc
+      const text = li.contents().filter((_, el) => el.type === 'text').text().trim();
+      return text || null;
+    };
+
+    // Extrai dados básicos
+    const nome = $('.perfil-container .nome').text().trim() || null;
+    const guilda_nome = $('.perfil-container .guilda').text().trim() || null;
+    const avatar = $('.perfil-container img.avatar').attr('src');
+    const banner = $('.perfil-container img.banner-fundo').attr('src');
+
+    const id = getLiValue('ID:') || playerId;
+    const data_criacao = getLiValue('Conta criada em:');
+    const ultimo_login = getLiValue('Último login em:');
+    const versao = getLiValue('Versão do jogo:');
+    const likes_text = getLiValue('Likes:');
+    const passe_booyah = getLiValue('Passe Booyah:');
+    const regiao = getLiValue('Região:');
+    const guilda = guilda_nome === 'Sem guilda' ? null : guilda_nome;
+
+    // Extrair level e experiência separados
+    const levelLi = $('li strong:contains("Level:")').first().parent();
+    const level = levelLi.contents()
+      .filter((_, el) => el.type === 'text')
+      .text().trim() || null;
+
+    const expMatch = levelLi.find('small').text().match(/Exp:\s*([\d.]+)/);
+    const experiencia = expMatch ? expMatch[1].replace(/\./g, '') : null;
+
+    // Extrai likes (apenas números)
+    const likes = likes_text ? likes_text.replace(/\D/g, '') : null;
+
+    // Extrai roupas (skins)
+    let roupas = [];
+    try {
+      const { data: skinHtml } = await axios.get(skinUrl);
+      const $$ = cheerio.load(skinHtml);
+
+      $$('div.d-flex.flex-wrap.justify-content-start img').each((_, el) => {
+        const src = $$(el).attr('src');
+        if (src) {
+          const urlCompleta = src.startsWith('http')
+            ? src
+            : 'https://www.freefiremania.com.br/' + src.replace(/^\/+/, '');
+          roupas.push(urlCompleta);
+        }
+      });
+    } catch (e) {
+      console.warn('[perfilff] ⚠️ Erro ao buscar roupas:', e.message);
+      roupas = false;
+    }
+
+    // Retorna JSON final
+    return res.json({
+      status: 'success',
+      perfil: {
+        id,
+        nome,
+        nick: nome,
+        guilda,
+        level,
+        experiencia,
+        bio,
+        avatar: avatar ? 'https://www.freefiremania.com.br/' + avatar.replace(/^\/+/, '') : null,
+        banner: banner ? 'https://www.freefiremania.com.br/' + banner.replace(/^\/+/, '') : null,
+        roupas,
+        data_criacao,
+        ultimo_login,
+        versao,
+        likes,
+        passe_booyah,
+        regiao,
+      }
+    });
+
+  } catch (err) {
+    console.error('[perfilff] ❌ Erro:', err.message);
+    return res.status(500).json({ status: 'error', message: 'Erro ao buscar o perfil no site' });
+  }
+});
+
 router.get('/guildaff', async (req, res) => {
   const guildId = req.query.id;
 
   if (!guildId) {
+    console.warn('[guildaff] ❌ Parâmetro ?id= ausente');
     return res.status(400).json({ status: 'error', message: 'Parâmetro ?id= é obrigatório' });
   }
 
+  const url = `https://www.freefiremania.com.br/guilda-ff/${guildId}.html`;
+  console.log(`[guildaff] 🔍 Buscando: ${url}`);
+
   try {
-    const url = `https://www.freefiremania.com.br/guilda-ff/${guildId}.html`;
     const { data: html } = await axios.get(url);
     const $ = cheerio.load(html);
+    console.log('[guildaff] ✅ Página carregada');
 
     const getText = (label) => {
-      const item = $(`li:contains("${label}")`).first();
-      return item.text().split(':')[1]?.trim() || null;
+      const li = $(`li:contains("${label}")`).first();
+      return li.length ? li.text().split(':').slice(1).join(':').trim() : null;
     };
 
     const nome = getText('Nome');
+    const id_guilda = getText('ID da Guilda');
+    const data_criacao = getText('Data de Criação');
     const regiao = getText('Região');
     const slogan = getText('Slogan');
     const nivel = getText('Nível da Guilda');
     const capacidade = getText('Capacidade');
     const membros = getText('Membros Atuais');
-    const capitao = getText('Capitão');
+    const capitao_texto = getText('Capitão');
     const verificada = getText('Verificada');
     const inatividade = getText('Inatividade');
-    const data_criacao = getText('Data de Criação');
     const recrutamento = getText('Tipo de Recrutamento');
+
+    const capitao = {
+      id: capitao_texto?.match(/\d+/)?.[0] || null,
+      link: $('a[href*="/perfil/"]').first().attr('href') || null
+    };
+
+    // Vice-capitães
+    const vice_capitaes = [];
+    $('section:contains("Vice-Capitães") ul.list-group li').each((_, el) => {
+      const link = $(el).find('a').attr('href');
+      const id = $(el).text().match(/\d+/)?.[0];
+      if (id) {
+        vice_capitaes.push({ id, link });
+      }
+    });
 
     // Etiquetas
     const etiquetas = [];
-    $('.bg-light ul.list-group li').each((_, el) => {
+    $('h4:contains("Etiquetas")').next('ul').find('li').each((_, el) => {
       etiquetas.push($(el).text().trim());
     });
 
     // Idade da guilda
-    const idade_descricao = $('.bg-warning p').text().trim();
+    const idade_descricao = $('section.bg-warning p').text().trim();
 
-    res.json({
+    const resultado = {
       status: 'success',
       guilda: {
         id: guildId,
         nome,
-        regiao,
+        id_guilda,
         data_criacao,
+        regiao,
         slogan,
         nivel,
         capacidade,
         membros,
         capitao,
+        vice_capitaes,
         verificada,
         inatividade,
         recrutamento,
         etiquetas,
         idade_descricao
       }
-    });
+    };
 
+    console.log('[guildaff] 🟢 Sucesso:', resultado.guilda.nome || 'Guilda encontrada');
+    return res.json(resultado);
   } catch (error) {
-    console.error('Erro ao buscar dados da guilda:', error.message);
+    console.error('[guildaff] ❌ Erro ao buscar dados da guilda:', error.message);
     return res.status(500).json({ status: 'error', message: 'Erro ao buscar a guilda no site' });
   }
 });
-
 // /primeff
 router.get('/primeff', async (req, res) => {
   const id = req.query.id?.trim();

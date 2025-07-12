@@ -311,6 +311,65 @@ router.get("/audio-bill", (req, res) =>
   generateAudio(res, "bVMeCyTHy58xNoL34h3p", req.query.text)
 );
 
+
+
+// 1) Download vídeo MP4 pelo URL do YouTube
+router.get('/linkmp4', async (req, res) => {
+  const ytUrl = req.query.url;
+  if (!ytUrl) return res.status(400).send('URL do YouTube é obrigatório');
+
+  try {
+    const response = await axios.get(`https://api.vreden.my.id/api/ytmp4?url=${encodeURIComponent(ytUrl)}`);
+    const downloadUrl = response.data.result.download.url;
+    res.redirect(downloadUrl);
+  } catch (error) {
+    res.status(500).send('Erro ao obter link de download');
+  }
+});
+
+// 2) Download MP3 por busca no YouTube (usando ?name=...)
+router.get('/musica', async (req, res) => {
+  const name = req.query.name;
+  if (!name) return res.status(400).send('Parâmetro "name" é obrigatório');
+
+  try {
+    const response = await axios.get(`https://api.vreden.my.id/api/ytplaymp3?query=${encodeURIComponent(name)}`);
+    const downloadUrl = response.data.result.download.url;
+    res.redirect(downloadUrl);
+  } catch (error) {
+    res.status(500).send('Erro ao obter link de download');
+  }
+});
+
+// 3) Download MP4 por busca no YouTube (usando ?name=...)
+router.get('/clipe', async (req, res) => {
+  const name = req.query.name;
+  if (!name) return res.status(400).send('Parâmetro "name" é obrigatório');
+
+  try {
+    const response = await axios.get(`https://api.vreden.my.id/api/ytplaymp4?query=${encodeURIComponent(name)}`);
+    const downloadUrl = response.data.result.download.url;
+    res.redirect(downloadUrl);
+  } catch (error) {
+    res.status(500).send('Erro ao obter link de download');
+  }
+});
+
+// 4) (Bonus) Exemplo para baixar áudio MP3 direto por URL (não tinha na sua lista, mas é comum)
+router.get('/linkmp3', async (req, res) => {
+  const ytUrl = req.query.url;
+  if (!ytUrl) return res.status(400).send('URL do YouTube é obrigatório');
+
+  try {
+    const response = await axios.get(`https://api.vreden.my.id/api/ytmp3?url=${encodeURIComponent(ytUrl)}`);
+    const downloadUrl = response.data.result.download.url;
+    res.redirect(downloadUrl);
+  } catch (error) {
+    res.status(500).send('Erro ao obter link de download');
+  }
+});
+
+
 function getYouTubeVideoId(url) {
   const regex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|v\/|embed\/|user\/[^\/\n\s]+\/)?(?:watch\?v=|v%3D|embed%2F|video%2F)?|youtu\.be\/|youtube\.com\/watch\?v=|youtube\.com\/embed\/|youtube\.com\/v\/|youtube\.com\/shorts\/|youtube\.com\/playlist\?list=)([a-zA-Z0-9_-]{11})/;
   const match = url.match(regex);
@@ -390,7 +449,7 @@ async function playmp3(link, quality = 128) {
   if (!videoId) return { status: false, message: "Invalid YouTube URL" };
 
   const url       = `https://youtube.com/watch?v=${videoId}`;
-  const meta      = await yts(url);
+  const meta      = await ytSearch(url);
   const download  = await savetube(url, q, "audio");
 
   return { status: true, creator: "@vreden/youtube_scraper", metadata: meta.all[0], download };
@@ -403,7 +462,7 @@ async function playmp4(link, quality = 360) {
   if (!videoId) return { status: false, message: "Invalid YouTube URL" };
 
   const url       = `https://youtube.com/watch?v=${videoId}`;
-  const meta      = await yts(url);
+  const meta      = await ytSearch(url);
   const download  = await savetube(url, q, "video");
 
   return { status: true, creator: "@vreden/youtube_scraper", metadata: meta.all[0], download };
@@ -459,7 +518,7 @@ async function channel(teks) {
 }
 
 // 7) /ytmp3dl?url=...&quality=128  → redireciona p/ MP3
-router.get("/linkmp3", async (req, res) => {
+router.get("/linkmp3-7", async (req, res) => {
   const { url, quality } = req.query;
   if (!url) return res.status(400).json({ status: false, message: 'Parâmetro "url" ausente' });
 
@@ -470,7 +529,7 @@ router.get("/linkmp3", async (req, res) => {
 });
 
 // 8) /ytmp4dl?url=...&quality=360  → redireciona p/ MP4
-router.get("/linkmp4", async (req, res) => {
+router.get("/linkmp4-7", async (req, res) => {
   const { url, quality } = req.query;
   if (!url) return res.status(400).json({ status: false, message: 'Parâmetro "url" ausente' });
 
@@ -481,12 +540,12 @@ router.get("/linkmp4", async (req, res) => {
 });
 
 // 9) /musicadl?name=...&quality=128 → busca por nome e redireciona p/ MP3
-router.get("/musica", async (req, res) => {
+router.get("/musica7", async (req, res) => {
   const { name, quality } = req.query;
   if (!name) return res.status(400).json({ status: false, message: 'Parâmetro "name" ausente' });
 
   try {
-    const srch = await yts(name);
+    const srch = await ytSearch(name);
     if (!srch.videos.length) return res.status(404).json({ status: false, message: "Nenhum resultado encontrado" });
 
     const first = srch.videos[0].url;
@@ -500,12 +559,12 @@ router.get("/musica", async (req, res) => {
 });
 
 // 10) /clipedl?name=...&quality=360 → busca por nome e redireciona p/ MP4
-router.get("/clipe", async (req, res) => {
+router.get("/clipe7", async (req, res) => {
   const { name, quality } = req.query;
   if (!name) return res.status(400).json({ status: false, message: 'Parâmetro "name" ausente' });
 
   try {
-    const srch = await yts(name);
+    const srch = await ytSearch(name);
     if (!srch.videos.length) return res.status(404).json({ status: false, message: "Nenhum resultado encontrado" });
 
     const first = srch.videos[0].url;
@@ -527,7 +586,7 @@ router.get("/musicadl", async (req, res) => {
 
   try {
     // Procura o vídeo pelo nome
-    const searchResults = await yts(name);
+    const searchResults = await ytSearch(name);
     if (!searchResults.videos.length) {
       return res.status(404).json({ status: false, message: "Nenhum resultado encontrado" });
     }
@@ -549,7 +608,7 @@ router.get("/clipedl", async (req, res) => {
   }
 
   try {
-    const searchResults = await yts(name);
+    const searchResults = await ytSearch(name);
     if (!searchResults.videos.length) {
       return res.status(404).json({ status: false, message: "Nenhum resultado encontrado" });
     }
@@ -1569,6 +1628,19 @@ router.get('/play-audio', async (req, res) => {
     const endpoint = `https://api.nexfuture.com.br/api/downloads/youtube/playaudio/v2?query=${encodeURIComponent(query)}`;
     const response = await axios.get(endpoint);
     res.json(response.data);
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao buscar áudio do YouTube', details: err.message });
+  }
+});
+
+router.get('/play-audio2', async (req, res) => {
+  const { q } = req.q;
+  if (!q) return res.status(400).json({ error: 'Parâmetro "query" não fornecido' });
+
+  try {
+    const endpoint = `http://speedhosting.cloud:2009/download/play-audio?url=${q}`;
+    const resultado = await axios.get(endpoint);
+    res.json(resultado.data);
   } catch (err) {
     res.status(500).json({ error: 'Erro ao buscar áudio do YouTube', details: err.message });
   }
@@ -8115,7 +8187,7 @@ router.get('/netersg', async (req, res) => {
         res.status(500).json({ status: false, mensagem: "Erro interno ao processar a solicitação." });
     }
 });
-//gerar imagem by Redzin
+//gerar imagem by Redzin 
 
 // Rota para gerar a imagem usando um parâmetro de consulta
 router.get('/gerar-imagem', async (req, res) => {

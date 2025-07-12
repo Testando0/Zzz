@@ -6,6 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const JXR = require("jxr-canvas");
 const canvacard = require("canvacard")
+const morgan  = require("morgan");
 const { createDecipheriv } = require("crypto");
 const Canvasfy = require("canvafy")
 const cheerio = require('cheerio');
@@ -1627,19 +1628,6 @@ router.get('/play-audio', async (req, res) => {
     const endpoint = `https://api.nexfuture.com.br/api/downloads/youtube/playaudio/v2?query=${encodeURIComponent(query)}`;
     const response = await axios.get(endpoint);
     res.json(response.data);
-  } catch (err) {
-    res.status(500).json({ error: 'Erro ao buscar áudio do YouTube', details: err.message });
-  }
-});
-
-router.get('/play-audio2', async (req, res) => {
-  const { q } = req.q;
-  if (!q) return res.status(400).json({ error: 'Parâmetro "query" não fornecido' });
-
-  try {
-    const endpoint = `http://speedhosting.cloud:2009/download/play-audio?url=${q}`;
-    const resultado = await axios.get(endpoint);
-    res.json(resultado.data);
   } catch (err) {
     res.status(500).json({ error: 'Erro ao buscar áudio do YouTube', details: err.message });
   }

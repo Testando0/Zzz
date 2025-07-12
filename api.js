@@ -6,7 +6,6 @@ const fs = require('fs');
 const path = require('path');
 const JXR = require("jxr-canvas");
 const canvacard = require("canvacard")
-const morgan  = require("morgan");
 const { createDecipheriv } = require("crypto");
 const Canvasfy = require("canvafy")
 const cheerio = require('cheerio');

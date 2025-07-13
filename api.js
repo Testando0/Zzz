@@ -6,8 +6,12 @@ const fs = require('fs');
 const path = require('path');
 const JXR = require("jxr-canvas");
 const canvacard = require("canvacard")
+const { musicCard, RankCard } = require("musicard-bun");
+const { Card } = require("welcomify")
+const morgan  = require("morgan");
 const { createDecipheriv } = require("crypto");
 const Canvasfy = require("canvafy")
+const ffmpeg = require('fluent-ffmpeg');
 const cheerio = require('cheerio');
 const search = require('yt-search');
 const ytSearch = require('yt-search');
@@ -1065,76 +1069,93 @@ router.get('/fut/:slug', async (req, res) => {
   if (!slug) return res.status(400).send('Slug inválido.');
 
   try {
-    // 🔑 1. Remonta a URL completa do jogo no Multicanais
+    // 1. URL completa do jogo no Multicanais
     const fullUrl = `https://multicanais.casino/assistir/${slug}/`;
 
-    // 🔑 2. Consulta a API já com a URL codificada
-    const apiURL =
-      'https://world-ecletix.onrender.com/api/futopcoes?url=' +
-      encodeURIComponent(fullUrl);
-
+    // 2. Consulta a API de opções de player
+    const apiURL = 'https://world-ecletix.onrender.com/api/futopcoes?url=' + encodeURIComponent(fullUrl);
     const { data } = await axios.get(apiURL);
 
-    // 🔑 3. Monta o HTML do player
+    // 3. HTML do player
     res.send(/* html */ `
       <!DOCTYPE html>
       <html lang="pt-BR">
-        <head>
-          <meta charset="UTF-8" />
-          <meta name="viewport" content="width=device-width, initial-scale=1" />
-          <title>${data.titulo || 'Transmissão ao Vivo'}</title>
-          <style>
-            body{
-              background:#000;color:#fff;font-family:Arial,sans-serif;
-              margin:0;padding:20px;text-align:center
-            }
-            h1{margin-bottom:10px}
-            .info{color:#00ccff;font-size:14px;margin-bottom:8px}
-            .desc{color:#ccc;font-size:15px;margin-bottom:15px}
-            .buttons{
-              display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:20px 0
-            }
-            .buttons button{
-              background:#00ccff;color:#000;border:none;padding:10px 16px;
-              border-radius:8px;font-weight:bold;cursor:pointer;
-              transition:background .3s
-            }
-            .buttons button:hover{background:#0099cc}
-            iframe{
-              width:100%;max-width:950px;height:500px;border:none;
-              border-radius:10px;box-shadow:0 0 10px #00ccff55;margin:0 auto
-            }
-          </style>
-        </head>
-        <body>
-          <h1>${data.titulo || 'Transmissão ao Vivo'}</h1>
-          ${data.campeonato ? `<div class="info">${data.campeonato}</div>` : ''}
-          ${data.dataHora   ? `<div class="desc">${data.dataHora}</div>`   : ''}
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>${data.titulo || 'Transmissão ao Vivo'}</title>
+        <style>
+          body {
+            background: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+          }
+          h1 { margin-bottom: 10px }
+          .info { color: #00ccff; font-size: 14px; margin-bottom: 8px }
+          .desc { color: #ccc; font-size: 15px; margin-bottom: 15px }
+          .buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+          }
+          .buttons button {
+            background: #00ccff;
+            color: #000;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+          }
+          .buttons button:hover {
+            background: #0099cc;
+          }
+          iframe {
+            width: 100%;
+            max-width: 950px;
+            height: 500px;
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 0 10px #00ccff55;
+            margin: 0 auto;
+          }
+        </style>
+      </head>
+      <body>
+        <h1>${data.titulo || 'Transmissão ao Vivo'}</h1>
+        ${data.campeonato ? `<div class="info">${data.campeonato}</div>` : ''}
+        ${data.dataHora ? `<div class="desc">${data.dataHora}</div>` : ''}
 
-          <div class="buttons">
-            ${
-              data.players?.length
-                ? data.players
-                    .map(
-                      p =>
-                        `<button onclick="setIframe('${p.link}')">${p.nome}</button>`
-                    )
-                    .join('')
-                : `<button onclick="setIframe('${data.iframeLink}')">PLAYER PRINCIPAL</button>`
-            }
-          </div>
+        <div class="buttons">
+          ${
+            data.players?.length
+              ? data.players
+                  .map(p => `<button onclick="setIframe('${p.link}')">${p.nome}</button>`)
+                  .join('')
+              : ''
+          }
+        </div>
 
-          <iframe id="player"
-                  src="${
-                    data.iframeLink ||
-                    (data.players?.length ? data.players[0].link : '')
-                  }"
-                  allowfullscreen></iframe>
+        <iframe id="player"
+                src="${
+                  data.players?.length
+                    ? data.players[0].link
+                    : data.iframeLink || ''
+                }"
+                allowfullscreen></iframe>
 
-          <script>
-            function setIframe(url){ document.getElementById('player').src = url; }
-          </script>
-        </body>
+        <script>
+          function setIframe(url) {
+            document.getElementById('player').src = url;
+          }
+        </script>
+      </body>
       </html>
     `);
   } catch (err) {
@@ -3544,24 +3565,31 @@ router.get('/ia', async (req, res) => {
 });
 
 router.get('/lady', async (req, res) => {
-    const { texto } = req.query;
+  const { texto } = req.query;
 
-    if (!texto) {
-        return res.status(400).json({ status: false, mensagem: 'O parâmetro "texto" é obrigatório.' });
-    }
+  if (!texto) {
+    return res
+      .status(400)
+      .json({ status: false, mensagem: 'O parâmetro "texto" é obrigatório.' });
+  }
 
-    try {
-        const response = await axios.get(`https://api.nexfuture.com.br/api/inteligencias/gemini/pro?query=${encodeURIComponent(texto)}`);
+  try {
+    // Faz a chamada à nova API, enviando o texto no parâmetro ask
+    const { data } = await axios.get(
+      'https://fastrestapis.fasturl.link/aillm/gpt-4o-turbo',
+      { params: { ask: texto } }
+    );
 
-        if (response.data && response.data.resposta) {
-            res.json({ resposta: response.data.resposta });
-        } else {
-            res.json({ resposta: 'Sem resposta disponível' });
-        }
-    } catch (error) {
-        console.error('Erro ao buscar dados:', error.message);
-        res.status(500).json({ status: false, mensagem: 'Erro interno do servidor.' });
-    }
+    // A API retorna a resposta no campo data.result
+    const resposta = data && data.result ? data.result : 'Sem resposta disponível';
+
+    res.json({ resposta });
+  } catch (error) {
+    console.error('Erro ao buscar dados:', error.message);
+    res
+      .status(500)
+      .json({ status: false, mensagem: 'Erro interno do servidor.' });
+  }
 });
 
 router.get('/blackbox', async (req, res) => {
@@ -8221,7 +8249,7 @@ router.get('/gerar-imagem', async (req, res) => {
 
 //fim 
 
-// play e playvideo by Redzin
+// play e playvideo by Redzin 
 
 const got = require('got');
 const ytsr = require('yt-search');

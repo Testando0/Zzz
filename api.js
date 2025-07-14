@@ -30,6 +30,8 @@ const readline = require('readline');
 const { Api } = require('telegram/tl');
 const { NewMessage, CallbackQuery } = require('telegram/events');
 const input = require('input');
+const { AI } = require('unlimited-ai');
+const { gpt, bing, llama, blackbox } = require('gpti'); 
 const router = express.Router();
 const getImageBuffer = async (url) => {
     try {
@@ -316,8 +318,121 @@ router.get("/audio-bill", (req, res) =>
 
 
 
-// 1) Download vídeo MP4 pelo URL do YouTube
+
+async function getApiKey() {
+  const headers = {
+    "content-type": "application/json",
+    "origin": "https://iframe.y2meta-uk.com",
+    "referer": "https://iframe.y2meta-uk.com/",
+    "user-agent": "Mozilla/5.0"
+  };
+  const { data } = await axios.get("https://api.mp3youtube.cc/v2/sanity/key", { headers });
+  return data.key;
+}
+
+/**
+ * Converte URL do YouTube para link direto MP3 ou MP4
+ * @param {string} youtubeUrl - URL do vídeo no YouTube
+ * @param {string} quality - Qualidade ("128kbps" para mp3, "720p" para mp4)
+ * @param {boolean} isVideo - true para vídeo, false para áudio
+ * @returns {string} URL direta para download
+ */
+async function convertYoutubeUrl(youtubeUrl, quality, isVideo = false) {
+  const key = await getApiKey();
+  const headers = {
+    "content-type": "application/x-www-form-urlencoded",
+    "Key": key,
+    "origin": "https://iframe.y2meta-uk.com",
+    "referer": "https://iframe.y2meta-uk.com/",
+    "user-agent": "Mozilla/5.0"
+  };
+
+  const params = new URLSearchParams({
+    link: youtubeUrl,
+    format: isVideo ? "mp4" : "mp3",
+    quality: quality
+  });
+
+  const { data } = await axios.post("https://api.mp3youtube.cc/v2/converter", params, { headers });
+  if (!data.url) throw new Error('Download indisponível');
+  return data.url;
+}
+
+/**
+ * Busca um vídeo no site mp3juice.blog
+ * @param {string} query - termo para busca
+ * @returns {Object} Primeiro item encontrado (id, title, thumbnail)
+ */
+async function searchYoutubeVideo(query) {
+  const headers = {
+    "user-agent": "Mozilla/5.0",
+    "origin": "https://v2.www-y2mate.com",
+    "referer": "https://v2.www-y2mate.com/"
+  };
+  const { data } = await axios.get(`https://wwd.mp3juice.blog/search.php?q=${encodeURIComponent(query)}`, { headers });
+  if (!data.items || data.items.length === 0) throw new Error('Nenhum resultado encontrado');
+  return data.items[0];
+}
+
+// /musica?name=...  => redireciona para MP3 do primeiro resultado
+router.get('/musica', async (req, res) => {
+  try {
+    const name = req.query.name;
+    if (!name) return res.status(400).send('Query "name" é obrigatória');
+
+    const video = await searchYoutubeVideo(name);
+    const urlMp3 = await convertYoutubeUrl(`https://youtu.be/${video.id}`, "128kbps", false);
+
+    res.redirect(urlMp3);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
+// /clipe?name=... => redireciona para MP4 do primeiro resultado
+router.get('/clipe', async (req, res) => {
+  try {
+    const name = req.query.name;
+    if (!name) return res.status(400).send('Query "name" é obrigatória');
+
+    const video = await searchYoutubeVideo(name);
+    const urlMp4 = await convertYoutubeUrl(`https://youtu.be/${video.id}`, "720p", true);
+
+    res.redirect(urlMp4);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
+// /linkmp3?url=... => redireciona para MP3 pelo link
+router.get('/linkmp3', async (req, res) => {
+  try {
+    const url = req.query.url;
+    if (!url) return res.status(400).send('Query "url" é obrigatória');
+
+    const urlMp3 = await convertYoutubeUrl(url, "128kbps", false);
+    res.redirect(urlMp3);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
+// /linkmp4?url=... => redireciona para MP4 pelo link
 router.get('/linkmp4', async (req, res) => {
+  try {
+    const url = req.query.url;
+    if (!url) return res.status(400).send('Query "url" é obrigatória');
+
+    const urlMp4 = await convertYoutubeUrl(url, "720p", true);
+    res.redirect(urlMp4);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
+
+// 1) Download vídeo MP4 pelo URL do YouTube
+router.get('/linkmp4-8', async (req, res) => {
   const ytUrl = req.query.url;
   if (!ytUrl) return res.status(400).send('URL do YouTube é obrigatório');
 
@@ -331,7 +446,7 @@ router.get('/linkmp4', async (req, res) => {
 });
 
 // 2) Download MP3 por busca no YouTube (usando ?name=...)
-router.get('/musica', async (req, res) => {
+router.get('/musica8', async (req, res) => {
   const name = req.query.name;
   if (!name) return res.status(400).send('Parâmetro "name" é obrigatório');
 
@@ -345,7 +460,7 @@ router.get('/musica', async (req, res) => {
 });
 
 // 3) Download MP4 por busca no YouTube (usando ?name=...)
-router.get('/clipe', async (req, res) => {
+router.get('/clipe8', async (req, res) => {
   const name = req.query.name;
   if (!name) return res.status(400).send('Parâmetro "name" é obrigatório');
 
@@ -359,7 +474,7 @@ router.get('/clipe', async (req, res) => {
 });
 
 // 4) (Bonus) Exemplo para baixar áudio MP3 direto por URL (não tinha na sua lista, mas é comum)
-router.get('/linkmp3', async (req, res) => {
+router.get('/linkmp3-8', async (req, res) => {
   const ytUrl = req.query.url;
   if (!ytUrl) return res.status(400).send('URL do YouTube é obrigatório');
 
@@ -1069,15 +1184,26 @@ router.get('/fut/:slug', async (req, res) => {
   if (!slug) return res.status(400).send('Slug inválido.');
 
   try {
-    // 1. URL completa do jogo no Multicanais
-    const fullUrl = `https://multicanais.casino/assistir/${slug}/`;
+    // Monta a URL base do Multicanais SEM barra final
+    let fullUrl = `https://multicanais.casino/assistir/${slug}`;
+    // Remove barra no final se houver
+    fullUrl = fullUrl.replace(/\/+$/, '');
 
-    // 2. Consulta a API de opções de player
-    const apiURL = 'https://world-ecletix.onrender.com/api/futopcoes?url=' + encodeURIComponent(fullUrl);
+    console.log('➡️  [fut] slug recebido:', slug);
+    console.log('🔗  fullUrl (sem barra final):', fullUrl);
+
+    // Chamada da sua rota local /futopcoes passando a URL sem barra final
+    const apiURL = `https://world-ecletix.onrender.com/api/futopcoes?url=${encodeURIComponent(fullUrl)}`;
+    console.log('🌐  GET', apiURL);
+
     const { data } = await axios.get(apiURL);
+    console.log('✅  /futopcoes retornou', {
+      titulo: data.titulo,
+      playersCount: data.players?.length || 0,
+    });
 
-    // 3. HTML do player
-    res.send(/* html */ `
+    // Monta o HTML com players e iframe
+    res.send(`
       <!DOCTYPE html>
       <html lang="pt-BR">
       <head>
@@ -1124,6 +1250,7 @@ router.get('/fut/:slug', async (req, res) => {
             border-radius: 10px;
             box-shadow: 0 0 10px #00ccff55;
             margin: 0 auto;
+            display: block;
           }
         </style>
       </head>
@@ -1134,21 +1261,15 @@ router.get('/fut/:slug', async (req, res) => {
 
         <div class="buttons">
           ${
-            data.players?.length
-              ? data.players
-                  .map(p => `<button onclick="setIframe('${p.link}')">${p.nome}</button>`)
-                  .join('')
-              : ''
+            data.players && data.players.length
+              ? data.players.map(p => `<button onclick="setIframe('${p.link}')">${p.nome}</button>`).join('')
+              : `<button onclick="setIframe('${data.iframeLink}')">PLAYER PRINCIPAL</button>`
           }
         </div>
 
-        <iframe id="player"
-                src="${
-                  data.players?.length
-                    ? data.players[0].link
-                    : data.iframeLink || ''
-                }"
-                allowfullscreen></iframe>
+        <iframe id="player" src="${
+          data.players && data.players.length ? data.players[0].link : data.iframeLink || ''
+        }" allowfullscreen></iframe>
 
         <script>
           function setIframe(url) {
@@ -1158,8 +1279,9 @@ router.get('/fut/:slug', async (req, res) => {
       </body>
       </html>
     `);
+
   } catch (err) {
-    console.error('Erro ao carregar dados do jogo:', err);
+    console.error('❌  Erro em /fut/:slug:', err.message);
     res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
@@ -3543,6 +3665,148 @@ router.get('/image', async (req, res) => {
 //fim
 
 //inteligência artificial 
+
+// Lista completa de modelos suportados
+const modelos = [
+  "grok-3", "grok-3-reason", "deepseek-r1", "deepseek-r1-0528",
+  "deepseek-v3-0324", "gpt-4.1", "gpt-4.1-mini", "gpt-4o",
+  "gpt-4o-2024-11-20", "claude-opus-4-20250514",
+  "claude-sonnet-4-20250514", "claude-3-7-sonnet-20250219",
+  "claude-3-7-sonnet-20250219-thinking", "claude-3-5-sonnet",
+  "claude-3-5-sonnet-20241022", "claude-opus-4-20250514-t",
+  "claude-sonnet-4-20250514-t", "claude-3-7-sonnet-20250219-t",
+  "gemini-2.5-pro-preview-05-06", "gemini-2.5-pro-preview-06-05",
+  "gemini-2.5-pro-preview-03-25", "gemini-2.5-pro-official",
+  "gemini-2.5-flash-preview-05-20", "gemini-flash", "gemini-2.0-flash",
+  "o3", "o4-mini", "imagen-4.0-generate-preview-05-20",
+  "imagen-4.0-ultra-generate-exp-05-20"
+];
+
+// rota: /ias/NOME_DO_MODELO?texto=...
+modelos.forEach((modeloId) => {
+  router.get(`/ias/${modeloId}`, async (req, res) => {
+    const { texto } = req.query;
+    if (!texto) {
+      return res.status(400).json({ resposta: 'Parâmetro ?texto= é obrigatório.' });
+    }
+
+    try {
+      const ia = new AI()
+        .setModel(modeloId)
+        .addMessage({ role: 'user', content: texto });
+
+      const resposta = await ia.generate();
+      res.json({ resposta });
+    } catch (err) {
+      res.status(500).json({ resposta: 'Erro ao gerar resposta: ' + err.message });
+    }
+  });
+});
+const gptModels = [
+  'gpt-4', 'gpt-4-0613', 'gpt-4-32k', 'gpt-4-0314', 'gpt-4-32k-0314',
+  'gpt-3.5-turbo', 'gpt-3.5-turbo-16k', 'gpt-3.5-turbo-0613',
+  'gpt-3.5-turbo-16k-0613', 'gpt-3.5-turbo-0301',
+  'text-davinci-003', 'text-davinci-002', 'code-davinci-002',
+  'gpt-3', 'text-curie-001', 'text-babbage-001', 'text-ada-001',
+  'davinci', 'curie', 'babbage', 'ada', 'babbage-002', 'davinci-002'
+];
+
+// GPT models (via gpt.v1)
+gptModels.forEach(modelId => {
+  router.get(`/ia/${modelId}`, async (req, res) => {
+    const { texto } = req.query;
+    if (!texto) return res.status(400).json({ resposta: 'Parâmetro ?texto= é obrigatório.' });
+
+    try {
+      const resposta = await gpt.v1({
+        model: modelId,
+        messages: [{ role: 'user', content: texto }],
+        prompt: texto,
+        markdown: false
+      });
+
+      res.json({ resposta });
+    } catch (err) {
+      res.status(500).json({ resposta: 'Erro ao gerar resposta: ' + err.message });
+    }
+  });
+});
+
+// GPT-4o (via gpt.v3)
+router.get('/ia/gpt-4o', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).json({ resposta: 'Parâmetro ?texto= é obrigatório.' });
+
+  try {
+    const resposta = await gpt.v3({
+      messages: [{ role: 'user', content: texto }],
+      markdown: false,
+      stream: false
+    });
+
+    res.json({ resposta });
+  } catch (err) {
+    res.status(500).json({ resposta: 'Erro ao gerar resposta: ' + err.message });
+  }
+});
+
+// Bing AI
+router.get('/ia/bing', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).json({ resposta: 'Parâmetro ?texto= é obrigatório.' });
+
+  try {
+    const resposta = await bing({
+      messages: [{ role: 'user', content: texto }],
+      conversation_style: 'Balanced',
+      markdown: false,
+      stream: false
+    });
+
+    res.json({ resposta });
+  } catch (err) {
+    res.status(500).json({ resposta: 'Erro ao gerar resposta: ' + err.message });
+  }
+});
+
+// LLaMA 3.1
+router.get('/ia/llama', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).json({ resposta: 'Parâmetro ?texto= é obrigatório.' });
+
+  try {
+    const resposta = await llama({
+      messages: [{ role: 'user', content: texto }],
+      markdown: false,
+      stream: false
+    });
+
+    res.json({ resposta });
+  } catch (err) {
+    res.status(500).json({ resposta: 'Erro ao gerar resposta: ' + err.message });
+  }
+});
+
+// Blackbox AI
+router.get('/ia/blackbox', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).json({ resposta: 'Parâmetro ?texto= é obrigatório.' });
+
+  try {
+    const resposta = await blackbox({
+      messages: [{ role: 'user', content: texto }],
+      markdown: false,
+      stream: false
+    });
+
+    res.json({ resposta });
+  } catch (err) {
+    res.status(500).json({ resposta: 'Erro ao gerar resposta: ' + err.message });
+  }
+});
+
+
+
 router.get('/ia', async (req, res) => {
   const { texto } = req.query;
 
@@ -3564,33 +3828,28 @@ router.get('/ia', async (req, res) => {
   }
 });
 
+
 router.get('/lady', async (req, res) => {
   const { texto } = req.query;
 
   if (!texto) {
-    return res
-      .status(400)
-      .json({ status: false, mensagem: 'O parâmetro "texto" é obrigatório.' });
+    return res.status(400).json({ status: false, mensagem: 'O parâmetro "texto" é obrigatório.' });
   }
 
   try {
-    // Faz a chamada à nova API, enviando o texto no parâmetro ask
-    const { data } = await axios.get(
-      'https://fastrestapis.fasturl.link/aillm/gpt-4o-turbo',
-      { params: { ask: texto } }
-    );
+    const { data } = await axios.get('https://api.siputzx.my.id/api/ai/meta-llama-33-70B-instruct-turbo', {
+      params: { content: texto }
+    });
 
-    // A API retorna a resposta no campo data.result
-    const resposta = data && data.result ? data.result : 'Sem resposta disponível';
-
+    const resposta = data?.data || 'Sem resposta disponível';
     res.json({ resposta });
+
   } catch (error) {
     console.error('Erro ao buscar dados:', error.message);
-    res
-      .status(500)
-      .json({ status: false, mensagem: 'Erro interno do servidor.' });
+    res.status(500).json({ status: false, mensagem: 'Erro interno do servidor.' });
   }
 });
+
 
 router.get('/blackbox', async (req, res) => {
     const { texto } = req.query;
@@ -8249,7 +8508,7 @@ router.get('/gerar-imagem', async (req, res) => {
 
 //fim 
 
-// play e playvideo by Redzin 
+// play e playvideo by Redzin
 
 const got = require('got');
 const ytsr = require('yt-search');
@@ -10987,7 +11246,7 @@ router.get('/pin/video', (req, res) => {
 
 const apiId = 21844566;
 const apiHash = 'ff82e94bfed22534a083c3aee236761a';
-const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBu6PFqVLLbiFdwrnZodLTYD+cJaR0zEZA3LBu/ADOYrX3h5NS1Mdu2+s2PvIlfkI7gC1OMkWaylptw3NfkQciqn6JhS6lhwFEZ2Vu5bZNbADkKU4dG86elaie2pmnMrporVqNL2MlMuM6JZNUyv7C22y96a2Hi46nX1tLWWgPdcPQ4AeT981MWMX3QkOYIc00HbKMZ5XlM3AmmMF+J6rYcq2aQ3AKl0gtYPqK5jQ4CzILfhr32mngEWr6HkqnvKVKAtGYe+Ne9Nb1IXa8soMVaK5J8iP37GeasfjuwUo/szjX9vb4xAFD/cv0QLyEnPbOJMYk+G0YCJzZhRuwO9K7w+o=');
+const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBu8AeUdWjhR5FPI77NjMSV9srquavDLswBKLjzgy3dEhpNRl/+jEikGUv/+wEfRzR4b3CvJMkzqE0S/bZY8a3L+LeZdvGppPGGsBpnZ/yujXSndjlLRYCFVf9a+ANzIeNfGIqlVo3hD6RVJRUtpCW+PI5KdTiq9SdzVpE+4wDBXhFFJ586MyosGlWpcVzFzt2lHnvPe7B7xE+7J+v3t6GEmSNWVt7C8uXt4b/OpMJ0UEFewkVnA+E0jBNHw7Brn8tSKLfsb8ND+QWwf1NpxCPMlUqGjZItknqNfWk7WtjqW2mBj+7RtPI1VvO+2PsH+esd03XH6dEYxS1f4kH5U5rb4g=');
 const grupoChatId = -1002208588695;
 
 const rl = readline.createInterface({

@@ -330,30 +330,8 @@ router.get('/linkmp4', async (req, res) => {
   }
 });
 
-// Baixar áudio pelo nome
-router.get('/musica', async (req, res) => {
-  const { name } = req.query;
-
-  if (!name) {
-    return res.status(400).json({ error: 'Name is required' });
-  }
-
-  try {
-    const response = await axios.get(`https://api.vreden.my.id/api/ytplaymp3?query=${encodeURIComponent(name)}`);
-    const downloadUrl = response.data.result.download.url;
-
-    if (downloadUrl) {
-      return res.redirect(downloadUrl);  // Redireciona para o link de download do áudio
-    } else {
-      return res.status(404).json({ error: 'Download link not available' });
-    }
-  } catch (error) {
-    return res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
-
 // 2) Download MP3 por busca no YouTube (usando ?name=...)
-router.get('/music', async (req, res) => {
+router.get('/musica', async (req, res) => {
   const name = req.query.name;
   if (!name) return res.status(400).send('Parâmetro "name" é obrigatório');
 

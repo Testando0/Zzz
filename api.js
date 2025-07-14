@@ -330,8 +330,37 @@ router.get('/linkmp4', async (req, res) => {
   }
 });
 
-// 2) Download MP3 por busca no YouTube (usando ?name=...)
 router.get('/musica', async (req, res) => {
+    const { query } = req; // O nome da música será passado como parâmetro de consulta
+    const musicName = query.name; // Exemplo: /play?nome=nome_da_musica
+
+    if (!musicName) {
+        return res.status(400).json({ error: 'Nome da música é obrigatório' });
+    }
+
+    try {
+        // Montar a URL da API com o nome da música
+        const apiUrl = `https://api.nexfuture.com.br/api/downloads/youtube/play?query=${encodeURIComponent(musicName)}`;
+        
+        // Fazer a requisição para a API
+        const response = await axios.get(apiUrl);
+
+        if (response.data.status && response.data.resultado && response.data.resultado.audio) {
+            const audioUrl = response.data.resultado.audio;
+
+            // Redirecionar para o link do áudio
+            return res.redirect(audioUrl);
+        } else {
+            return res.status(404).json({ error: 'Áudio não encontrado' });
+        }
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: 'Erro ao processar a solicitação' });
+    }
+});
+
+// 2) Download MP3 por busca no YouTube (usando ?name=...)
+router.get('/music', async (req, res) => {
   const name = req.query.name;
   if (!name) return res.status(400).send('Parâmetro "name" é obrigatório');
 

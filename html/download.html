@@ -144,19 +144,19 @@
 
             switch(option) {
                 case 'musicByName':
-                    apiUrl = `https://kuromi-system-ofc.onrender.com/api/musica?name=${q}`;
+                    apiUrl = `https://kuromi-system-tech.onrender.com/api/musica?name=${q}`;
                     break;
                 case 'musicByLink':
-                    apiUrl = `https://kuromi-system-ofc.onrender.com/api/ytmp3?url=${q}`;
+                    apiUrl = `https://kuromi-system-tech.onrender.com/api/ytmp3?url=${q}`;
                     break;
                 case 'videoByName':
-                    apiUrl = `https://kuromi-system-ofc.onrender.com/api/ytmp4?url=${q}`;
+                    apiUrl = `https://kuromi-system-tech.onrender.com/api/ytmp4?url=${q}`;
                     break;
                 case 'videoByLink':
-                    apiUrl = `https://kuromi-system-ofc.onrender.com/api/ytmp4?url=${q}`;
+                    apiUrl = `https://kuromi-system-tech.onrender.com/api/ytmp4?url=${q}`;
                     break;
                 case 'instagramByLink':
-                    apiUrl = `https://kuromi-system-ofc.onrender.com/api/insta?url=${q}`;
+                    apiUrl = `https://kuromi-system-tech.onrender.com/api/insta?url=${q}`;
                     break;
                 case 'instagramStoryByLink':
                     apiUrl = `https://api-aswin-sparky.koyeb.app/api/downloader/story?url=${encodeURIComponent(query)}`;
@@ -165,13 +165,13 @@
                     apiUrl = `https://api-aswin-sparky.koyeb.app/api/search/ig?search=${encodeURIComponent(query)}`;
                     break;
                 case 'facebookByLink1':
-                    apiUrl = `https://kuromi-system-ofc.onrender.com/api/facebook?link=${encodeURIComponent(query)}`;
+                    apiUrl = `https://kuromi-system-tech.onrender.com/api/facebook?link=${encodeURIComponent(query)}`;
                     break;
                 case 'facebookByLink2':
                     apiUrl = `https://api-aswin-sparky.koyeb.app/api/downloader/fbdl?url=${encodeURIComponent(query)}`;
                     break;
                 case 'tiktokByLinkVideo':
-                    apiUrl = `https://kuromi-system-ofc.onrender.com/api/tiktok?query=${encodeURIComponent(query)}`;
+                    apiUrl = `https://kuromi-system-tech.onrender.com/api/tiktok?query=${encodeURIComponent(query)}`;
                     break;
                 case 'tiktokByLinkAudio':
                     apiUrl = `https://clover-t-bot-r0wt.onrender.com/download/tiktok?url=${encodeURIComponent(query)}`;
@@ -182,16 +182,16 @@
                     window.open('https://imgur.com/', '_blank');
                     return;
                 case 'pinterestVideo':
-                    apiUrl = `https://kuromi-system-ofc.onrender.com/api/pinvideo?url=${encodeURIComponent(query)}`;
+                    apiUrl = `https://kuromi-system-tech.onrender.com/api/pinvideo?url=${encodeURIComponent(query)}`;
                     break;
                 case 'pinterestImage':
-                    apiUrl = `https://kuromi-system-ofc.onrender.com/api/pinimagem?url=${encodeURIComponent(query)}`;
+                    apiUrl = `https://kuromi-system-tech.onrender.com/api/pinimagem?url=${encodeURIComponent(query)}`;
                     break;
                 case 'instaByNewApi':
                     apiUrl = `https://api-aswin-sparky.koyeb.app/api/downloader/igdl?url=${encodeURIComponent(query)}`;
                     break;
                 default:
-                    resultElement.textContent = 'Opção inválida ou não suportada';
+                    resultElement.textContent = 'Opção Inválida Ou Não Suportada';
                     return;
             }
 

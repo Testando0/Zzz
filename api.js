@@ -3662,6 +3662,55 @@ router.get('/image', async (req, res) => {
   }
 });
       
+router.get('/flux', async (req, res) => {
+  const { prompt } = req.query;
+  if (!prompt) return res.status(400).json({ error: 'Informe um prompt' });
+
+  try {
+    const response = await axios.get(
+      'https://api.siputzx.my.id/api/ai/flux',
+      { params: { prompt }, responseType: 'stream' }
+    );
+    res.setHeader('Content-Type', response.headers['content-type'] || 'image/png');
+    response.data.pipe(res);
+  } catch {
+    res.status(500).json({ error: 'Erro ao gerar imagem' });
+  }
+});
+
+router.get('/magicstudio', async (req, res) => {
+  const { prompt } = req.query;
+  if (!prompt) return res.status(400).json({ error: 'Informe um prompt' });
+
+  try {
+    const response = await axios.get(
+      'https://api.siputzx.my.id/api/ai/magicstudio',
+      { params: { prompt }, responseType: 'stream' }
+    );
+    res.setHeader('Content-Type', response.headers['content-type'] || 'image/png');
+    response.data.pipe(res);
+  } catch {
+    res.status(500).json({ error: 'Erro ao gerar imagem' });
+  }
+});
+
+router.get('/stabilityai', async (req, res) => {
+  const { prompt } = req.query;
+  if (!prompt) return res.status(400).json({ error: 'Informe um prompt' });
+
+  try {
+    const response = await axios.get(
+      'https://api.siputzx.my.id/api/ai/stabilityai',
+      { params: { prompt }, responseType: 'stream' }
+    );
+    res.setHeader('Content-Type', response.headers['content-type'] || 'image/png');
+    response.data.pipe(res);
+  } catch {
+    res.status(500).json({ error: 'Erro ao gerar imagem' });
+  }
+});
+
+      
 //fim
 
 //inteligência artificial 
@@ -3805,9 +3854,24 @@ router.get('/ia/blackbox', async (req, res) => {
   }
 });
 
-
-
 router.get('/ia', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).json({ error: 'O parâmetro "texto" é obrigatório.' });
+
+  try {
+    const { data } = await axios.get(
+      'https://api.siputzx.my.id/api/ai/deepseek-llm-67b-chat',
+      { params: { content: texto } }
+    );
+
+    if (!data?.data) return res.status(502).json({ error: 'Resposta inesperada da API.' });
+    res.json({ resposta: data.data });
+  } catch {
+    res.status(500).json({ error: 'Erro ao processar a requisição.' });
+  }
+});
+
+router.get('/ia2', async (req, res) => {
   const { texto } = req.query;
 
   if (!texto) {
@@ -3833,6 +3897,28 @@ router.get('/lady', async (req, res) => {
   const { texto } = req.query;
 
   if (!texto) {
+    return res.status(400).json({ erro: 'Parâmetro "texto" é obrigatório.' });
+  }
+
+  try {
+    const { data } = await axios.get(`https://zelapioffciall.vercel.app/ai/copilotai`, {
+      params: { text: texto }
+    });
+
+    const resposta = data?.result?.text || 'Erro ao obter resposta.';
+
+    res.json({ resposta });
+  } catch (error) {
+    console.error('Erro na requisição:', error.message);
+    res.status(500).json({ erro: 'Erro ao consultar a IA.' });
+  }
+});
+
+
+router.get('/meta-llama', async (req, res) => {
+  const { texto } = req.query;
+
+  if (!texto) {
     return res.status(400).json({ status: false, mensagem: 'O parâmetro "texto" é obrigatório.' });
   }
 
@@ -3851,7 +3937,7 @@ router.get('/lady', async (req, res) => {
 });
 
 
-router.get('/blackbox', async (req, res) => {
+router.get('/blackbox2', async (req, res) => {
     const { texto } = req.query;
 
     if (!texto) {
@@ -3872,7 +3958,47 @@ router.get('/blackbox', async (req, res) => {
     }
 });
 
+router.get('/blackbox', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).json({ error: 'Texto parameter is required.' });
+
+  try {
+    const { data } = await axios.get(
+      'https://api.siputzx.my.id/api/ai/blackboxai',
+      { params: { content: texto } }
+    );
+
+    if (!data?.data) return res.status(502).json({ error: 'Resposta inesperada.' });
+    res.json({ resposta: data.data });
+  } catch {
+    res.status(500).json({ error: 'Erro ao obter resposta da AI.' });
+  }
+});
+
+
 router.get('/deepseek', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).json({ error: 'O parâmetro "texto" é obrigatório.' });
+
+  try {
+    const { data } = await axios.get(
+      'https://api.siputzx.my.id/api/ai/deepseek',
+      {
+        params: {
+          prompt: 'You are an assistant that always responds in Indonesian with a friendly and informal tone',
+          message: texto
+        }
+      }
+    );
+
+    if (!data?.data) return res.status(502).json({ error: 'Resposta inesperada da API.' });
+    res.json({ resposta: data.data });
+  } catch {
+    res.status(500).json({ error: 'Erro ao processar a requisição.' });
+  }
+});
+
+router.get('/deepseek2', async (req, res) => {
     const { texto } = req.query;
 
     if (!texto) {
@@ -6103,6 +6229,154 @@ router.get('/ai-gpt4-o', async (req, res) => {
   }
 });
 
+router.get('/gemma', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).json({ error: 'O parâmetro "texto" é obrigatório.' });
+
+  try {
+    const { data } = await axios.get(
+      'https://api.siputzx.my.id/api/ai/gemma',
+      {
+        params: {
+          prompt: 'Você é uma inteligência artificial que fala português animada',
+          message: texto
+        }
+      }
+    );
+
+    if (!data?.data) return res.status(502).json({ error: 'Resposta inesperada da API.' });
+    res.json({ resposta: data.data });
+  } catch {
+    res.status(500).json({ error: 'Erro ao obter resposta da IA.' });
+  }
+});
+
+router.get('/gita', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).json({ error: 'O parâmetro "texto" é obrigatório.' });
+
+  try {
+    const { data } = await axios.get(
+      'https://api.siputzx.my.id/api/ai/gita',
+      { params: { q: texto } }
+    );
+
+    if (!data?.data) return res.status(502).json({ error: 'Resposta inesperada da API.' });
+    res.json({ resposta: data.data });
+  } catch {
+    res.status(500).json({ error: 'Erro ao obter resposta da IA.' });
+  }
+});
+
+router.get('/llama', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).json({ error: 'O parâmetro "texto" é obrigatório.' });
+
+  try {
+    const { data } = await axios.get(
+      'https://api.siputzx.my.id/api/ai/llama',
+      {
+        params: {
+          prompt: 'Você é um assistente que sempre responde em indonésio, de forma amigável e informal',
+          message: texto
+        }
+      }
+    );
+
+    if (!data?.data) return res.status(502).json({ error: 'Resposta inesperada da API.' });
+    res.json({ resposta: data.data });
+  } catch {
+    res.status(500).json({ error: 'Erro ao obter resposta da IA.' });
+  }
+});
+
+router.get('/bard', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).json({ error: 'O parâmetro "texto" é obrigatório.' });
+
+  try {
+    const { data } = await axios.get(
+      'https://api.siputzx.my.id/api/ai/bard',
+      { params: { query: texto } }
+    );
+
+    if (!data?.data) return res.status(502).json({ error: 'Resposta inesperada da API.' });
+    res.json({ resposta: data.data });
+  } catch {
+    res.status(500).json({ error: 'Erro ao obter resposta da IA.' });
+  }
+});
+
+router.get('/metaai', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).json({ error: 'O parâmetro "texto" é obrigatório.' });
+
+  try {
+    const { data } = await axios.get(
+      'https://api.siputzx.my.id/api/ai/metaai',
+      { params: { query: texto } }
+    );
+
+    if (!data?.data) return res.status(502).json({ error: 'Resposta inesperada da API.' });
+    res.json({ resposta: data.data });
+  } catch {
+    res.status(500).json({ error: 'Erro ao obter resposta da IA.' });
+  }
+});
+
+router.get('/esia', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).json({ error: 'O parâmetro "texto" é obrigatório.' });
+
+  try {
+    const { data } = await axios.get(
+      'https://api.siputzx.my.id/api/ai/esia',
+      { params: { content: texto } }
+    );
+
+    if (!data?.data) return res.status(502).json({ error: 'Resposta inesperada da API.' });
+    res.json({ resposta: data.data });
+  } catch {
+    res.status(500).json({ error: 'Erro ao obter resposta da IA.' });
+  }
+});
+
+router.get('/dukun', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).json({ error: 'O parâmetro "texto" é obrigatório.' });
+
+  try {
+    const { data } = await axios.get(
+      'https://api.siputzx.my.id/api/ai/dukun',
+      { params: { content: texto } }
+    );
+
+    if (!data?.data) return res.status(502).json({ error: 'Resposta inesperada da API.' });
+    res.json({ resposta: data.data });
+  } catch {
+    res.status(500).json({ error: 'Erro ao obter resposta da IA.' });
+  }
+});
+
+router.get('/dreamshaper', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).json({ error: 'O parâmetro "texto" é obrigatório.' });
+
+  try {
+    const response = await axios.get(
+      'https://api.siputzx.my.id/api/ai/dreamshaper',
+      {
+        params: { prompt: texto },
+        responseType: 'stream'
+      }
+    );
+
+    res.setHeader('Content-Type', response.headers['content-type'] || 'image/png');
+    response.data.pipe(res);
+  } catch {
+    res.status(500).json({ error: 'Erro ao gerar a imagem.' });
+  }
+});
 
 router.get('/ai-llama', async (req, res) => {
   const { texto } = req.query; // Captura o parâmetro 'texto' da query string
@@ -8057,8 +8331,31 @@ router.get('/tiktok', async (req, res) => {
   }
 });
 
+router.get('/gpt3', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).json({ error: 'O parâmetro "texto" é obrigatório.' });
+
+  try {
+    const { data } = await axios.get(
+      'https://api.siputzx.my.id/api/ai/gpt3',
+      {
+        params: {
+          prompt: 'Você é uma IA que sempre responde em português, de forma amigável e informal.',
+          content: texto
+        }
+      }
+    );
+
+    if (!data?.data) return res.status(502).json({ error: 'Resposta inesperada da API.' });
+    res.json({ resposta: data.data });
+  } catch {
+    res.status(500).json({ error: 'Erro ao obter resposta da IA.' });
+  }
+});
+
+
 // Rota para ChatGPT 
-router.get('/chatgpt', async (req, res) => {
+router.get('/chatgpt2', async (req, res) => {
   const you_qus = req.query.texto; // Esperando um parâmetro de consulta com 'texto'
   
   if (!you_qus) {
@@ -8462,8 +8759,26 @@ router.get('/netersg', async (req, res) => {
 });
 //gerar imagem by Redzin 
 
-// Rota para gerar a imagem usando um parâmetro de consulta
 router.get('/gerar-imagem', async (req, res) => {
+  const { prompt } = req.query;
+  if (!prompt) return res.status(400).json({ error: 'Informe um prompt' });
+
+  try {
+    const response = await axios.get(
+      'https://api.siputzx.my.id/api/ai/stable-diffusion',
+      { params: { prompt }, responseType: 'stream' }
+    );
+
+    res.setHeader('Content-Type', response.headers['content-type'] || 'image/png');
+    response.data.pipe(res);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao gerar imagem' });
+  }
+});
+
+
+// Rota para gerar a imagem usando um parâmetro de consulta
+router.get('/gerar-imagem2', async (req, res) => {
     const { texto } = req.query; // texto que será enviado para a API da Hugging Face
 
     if (!texto) {
@@ -11246,7 +11561,7 @@ router.get('/pin/video', (req, res) => {
 
 const apiId = 21844566;
 const apiHash = 'ff82e94bfed22534a083c3aee236761a';
-const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBu8AeUdWjhR5FPI77NjMSV9srquavDLswBKLjzgy3dEhpNRl/+jEikGUv/+wEfRzR4b3CvJMkzqE0S/bZY8a3L+LeZdvGppPGGsBpnZ/yujXSndjlLRYCFVf9a+ANzIeNfGIqlVo3hD6RVJRUtpCW+PI5KdTiq9SdzVpE+4wDBXhFFJ586MyosGlWpcVzFzt2lHnvPe7B7xE+7J+v3t6GEmSNWVt7C8uXt4b/OpMJ0UEFewkVnA+E0jBNHw7Brn8tSKLfsb8ND+QWwf1NpxCPMlUqGjZItknqNfWk7WtjqW2mBj+7RtPI1VvO+2PsH+esd03XH6dEYxS1f4kH5U5rb4g=');
+const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBu6w+tiogVJwhWK96/OnRGDlFxzXUVSEq31hviJy0fSxSkOztt68FZE6/zXt39IbaPuHBIR8aoivAXAN/SNk93++3UXdjrN/Yc64oHaRuKr9b1vPGEXzTbTcXgJrmrB05IOCu17oaz41fHStwBODJtZNmqK25yNt1nAMFEhooxxBF8DzZ523ejwC4LBTTgYaMuJx2piK0n4O/lSNYmBV13hYWEAPYxEwF+uJXLTDJh0O+l54HEHAJYR6p7ynh1E/dG0D/C7YqcfVTFF/pFze64UG4nGh3hLau1a+zDNCX6dE4wZpA4SXyhrhLPM8i8rFj/A7DH8gp4Z9PkB4rXTOf6+Y=');
 const grupoChatId = -1002208588695;
 
 const rl = readline.createInterface({
@@ -17680,7 +17995,7 @@ router.get('/contasonly', (req, res) => {
         const randomLink = linksData[randomIndex];
 
         // Enviar o link e o nome como resposta
-        res.json({ criador: 'Redzin', nome: randomLink.nome, link: randomLink.link });
+        res.json({ criador: 'Kuromi', nome: randomLink.nome, link: randomLink.link });
     } catch (error) {
         console.error('Erro ao obter o link aleatório:', error);
         res.status(500).json({ error: 'Erro ao obter o link aleatório' });
@@ -17707,7 +18022,7 @@ router.get('/metadinhas', (req, res) => {
 
         // Enviar os links masculinos e femininos como resposta
         res.json({
-            criador: 'Redzin',
+            criador: 'Kuromi',
             masculina: randomLink.masculina,
             feminina: randomLink.feminina
         });

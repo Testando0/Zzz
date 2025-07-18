@@ -1,7 +1,7 @@
 {
-  "name": "KUROMI SYSTEM",
+  "name": "Kuromi System",
   "version": "3.0.0",
-  "description": "Sistemas Kuromi",
+  "description": "Sistemas Kuromi....",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -11,6 +11,7 @@
   "dependencies": {
     "express": "",
     "axios": "",
+    "node-fetch": "^2.6.11",
     "yt-search": "",
     "request": "",
     "node-fetch": "",
@@ -46,6 +47,8 @@
     "welcomify": "",
     "musicard-bun": "",
     "fluent-ffmpeg": "",
-    "morgan": ""
+    "morgan": "",
+    "unlimited-ai": "",
+    "gpti": ""
   }
 }

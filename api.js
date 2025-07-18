@@ -7,6 +7,7 @@ const path = require('path');
 const JXR = require("jxr-canvas");
 const canvacard = require("canvacard")
 const { musicCard, RankCard } = require("musicard-bun");
+const { loadImage } = require('canvas');
 const { Card } = require("welcomify")
 const morgan  = require("morgan");
 const { createDecipheriv } = require("crypto");
@@ -15,6 +16,7 @@ const ffmpeg = require('fluent-ffmpeg');
 const cheerio = require('cheerio');
 const search = require('yt-search');
 const ytSearch = require('yt-search');
+const fetch = require("node-fetch");
 const yt = require('@distube/ytdl-core');
 const criador = 'Redzin';
 const { exec } = require('child_process');
@@ -192,6 +194,61 @@ const {
 } = require('./config.js'); // arquivo que ele puxa as funções 
 
 // 719 rotas 10/06/2025 18:38
+
+
+router.get('/boneco', async (req, res) => {
+  try {
+    const largura = 512;
+    const altura = 900;
+    const tamanhoPadrao = 200;
+
+    const canvas = createCanvas(largura, altura);
+    const ctx = canvas.getContext('2d');
+
+    ctx.clearRect(0, 0, largura, altura);
+
+    // Ordem: chapéu, máscara, maquiagem, blusa, calça, sapato
+    const partes = [
+      { nome: 'chapeu', url: req.query.chapeu },
+      { nome: 'mascara', url: req.query.mascara },
+      { nome: 'maquiagem', url: req.query.maquiagem },
+      { nome: 'blusa', url: req.query.blusa },
+      { nome: 'calca', url: req.query.calca },
+      { nome: 'sapato', url: req.query.sapato },
+    ];
+
+    const posicoesFixas = [
+      { x: 156, y: 0 },    // chapéu
+      { x: 156, y: 140 },  // máscara
+      { x: 156, y: 280 },  // maquiagem
+      { x: 156, y: 420 },  // blusa
+      { x: 156, y: 560 },  // calça
+      { x: 156, y: 700 },  // sapato
+    ];
+
+    for (let i = 0; i < partes.length; i++) {
+      const parte = partes[i];
+      if (parte.url && parte.url.trim() !== '') {
+        try {
+          const response = await axios.get(parte.url, { responseType: 'arraybuffer' });
+          const buffer = Buffer.from(response.data, 'binary');
+          const img = await loadImage(buffer);
+
+          const { x, y } = posicoesFixas[i];
+          ctx.drawImage(img, x, y, tamanhoPadrao, tamanhoPadrao);
+        } catch (err) {
+          console.error(`Erro na parte ${parte.nome}:`, err.message);
+        }
+      }
+    }
+
+    res.setHeader('Content-Type', 'image/png');
+    res.send(canvas.toBuffer());
+  } catch (err) {
+    console.error('Erro na rota /boneco:', err);
+    res.status(500).send('Erro ao gerar boneco');
+  }
+});
 
 
 async function generateAudio(res, voiceId, text) {
@@ -488,6 +545,7 @@ router.get('/linkmp3-8', async (req, res) => {
 });
 
 
+// Extrai ID do vídeo do YouTube
 function getYouTubeVideoId(url) {
   const regex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|v\/|embed\/|user\/[^\/\n\s]+\/)?(?:watch\?v=|v%3D|embed%2F|video%2F)?|youtu\.be\/|youtube\.com\/watch\?v=|youtube\.com\/embed\/|youtube\.com\/v\/|youtube\.com\/shorts\/|youtube\.com\/playlist\?list=)([a-zA-Z0-9_-]{11})/;
   const match = url.match(regex);
@@ -517,42 +575,44 @@ const decode = (enc) => {
 
 async function savetube(link, quality, type) {
   try {
-    const cdn     = (await axios.get("https://media.savetube.me/api/random-cdn")).data.cdn;
-    const infoget = (
-      await axios.post(
-        `https://${cdn}/v2/info`,
-        { url: link },
-        {
-          headers: {
-            "User-Agent":
-              "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Mobile Safari/537.36",
-            Referer: "https://yt.savetube.me/1kejjj1?id=362796039",
-          },
-        }
-      )
-    ).data;
+    const cdnRes = await fetch("https://media.savetube.me/api/random-cdn");
+    const { cdn } = await cdnRes.json();
 
-    const info = decode(infoget.data);
+    const infoRes = await fetch(`https://${cdn}/v2/info`, {
+      method: "POST",
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Linux; Android 10; K)",
+        "Referer": "https://yt.savetube.me/1kejjj1?id=362796039",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ url: link })
+    });
 
-    const { data: downloadResp } = await axios.post(
-      `https://${cdn}/download`,
-      { downloadType: type, quality: `${quality}`, key: info.key },
-      {
-        headers: {
-          "Content-Type": "application/json",
-          "User-Agent":
-            "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Mobile Safari/537.36",
-          Referer: "https://yt.savetube.me/start-download?from=1kejjj1%3Fid%3D362796039",
-        },
-      }
-    );
+    const infoJson = await infoRes.json();
+    const info = decode(infoJson.data);
+
+    const downloadRes = await fetch(`https://${cdn}/download`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "User-Agent": "Mozilla/5.0 (Linux; Android 10; K)",
+        "Referer": "https://yt.savetube.me/start-download?from=1kejjj1%3Fid%3D362796039"
+      },
+      body: JSON.stringify({
+        downloadType: type,
+        quality: `${quality}`,
+        key: info.key
+      })
+    });
+
+    const downloadJson = await downloadRes.json();
 
     return {
       status: true,
       quality: `${quality}${type === "audio" ? "kbps" : "p"}`,
       availableQuality: type === "audio" ? audioQualities : videoQualities,
-      url: downloadResp.data.downloadUrl,
-      filename: `${info.title} (${quality}${type === "audio" ? "kbps).mp3" : "p).mp4"}`,
+      url: downloadJson.data.downloadUrl,
+      filename: `${info.title} (${quality}${type === "audio" ? "kbps).mp3" : "p).mp4"}`
     };
   } catch (error) {
     console.error("Converting error:", error);
@@ -560,15 +620,16 @@ async function savetube(link, quality, type) {
   }
 }
 
+
 async function playmp3(link, quality = 128) {
   const videoId = getYouTubeVideoId(link);
   const q       = audioQualities.includes(+quality) ? +quality : 128;
 
   if (!videoId) return { status: false, message: "Invalid YouTube URL" };
 
-  const url       = `https://youtube.com/watch?v=${videoId}`;
-  const meta      = await ytSearch(url);
-  const download  = await savetube(url, q, "audio");
+  const url      = `https://youtube.com/watch?v=${videoId}`;
+  const meta     = await ytSearch(url);
+  const download = await savetube(url, q, "audio");
 
   return { status: true, creator: "@vreden/youtube_scraper", metadata: meta.all[0], download };
 }
@@ -579,23 +640,23 @@ async function playmp4(link, quality = 360) {
 
   if (!videoId) return { status: false, message: "Invalid YouTube URL" };
 
-  const url       = `https://youtube.com/watch?v=${videoId}`;
-  const meta      = await ytSearch(url);
-  const download  = await savetube(url, q, "video");
+  const url      = `https://youtube.com/watch?v=${videoId}`;
+  const meta     = await ytSearch(url);
+  const download = await savetube(url, q, "video");
 
   return { status: true, creator: "@vreden/youtube_scraper", metadata: meta.all[0], download };
 }
 
 async function fetchTranscript(link) {
   try {
-    const { data } = await axios.get("https://ytb2mp4.com/api/fetch-transcript", {
-      params: { url: link },
+    const res = await fetch(`https://ytb2mp4.com/api/fetch-transcript?url=${encodeURIComponent(link)}`, {
       headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36",
-        Referer: "https://ytb2mp4.com/youtube-transcript",
-      },
+        "User-Agent": "Mozilla/5.0 (Linux; Android 10; K)",
+        "Referer": "https://ytb2mp4.com/youtube-transcript"
+      }
     });
+
+    const data = await res.json();
     return { status: true, creator: "@vreden/youtube_scraper", transcript: data.transcript };
   } catch (error) {
     return { status: false, message: error.message };
@@ -604,9 +665,9 @@ async function fetchTranscript(link) {
 
 async function ytdlv2(link, quality) {
   try {
-    const { data: meta } = await axios.get(`https://ytdl.vreden.web.id/metadata?url=${link}`);
+    const resMeta = await fetch(`https://ytdl.vreden.web.id/metadata?url=${encodeURIComponent(link)}`);
+    const meta = await resMeta.json();
 
-    // Reutiliza nossas próprias funções para gerar URLs diretos
     const mp3 = await playmp3(link, quality);
     const mp4 = await playmp4(link, quality);
 
@@ -621,17 +682,11 @@ async function ytdlv2(link, quality) {
 
 async function channel(teks) {
   try {
-    const result = await axios.get(`https://ytdl.vreden.web.id/channel/${teks}`);
-    return {
-      status: true,
-      creator: "@vreden/youtube_scraper",
-      ...result.data
-    };
+    const res = await fetch(`https://ytdl.vreden.web.id/channel/${teks}`);
+    const result = await res.json();
+    return { status: true, creator: "@vreden/youtube_scraper", ...result };
   } catch (error) {
-    return {
-      status: false,
-      message: error.message
-    };
+    return { status: false, message: error.message };
   }
 }
 
@@ -2053,7 +2108,7 @@ const response = await axios.get(`https://api.vreden.my.id/api/download/threads?
 
 
 
-router.get('/facebook2', async (req, res) => {
+router.get('/facebook', async (req, res) => {
   const { url } = req.query;
   if (!url) return res.status(400).json({ error: 'URL não fornecida' });
 
@@ -2985,33 +3040,42 @@ router.get('/likeff', async (req, res) => {
 
 
 router.get('/likesff', async (req, res) => {
-    const { id } = req.query;
+  const { id } = req.query;
 
-    if (!id) {
-        return res.status(400).json({ error: 'O parâmetro "id" é obrigatório.' });
+  if (!id) {
+    return res.status(400).json({ error: 'O parâmetro "id" é obrigatório.' });
+  }
+
+  try {
+    const apiUrl = `https://likesff.online/api/ff?uid=${encodeURIComponent(id)}`;
+    const response = await axios.get(apiUrl);
+    const data = response.data;
+
+    if (data.status !== 200) {
+      return res.status(500).json({ error: 'Erro ao buscar informações do jogador.' });
     }
 
-    try {
-        const apiUrl = `https://likeskryptor.squareweb.app/api/likes?uid=${encodeURIComponent(id)}&quantity=100&key=bykryptor`;
-        const response = await axios.get(apiUrl);
-        const data = response.data;
+    const likesCalculado = data.likes_depois - data.likes_antes;
 
-        const likesCalculado = data.Likes_Depois - data.Likes_Antes;
+    const formattedResponse = {
+      "ID do Jogador": id,
+      "Apelido": data.nickname,
+      "Região": data.region,
+      "Nível": data.level,
+      "Experiência": data.exp,
+      "Likes Antes": data.likes_antes,
+      "Likes Depois": data.likes_depois,
+      "Likes Enviados": likesCalculado,
+      "Texto Resposta": data.sent
+    };
 
-        const formattedResponse = {
-            "ID do Jogador": id,
-            "Apelido": data.PlayerNickname,
-            "Região": data.PlayerRegion,
-            "Nível": data.PlayerLevel,
-            "Likes Antes": data.Likes_Antes,
-            "Likes Depois": data.Likes_Depois,
-            "Likes Enviados": likesCalculado
-        };
-
-        res.json(formattedResponse);
-    } catch (error) {
-        res.status(500).json({ error: 'Erro ao buscar informações de likes.', details: error.message });
-    }
+    res.json(formattedResponse);
+  } catch (error) {
+    res.status(500).json({
+      error: 'Erro ao buscar informações de likes.',
+      details: error.message
+    });
+  }
 });
 
 
@@ -8372,7 +8436,83 @@ router.get('/chatgpt2', async (req, res) => {
     res.status(500).json({ error: 'Erro ao buscar dados do ChatGPT' });
   }
 });
-router.get('/facebook', async (req, res) => {
+
+// Função para extrair dados do Facebook
+async function facebook(url) {
+  const headers = {
+    accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+    "sec-fetch-site": "none",
+    "sec-fetch-user": "?1",
+    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36 Edg/137.0.0.0"
+  };
+
+  try {
+    const response = await fetch(url, { headers });
+    const html = await response.text();
+
+    const title = html.match(/<meta name="description" content="([^"]+?)"/)?.[1] || null;
+    const views = html.match(/<meta property="og:title" content="([^"]+)"/)?.[1]
+      ?.match(/([\d.,]+[ \u00A0]?[KM]?[ \u00A0]?(views|tayangan|vues))/i)?.[1] || null;
+    const reaction = html.match(/<meta property="og:title" content="([^"]+)"/)?.[1]
+      ?.match(/([\d.,]+[ \u00A0]?[KM]?[ \u00A0]?r[eé]actions)/i)?.[1] || null;
+    const video_sd = html.match(/"browser_native_sd_url":"(.+?)",/)?.[1]?.replace(/\\/g, "");
+    const video_hd = html.match(/"browser_native_hd_url":"(.+?)",/)?.[1]?.replace(/\\/g, "");
+    const audio = html.match(/"mime_type":"audio\\\/mp4","codecs":"mp4a\.40\.5","base_url":"(.+?)",/)?.[1]?.replace(/\\/g, "");
+
+    return {
+      metadata: {
+        title,
+        views,
+        reaction
+      },
+      download: {
+        video_sd,
+        video_hd,
+        audio
+      }
+    };
+  } catch (error) {
+    console.error("❌ Erro ao processar:", error.message || error);
+    return { error: true, message: "Erro ao acessar o Facebook." };
+  }
+}
+
+// Rota para baixar vídeo
+router.get("/facebookmp4", async (req, res) => {
+  const { url } = req.query;
+  if (!url) return res.status(400).json({ error: true, message: "URL do vídeo é obrigatória." });
+
+  const result = await facebook(url);
+  if (result.error || (!result.download.video_hd && !result.download.video_sd)) {
+    return res.status(500).json({ error: true, message: "Não foi possível extrair o vídeo." });
+  }
+
+  res.json({
+    title: result.metadata.title,
+    views: result.metadata.views,
+    reaction: result.metadata.reaction,
+    video_sd: result.download.video_sd,
+    video_hd: result.download.video_hd
+  });
+});
+
+// Rota para baixar áudio
+router.get("/facebookmp3", async (req, res) => {
+  const { url } = req.query;
+  if (!url) return res.status(400).json({ error: true, message: "URL do vídeo é obrigatória." });
+
+  const result = await facebook(url);
+  if (result.error || !result.download.audio) {
+    return res.status(500).json({ error: true, message: "Áudio não disponível para esse vídeo." });
+  }
+
+  res.json({
+    title: result.metadata.title,
+    audio: result.download.audio
+  });
+});
+
+router.get('/facebook3', async (req, res) => {
   const link = req.query.link;
   try {
     const result = await FacebookMp4(link);
@@ -8824,7 +8964,6 @@ router.get('/gerar-imagem2', async (req, res) => {
 //fim 
 
 // play e playvideo by Redzin
-
 const got = require('got');
 const ytsr = require('yt-search');
 
@@ -12163,22 +12302,18 @@ router.get('/perfilff', async (req, res) => {
 
   try {
     // Buscar HTML do perfil
-    const { data: html } = await axios.get(perfilUrl);
+    const html = await (await fetch(perfilUrl)).text();
     const $ = cheerio.load(html);
 
-    // Extrair bio pelo atributo data-original-bio
     const bio = $('#bioContent').attr('data-original-bio') || null;
 
-    // Função auxiliar para extrair texto depois do <strong>
     const getLiValue = (label) => {
       const li = $(`li strong:contains("${label}")`).first().parent();
       if (!li) return null;
-      // Pega só o texto dos nós tipo texto, sem filhos <small> etc
       const text = li.contents().filter((_, el) => el.type === 'text').text().trim();
       return text || null;
     };
 
-    // Extrai dados básicos
     const nome = $('.perfil-container .nome').text().trim() || null;
     const guilda_nome = $('.perfil-container .guilda').text().trim() || null;
     const avatar = $('.perfil-container img.avatar').attr('src');
@@ -12193,22 +12328,16 @@ router.get('/perfilff', async (req, res) => {
     const regiao = getLiValue('Região:');
     const guilda = guilda_nome === 'Sem guilda' ? null : guilda_nome;
 
-    // Extrair level e experiência separados
     const levelLi = $('li strong:contains("Level:")').first().parent();
-    const level = levelLi.contents()
-      .filter((_, el) => el.type === 'text')
-      .text().trim() || null;
+    const level = levelLi.contents().filter((_, el) => el.type === 'text').text().trim() || null;
 
     const expMatch = levelLi.find('small').text().match(/Exp:\s*([\d.]+)/);
     const experiencia = expMatch ? expMatch[1].replace(/\./g, '') : null;
-
-    // Extrai likes (apenas números)
     const likes = likes_text ? likes_text.replace(/\D/g, '') : null;
 
-    // Extrai roupas (skins)
     let roupas = [];
     try {
-      const { data: skinHtml } = await axios.get(skinUrl);
+      const skinHtml = await (await fetch(skinUrl)).text();
       const $$ = cheerio.load(skinHtml);
 
       $$('div.d-flex.flex-wrap.justify-content-start img').each((_, el) => {
@@ -12225,7 +12354,6 @@ router.get('/perfilff', async (req, res) => {
       roupas = false;
     }
 
-    // Retorna JSON final
     return res.json({
       status: 'success',
       perfil: {
@@ -12256,19 +12384,15 @@ router.get('/perfilff', async (req, res) => {
 
 router.get('/guildaff', async (req, res) => {
   const guildId = req.query.id;
-
   if (!guildId) {
-    console.warn('[guildaff] ❌ Parâmetro ?id= ausente');
     return res.status(400).json({ status: 'error', message: 'Parâmetro ?id= é obrigatório' });
   }
 
   const url = `https://www.freefiremania.com.br/guilda-ff/${guildId}.html`;
-  console.log(`[guildaff] 🔍 Buscando: ${url}`);
 
   try {
-    const { data: html } = await axios.get(url);
+    const html = await (await fetch(url)).text();
     const $ = cheerio.load(html);
-    console.log('[guildaff] ✅ Página carregada');
 
     const getText = (label) => {
       const li = $(`li:contains("${label}")`).first();
@@ -12293,7 +12417,6 @@ router.get('/guildaff', async (req, res) => {
       link: $('a[href*="/perfil/"]').first().attr('href') || null
     };
 
-    // Vice-capitães
     const vice_capitaes = [];
     $('section:contains("Vice-Capitães") ul.list-group li').each((_, el) => {
       const link = $(el).find('a').attr('href');
@@ -12303,16 +12426,14 @@ router.get('/guildaff', async (req, res) => {
       }
     });
 
-    // Etiquetas
     const etiquetas = [];
     $('h4:contains("Etiquetas")').next('ul').find('li').each((_, el) => {
       etiquetas.push($(el).text().trim());
     });
 
-    // Idade da guilda
     const idade_descricao = $('section.bg-warning p').text().trim();
 
-    const resultado = {
+    return res.json({
       status: 'success',
       guilda: {
         id: guildId,
@@ -12332,15 +12453,14 @@ router.get('/guildaff', async (req, res) => {
         etiquetas,
         idade_descricao
       }
-    };
+    });
 
-    console.log('[guildaff] 🟢 Sucesso:', resultado.guilda.nome || 'Guilda encontrada');
-    return res.json(resultado);
   } catch (error) {
     console.error('[guildaff] ❌ Erro ao buscar dados da guilda:', error.message);
     return res.status(500).json({ status: 'error', message: 'Erro ao buscar a guilda no site' });
   }
 });
+
 // /primeff
 router.get('/primeff', async (req, res) => {
   const id = req.query.id?.trim();
@@ -17995,7 +18115,7 @@ router.get('/contasonly', (req, res) => {
         const randomLink = linksData[randomIndex];
 
         // Enviar o link e o nome como resposta
-        res.json({ criador: 'Kuromi', nome: randomLink.nome, link: randomLink.link });
+        res.json({ criador: 'Redzin', nome: randomLink.nome, link: randomLink.link });
     } catch (error) {
         console.error('Erro ao obter o link aleatório:', error);
         res.status(500).json({ error: 'Erro ao obter o link aleatório' });
@@ -18022,7 +18142,7 @@ router.get('/metadinhas', (req, res) => {
 
         // Enviar os links masculinos e femininos como resposta
         res.json({
-            criador: 'Kuromi',
+            criador: 'Redzin',
             masculina: randomLink.masculina,
             feminina: randomLink.feminina
         });

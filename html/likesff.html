@@ -159,18 +159,18 @@
       if (data["ID do Jogador"]) {
         const likesAntes = parseInt(data["Likes Antes"]);
         const likesDepois = parseInt(data["Likes Depois"]);
-        const likesEnviados = likesEnviados;
+        const enviados = likesDepois - likesAntes;
 
         messageElement.className = 'message success';
         messageElement.textContent =
-          `❤️ *Informações De Likes Do Jogador*\n\n` +
+          `❤️ Informações De Likes Do Jogador\n\n` +
           `• 🆔 ID: ${data["ID do Jogador"]}\n` +
           `• ✨ Apelido: ${data["Apelido"]}\n` +
           `• 🌎 Região: ${data["Região"]}\n` +
           `• ⭐ Nível: ${data["Nível"]}\n` +
           `• 👍 Likes Antes: ${likesAntes}\n` +
           `• 👍 Likes Depois: ${likesDepois}\n` +
-          `• 🤖 Likes Enviados: ${likesEnviados}\n\n` +
+          `• 🤖 Likes Enviados: ${enviados}\n\n` +
           `⏱️ Tempo De Resposta: ${elapsed} segundos`;
       } else {
         messageElement.className = 'message error';

@@ -159,7 +159,7 @@
       if (data["ID do Jogador"]) {
         const likesAntes = parseInt(data["Likes Antes"]);
         const likesDepois = parseInt(data["Likes Depois"]);
-        const enviados = likesDepois - likesAntes;
+        const likesEnviados = likesEnviados;
 
         messageElement.className = 'message success';
         messageElement.textContent =
@@ -170,7 +170,7 @@
           `• ⭐ Nível: ${data["Nível"]}\n` +
           `• 👍 Likes Antes: ${likesAntes}\n` +
           `• 👍 Likes Depois: ${likesDepois}\n` +
-          `• 🤖 Likes Enviados: ${enviados}\n\n` +
+          `• 🤖 Likes Enviados: ${likesEnviados}\n\n` +
           `⏱️ Tempo De Resposta: ${elapsed} segundos`;
       } else {
         messageElement.className = 'message error';

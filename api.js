@@ -17,6 +17,7 @@ const cheerio = require('cheerio');
 const search = require('yt-search');
 const ytSearch = require('yt-search');
 const fetch = require("node-fetch");
+const chatCopilot = require('unofficial-copilot-api/src/copilot.js');
 const yt = require('@distube/ytdl-core');
 const criador = 'Redzin';
 const { exec } = require('child_process');
@@ -3956,8 +3957,27 @@ router.get('/ia2', async (req, res) => {
   }
 });
 
-
 router.get('/lady', async (req, res) => {
+  const texto = req.query.texto;
+
+  if (!texto) {
+    return res.status(400).json({
+      erro: 'Parâmetro texto não fornecido. Use /lady?texto=Sua pergunta'
+    });
+  }
+
+  try {
+    const resposta = await chatCopilot(texto);
+    res.json({ resposta });
+  } catch (err) {
+    res.status(500).json({
+      erro: 'Erro ao consultar Copilot',
+      detalhes: err.message
+    });
+  }
+});
+
+router.get('/lady2', async (req, res) => {
   const { texto } = req.query;
 
   if (!texto) {
@@ -8964,6 +8984,7 @@ router.get('/gerar-imagem2', async (req, res) => {
 //fim 
 
 // play e playvideo by Redzin
+
 const got = require('got');
 const ytsr = require('yt-search');
 
@@ -11700,7 +11721,7 @@ router.get('/pin/video', (req, res) => {
 
 const apiId = 21844566;
 const apiHash = 'ff82e94bfed22534a083c3aee236761a';
-const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBu6w+tiogVJwhWK96/OnRGDlFxzXUVSEq31hviJy0fSxSkOztt68FZE6/zXt39IbaPuHBIR8aoivAXAN/SNk93++3UXdjrN/Yc64oHaRuKr9b1vPGEXzTbTcXgJrmrB05IOCu17oaz41fHStwBODJtZNmqK25yNt1nAMFEhooxxBF8DzZ523ejwC4LBTTgYaMuJx2piK0n4O/lSNYmBV13hYWEAPYxEwF+uJXLTDJh0O+l54HEHAJYR6p7ynh1E/dG0D/C7YqcfVTFF/pFze64UG4nGh3hLau1a+zDNCX6dE4wZpA4SXyhrhLPM8i8rFj/A7DH8gp4Z9PkB4rXTOf6+Y=');
+const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBuxnBazxSVrYl2sT6wdWcz4fZY75KcJjKYgEXKGMDCXFJeWKyQDtQxkRJ/hrozVdANevDhCHSjhucRwqjxPKrTJwiFTQzSOqlaQOsl9W5Dz5Ok6vB7DgA+vJqv7vBmY2xkBYgYpYLCsEAjPTUhq4vqF1QRI2vOm+nOjk2MMWuULvUL6zPtQslvj+gyvfSOLomwXYTAkxp/Gss0Qg6Abszh0atDkgZVZSxbH2I4B4PW+c91rj1tBBIHtC8IP3Jkz9Na53c1Tgne9EgAgbCwSRUKrEaKFuV3JGodxJ9Es2W1Ms2VBlfeX81mJGUlH7sTK/9WLvy5rLENflM7jttKVxEeFA=');
 const grupoChatId = -1002208588695;
 
 const rl = readline.createInterface({
@@ -12060,6 +12081,7 @@ console.log(`Mensagem de consulta enviada para o grupo ${grupoChatId}: /${type.t
 
 const idDoGrupoDeLikes = -1002208588695;
 
+
 router.get('/likes', async (req, res) => {
   const id = req.query.id;
   const region = req.query.region || 'br';
@@ -12073,15 +12095,17 @@ router.get('/likes', async (req, res) => {
 
   const getUserInfo = async () => {
     try {
-      const { data } = await axios.get(`https://system.ffgarena.cloud/api/info_avatar?uid=${id}&region=${region}`);
+      const { data } = await axios.get(`https://kryptorinfo.squareweb.app/api/player_info?uid=${id}&region=${region}`);
+
       return {
         liked: data.basicInfo?.liked || 0,
         nickname: data.basicInfo?.nickname || 'Desconhecido',
         level: data.basicInfo?.level || 0,
-        avatar: data.avatars || ''
+        avatar: data.basicInfo?.avatars?.webp || '',
+        skin: data.profileInfo?.clothesImage || ''
       };
     } catch (err) {
-      console.error('❌ Erro na API:', err.message);
+      console.error('❌ Erro na nova API:', err.message);
       return null;
     }
   };
@@ -12093,7 +12117,7 @@ router.get('/likes', async (req, res) => {
 
   try {
     await client.sendMessage(idDoGrupoDeLikes, { message: `/likes ${id}` });
-    console.log(`✅ Mensagem enviada: /like ${id}`);
+    console.log(`✅ Mensagem enviada: /likes ${id}`);
 
     let infoDepois = null;
 
@@ -12117,6 +12141,7 @@ router.get('/likes', async (req, res) => {
         nick: infoDepois.nickname,
         nivel: infoDepois.level,
         avatar: infoDepois.avatar,
+        skin: infoDepois.skin,
         região: region
       }
     });
@@ -12126,6 +12151,7 @@ router.get('/likes', async (req, res) => {
     return res.json({ status: false, resultado: 'Erro ao tentar registrar os likes.' });
   }
 });
+
 
 router.get('/calcularxp', (req, res) => {
   const tabelaXP = [
@@ -12506,7 +12532,7 @@ router.get('/infoff', async (req, res) => {
     }
 
     try {
-        const response = await axios.get(`https://system.ffgarena.cloud/api/info_avatar?uid=${id}&region=br`);
+        const response = await axios.get(`https://freefirefwx-beta.squareweb.app/api/info_player?uid=${id}&region=br&clothes=true`);
 
         // Verifica se retornou erro
         if (response.data.error) {

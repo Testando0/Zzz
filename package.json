@@ -1,12 +1,12 @@
 {
-  "name": "Word-Eletrix",
+  "name": "Kuromi System",
   "version": "3.0.0",
-  "description": "site com objetivos de espalhar conhecimento!",
+  "description": "Sistemas Kuromi",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
-  "author": "luanzin dev",
+  "author": "Redzin",
   "license": "MIT",
   "dependencies": {
     "express": "",

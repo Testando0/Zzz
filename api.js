@@ -1544,36 +1544,38 @@ router.get('/celular2', async (req, res) => {
 // Rota para buscar as informações do site
 router.get('/playertv', async (req, res) => {
   try {
-    // URL do site para puxar os dados
-    const url = 'https://playertv.net';
-    
-    // Fazendo a requisição HTTP
-    const { data } = await axios.get(url);
-    
-    // Usando Cheerio para parsear o HTML
+    const baseUrl = 'https://playertv.net';
+    const { data } = await axios.get(baseUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) ' +
+                      'AppleWebKit/537.36 (KHTML, like Gecko) ' +
+                      'Chrome/115.0.0.0 Safari/537.36'
+      }
+    });
+
     const $ = cheerio.load(data);
     const posts = [];
-    
-    // Buscando os posts
+
     $('.elementor-post').each((index, element) => {
       const link = $(element).find('.elementor-post__title a').attr('href');
       const title = $(element).find('.elementor-post__title a').text().trim();
-      const imgSrc = $(element).find('.elementor-post__thumbnail img').attr('src') || '';
-      
-      posts.push({
-        link,
-        title,
-        imgSrc
-      });
+      let imgSrc = $(element).find('.elementor-post__thumbnail__link img').attr('src') || '';
+
+      // Corrige URL relativa
+      if (imgSrc && !imgSrc.startsWith('http')) {
+        imgSrc = `${baseUrl}/${imgSrc.replace(/^\//, '')}`;
+      }
+
+      posts.push({ link, title, imgSrc });
     });
 
-    // Respondendo com os posts encontrados
     res.json(posts);
   } catch (error) {
-    console.error('Erro ao obter o conteúdo:', error);
+    console.error('Erro ao obter o conteúdo:', error.message);
     res.status(500).json({ error: 'Erro ao buscar o conteúdo.' });
   }
 });
+
 router.get('/playertv2', async (req, res) => {
   try {
     const { data } = await axios.get('https://playertv.net/c/max/uefa.php');
@@ -11721,7 +11723,7 @@ router.get('/pin/video', (req, res) => {
 
 const apiId = 21844566;
 const apiHash = 'ff82e94bfed22534a083c3aee236761a';
-const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBuxnBazxSVrYl2sT6wdWcz4fZY75KcJjKYgEXKGMDCXFJeWKyQDtQxkRJ/hrozVdANevDhCHSjhucRwqjxPKrTJwiFTQzSOqlaQOsl9W5Dz5Ok6vB7DgA+vJqv7vBmY2xkBYgYpYLCsEAjPTUhq4vqF1QRI2vOm+nOjk2MMWuULvUL6zPtQslvj+gyvfSOLomwXYTAkxp/Gss0Qg6Abszh0atDkgZVZSxbH2I4B4PW+c91rj1tBBIHtC8IP3Jkz9Na53c1Tgne9EgAgbCwSRUKrEaKFuV3JGodxJ9Es2W1Ms2VBlfeX81mJGUlH7sTK/9WLvy5rLENflM7jttKVxEeFA=');
+const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBu5e4yojTh66DvXl7f3Mu3lG9s0LWwwolbDpnBo4qm2yAmTeU96VXXcEGC2oiDtgIywf/n2RFqg1YxblIH99Wp339e4UBUjfeUF8GDSsV2xsiUJjB1W40KKW+R0Vo080WW20sPoETAR8/PfZcXlyXg1WOgOwMt/30gqQS8/KcBCoTLmdJPXTTOEJrBOrBP9QoaCvejpQ9IB6te3LfjK4/xh97Z2mpGVDeMSEH6iHA+017BIHw6+caSRKv4gOKIkeHmBIGS5pjTb49RnLb9/ALgr9z0Zy74x77zs/k7aLzzjZLHHhcmYZyrqFJfMfAaauahdIAlbMaEdup63p+Fg38BbQ=');
 const grupoChatId = -1002208588695;
 
 const rl = readline.createInterface({
@@ -18178,6 +18180,3 @@ router.get('/metadinhas', (req, res) => {
     }
 });
 module.exports = router;
-
-
-

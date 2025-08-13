@@ -1541,17 +1541,10 @@ router.get('/celular2', async (req, res) => {
   }
 });
 
-// Rota para buscar as informações do site
 router.get('/playertv', async (req, res) => {
   try {
     const baseUrl = 'https://playertv.net';
-    const { data } = await axios.get(baseUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) ' +
-                      'AppleWebKit/537.36 (KHTML, like Gecko) ' +
-                      'Chrome/115.0.0.0 Safari/537.36'
-      }
-    });
+    const { data } = await axios.get(baseUrl);
 
     const $ = cheerio.load(data);
     const posts = [];
@@ -1575,6 +1568,8 @@ router.get('/playertv', async (req, res) => {
     res.status(500).json({ error: 'Erro ao buscar o conteúdo.' });
   }
 });
+
+
 
 router.get('/playertv2', async (req, res) => {
   try {
@@ -11723,7 +11718,7 @@ router.get('/pin/video', (req, res) => {
 
 const apiId = 21844566;
 const apiHash = 'ff82e94bfed22534a083c3aee236761a';
-const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBu5e4yojTh66DvXl7f3Mu3lG9s0LWwwolbDpnBo4qm2yAmTeU96VXXcEGC2oiDtgIywf/n2RFqg1YxblIH99Wp339e4UBUjfeUF8GDSsV2xsiUJjB1W40KKW+R0Vo080WW20sPoETAR8/PfZcXlyXg1WOgOwMt/30gqQS8/KcBCoTLmdJPXTTOEJrBOrBP9QoaCvejpQ9IB6te3LfjK4/xh97Z2mpGVDeMSEH6iHA+017BIHw6+caSRKv4gOKIkeHmBIGS5pjTb49RnLb9/ALgr9z0Zy74x77zs/k7aLzzjZLHHhcmYZyrqFJfMfAaauahdIAlbMaEdup63p+Fg38BbQ=');
+const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBuxbSRWlMQNivsjIMgG0crfPR0nnerhLyTXiXoTnn2N20bU44kPFp08NNcktGn08cx39uuVYJyOOM/MnjXx4nuQ37f/i8I+/DFofePfu/Ljpew8HeFXAsDG9vf16b3MAJgercbe+/EgiQ3XuCfI7xMnqLBDDZFIY5bKRzuAmpYqaPVSjpbvHzYUGiPIGirIbP9DQeLh0eZ4c1FHSxhFsdE6H2Hn9xeV59OJ6/xQKNl3CugcYHqlI4EjcfAryipWoO2qSIyr12G6Z9wZtpdbIDtagaKhFwDsnyXwOyFl8B68kZIMHRRSCabuSM0/TmMfjwozwyY9rW3vckHkKxYhso4bY=');
 const grupoChatId = -1002208588695;
 
 const rl = readline.createInterface({
@@ -18180,3 +18175,6 @@ router.get('/metadinhas', (req, res) => {
     }
 });
 module.exports = router;
+
+
+

@@ -1,7 +1,7 @@
 <!DOCTYPE html><html lang="pt-BR"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="icon" href="https://i.ibb.co/0RJmMT9b/1002612701.jpg" type="image/png">
+<link rel="icon" href="https://i.ibb.co/0RJmMT9b/1002612701.jpg" type="image/jpg">
 <title>KUROMI CONSULTAS</title>
 <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -59,7 +59,7 @@
 <body>
 
 <h1>KUROMI CONSULTAS</h1>
-<h2>⚠️ Se der erro tente novamente, caso continuar entre em contato com o dono</h2>
+<h2>Em Testes...</h2>
 
 <select id="tipo">
     <option value="telefone">Telefone</option>
@@ -68,7 +68,7 @@
     <option value="placa">Placa</option>
 </select>
 
-<input type="text" id="entrada" placeholder="Digite aqui...">
+<input type="text" id="entrada" placeholder="Digite Aqui...">
 <button onclick="consultar()">Consultar</button>
 
 <div id="containerResultado">
@@ -91,11 +91,11 @@ async function consultar() {
     copyBtn.style.display = "none";
 
     if (!entrada) {
-        resultadoEl.textContent = "❌ Preencha o campo!";
+        resultadoEl.textContent = "❌ Preencha O Campo!";
         return;
     }
 
-    resultadoEl.textContent = "⏳ Buscando informações, aguarde...";
+    resultadoEl.textContent = "⏳ Buscando Informações, Aguarde...";
 
     try {
         const res = await fetch("/api/consulta", {
@@ -106,7 +106,7 @@ async function consultar() {
         const data = await res.json();
 
         if (!data.status || !data.resultado) {
-            resultadoEl.textContent = "❌ Nenhum resultado encontrado.";
+            resultadoEl.textContent = "❌ Nenhum Resultado Encontrado.";
             return;
         }
 
@@ -120,7 +120,7 @@ async function consultar() {
         document.getElementById('containerResultado').scrollTop = 0;
 
     } catch (err) {
-        resultadoEl.textContent = "❌ Erro ao buscar dados. Tente novamente.";
+        resultadoEl.textContent = "❌ Erro Ao Buscar Dados. Tente Novamente.";
         console.error(err);
     }
 }
@@ -132,7 +132,7 @@ async function carregarInfoUsuario() {
         const res = await fetch('https://api.ipify.org?format=json');
         const data = await res.json();
         ip = data.ip;
-    } catch (e) { console.warn("⚠️ Não foi possível obter IP público:", e); }
+    } catch (e) { console.warn("⚠️ Não Foi Possível Obter IP Público:", e); }
     
     const userAgent = navigator.userAgent;
     let dispositivo = /Android/i.test(userAgent) ? "Android"
@@ -145,16 +145,9 @@ async function carregarInfoUsuario() {
 function copiarResultado() {
     const resultadoEl = document.getElementById('resultado');
     navigator.clipboard.writeText(resultadoEl.textContent)
-        .then(() => alert("✅ Resultado copiado para a área de transferência!"))
-        .catch(() => alert("❌ Erro ao copiar texto."));
+        .then(() => alert("✅ Resultado Copiado Para A Área De Transferência!"))
+        .catch(() => alert("❌ Erro Ao Copiar Texto."));
 }
 
 carregarInfoUsuario();
 </script>
-
-
-
-
-<button id="botaoTopo" onclick="window.location.href='coment.html'">Comentários</button>
-
-</body><!-- Botão acima do título --></html>

@@ -3954,12 +3954,12 @@ router.get('/ia2', async (req, res) => {
   }
 });
 
-router.get('/lady', async (req, res) => {
+router.get('/kuromi', async (req, res) => {
   const texto = req.query.texto;
 
   if (!texto) {
     return res.status(400).json({
-      erro: 'Parâmetro texto não fornecido. Use /lady?texto=Sua pergunta'
+      erro: 'Parâmetro texto não fornecido. Use /kuromi?texto=Sua pergunta'
     });
   }
 
@@ -3974,7 +3974,7 @@ router.get('/lady', async (req, res) => {
   }
 });
 
-router.get('/lady2', async (req, res) => {
+router.get('/kuromi2', async (req, res) => {
   const { texto } = req.query;
 
   if (!texto) {
@@ -11718,7 +11718,7 @@ router.get('/pin/video', (req, res) => {
 
 const apiId = 21844566;
 const apiHash = 'ff82e94bfed22534a083c3aee236761a';
-const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBuxbSRWlMQNivsjIMgG0crfPR0nnerhLyTXiXoTnn2N20bU44kPFp08NNcktGn08cx39uuVYJyOOM/MnjXx4nuQ37f/i8I+/DFofePfu/Ljpew8HeFXAsDG9vf16b3MAJgercbe+/EgiQ3XuCfI7xMnqLBDDZFIY5bKRzuAmpYqaPVSjpbvHzYUGiPIGirIbP9DQeLh0eZ4c1FHSxhFsdE6H2Hn9xeV59OJ6/xQKNl3CugcYHqlI4EjcfAryipWoO2qSIyr12G6Z9wZtpdbIDtagaKhFwDsnyXwOyFl8B68kZIMHRRSCabuSM0/TmMfjwozwyY9rW3vckHkKxYhso4bY=');
+const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBuxDVl0z6UBOt68A2zYOTpxxwfN46xiZZft+90Qs1IgoLikm+rf/MbuWsXQiwqycth4iTW9isqfE5+gCuqT1Cwb8cDCgnu/iCpbTDHuGHmXt1VM6tcvI6gPNPYthpUDpqDtG2e50iRqKVEaiCXRiywO+wvXqr9BVYLq7Yvd0fClzsXpjboF85Dzlx9C807bH7DMAaDKtSQKwHJbh/7ruvjSjDVm0+WzfPvM3nXOReWrwoS/TXmqrYZ6C6AxNA/NBJx9yx4lrZ8vi4MAh5uq4bIrpoRsBXLPZGhB6F4JBkUaaQrABQr6y3VaVpU2p/kwl9XE6zGNyhkVTvANPl2qM4IFE=');
 const grupoChatId = -1002208588695;
 
 const rl = readline.createInterface({
@@ -11757,6 +11757,9 @@ let client;
     console.error('Erro ao iniciar o cliente Telegram:', err);
   }
 })();
+
+
+
 
 router.get('/attp', async (req, res, next) => {
     let texto = req.query.texto;
@@ -18175,6 +18178,3 @@ router.get('/metadinhas', (req, res) => {
     }
 });
 module.exports = router;
-
-
-

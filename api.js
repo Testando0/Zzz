@@ -11718,7 +11718,7 @@ router.get('/pin/video', (req, res) => {
 
 const apiId = 21844566;
 const apiHash = 'ff82e94bfed22534a083c3aee236761a';
-const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBuxedhH02l9gV2xEQFGQTq6ltwgr0loleAz/yFHGo5AgD2DwNFDKD9HFQqOO4hVavoEtJcTsnJFFcNi7jtNF0anMVKDepwm2ZFXP/mnf3f4OVyIsVfD0nZRmJ5gqltWnAvSo2+9gNWvKxdLyXyEk/zq3sxuX9C0uui3e+sWD2pN5MzTOUt5y+lNyWs79Na9xO3xI02r8n2li/cPRjgMgIoT2q3dnS1Y9mHR113EoLDslXekxIymupzbZj7MTvoboOK/6jJ/Zz+afGiIvga8/OxMrSVfEJiLZjexrH+OZzidcYrmmZe7UguoEH2YuqO/IgUs0bOdAfdQrq6Hy1wWhWxew=');
+const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBu5d/K2H7HRiC543CTmMKTc3nv/7T+GOxOrY926/rz0A8nepQeHvNg9Dv5H8Iuz9aZs0ILTlpmNLyB0wM5MDDiQ1xOtUIJogcVoLflEDga0wSTLEqAKtYjVX21ajNUWSdQXelN7cbyBOWw2CtV33/4l5Po8yeZx5mxVsL2g36e0RKS956/kYnLhXM2/4D5PpGaYvpP6IxxtNK7RH1ep+KrwNc9oOJp+acQfxcMOA0iCrmoaE5BRx16rivzBuM/9zYRp/0ETda20iOkj/E6wdhUVMbPkc20qmUjd1Gh8c3q/o0ewl82uSYC+ZBkCc2PPvJ3LDXPQyCcHR0jIL3SO9rkvM=');
 const grupoChatId = -1002208588695;
 
 const rl = readline.createInterface({
@@ -11792,6 +11792,53 @@ router.get('/attp', async (req, res, next) => {
         return res.json({ message: "Erro no servidor interno..." });
     }
 });
+
+
+// Função genérica que chama a API de consulta
+async function consultar(tipo, entrada) {
+    try {
+        const res = await fetch("https://sandroapi.site/api/consulta", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ tipo, entrada })
+        });
+        const data = await res.json();
+        return data;
+    } catch (err) {
+        console.error(err);
+        return { status: false, error: "Erro ao consultar API" };
+    }
+}
+
+// Rota GET para telefone
+router.get('/consulta/telefone/:entrada', async (req, res) => {
+    const { entrada } = req.params;
+    const data = await consultar('telefone', entrada);
+    res.json(data);
+});
+
+// Rota GET para CPF
+router.get('/consulta/cpf/:entrada', async (req, res) => {
+    const { entrada } = req.params;
+    const data = await consultar('cpf', entrada);
+    res.json(data);
+});
+
+// Rota GET para nome
+router.get('/consulta/nome/:entrada', async (req, res) => {
+    const { entrada } = req.params;
+    const data = await consultar('nome', entrada);
+    res.json(data);
+});
+
+// Rota GET para placa
+router.get('/consulta/placa/:entrada', async (req, res) => {
+    const { entrada } = req.params;
+    const data = await consultar('placa', entrada);
+    res.json(data);
+});
+
+
 
 router.get('/consultarcpf', async (req, res, next) => {
     let cpf = req.query.cpf;

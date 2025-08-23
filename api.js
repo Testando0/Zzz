@@ -1902,7 +1902,7 @@ router.get('/play-audio3', async (req, res) => {
   if (!query) return res.status(400).json({ error: 'Parâmetro "query" não fornecido' });
 
   try {
-    const endpoint = `speedhosting.cloud:2009/download/play-audio?&url=${encodeURIComponent(query)}`;
+    const endpoint = `http://speedhosting.cloud:2009/download/play-audio?&url=${encodeURIComponent(query)}`;
     const response = await axios.get(endpoint);
     res.json(response.data);
   } catch (err) {

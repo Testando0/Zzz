@@ -1897,6 +1897,19 @@ router.get('/play-audio2', async (req, res) => {
   }
 });
 
+router.get('/play-audio3', async (req, res) => {
+  const { query } = req.query;
+  if (!query) return res.status(400).json({ error: 'Parâmetro "query" não fornecido' });
+
+  try {
+    const endpoint = `speedhosting.cloud:2009/download/play-audio?&url=${encodeURIComponent(query)}`;
+    const response = await axios.get(endpoint);
+    res.json(response.data);
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao buscar áudio do YouTube', details: err.message });
+  }
+});
+
 // Baixar áudio pelo link
 
 router.get('/ytmp3', async (req, res) => {

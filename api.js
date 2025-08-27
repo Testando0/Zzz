@@ -545,6 +545,18 @@ router.get('/linkmp3-8', async (req, res) => {
   }
 });
 
+router.get('/soundcloud', async (req, res) => {
+  const sdUrl = req.query.url;
+  if (!ytUrl) return res.status(400).send('URL do Soundcloud é obrigatório');
+
+  try {
+    const response = await axios.get(`https://delirius-apiofc.vercel.app/download/soundcloud?url=${encodeURIComponent(sdUrl)}`);
+    const downloadUrl = response.data.result.download.url;
+    res.redirect(downloadUrl);
+  } catch (error) {
+    res.status(500).send('Erro ao obter link de download');
+  }
+});
 
 // Extrai ID do vídeo do YouTube
 function getYouTubeVideoId(url) {

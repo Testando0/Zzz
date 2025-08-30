@@ -126,13 +126,13 @@
   <h1>Likes FF</h1>
 
   <div class="form-container">
-    <input type="text" id="userId" placeholder="Digite O ID Do Usuário" />
+    <input type="text" id="userId" placeholder="Digite o ID do usuário" />
     <button onclick="enviarLikes()">Enviar Likes</button>
     <div class="message" id="message"></div>
   </div>
 
   <div class="footer">
-    by Redzin
+    Redzin
   </div>
 
 <script>
@@ -147,7 +147,7 @@
 
     messageElement.className = 'message';
     messageElement.style.display = 'block';
-    messageElement.textContent = '⏳ Enviando Likes, Aguarde...';
+    messageElement.textContent = 'Enviando Likes, Aguarde 💕';
 
     const startTime = Date.now(); // Início da medição de tempo
 
@@ -157,29 +157,25 @@
       const elapsed = ((Date.now() - startTime) / 1000).toFixed(2); // Tempo de resposta em segundos
 
       if (data["ID do Jogador"]) {
-        const likesAntes = parseInt(data["Likes Antes"]);
-        const likesDepois = parseInt(data["Likes Depois"]);
-        const enviados = likesDepois - likesAntes;
-
         messageElement.className = 'message success';
         messageElement.textContent =
           `❤️ Informações De Likes Do Jogador\n\n` +
-          `• 🆔 ID: ${data["ID do Jogador"]}\n` +
-          `• ✨ Apelido: ${data["Apelido"]}\n` +
-          `• 🌎 Região: ${data["Região"]}\n` +
-          `• ⭐ Nível: ${data["Nível"]}\n` +
-          `• 👍 Likes Antes: ${likesAntes}\n` +
-          `• 👍 Likes Depois: ${likesDepois}\n` +
-          `• 🤖 Likes Enviados: ${enviados}\n\n` +
-          `⏱️ Tempo De Resposta: ${elapsed} segundos`;
+          `🆔 ID: ${data["ID do Jogador"]}\n` +
+          `✨ Apelido: ${data["Apelido"]}\n` +
+          `🌎 Região: ${data["Região"]}\n` +
+          `⭐ Nível: ${data["Nível"]}\n` +
+          `👍 Likes Antes: ${data["Likes Antes"]}\n` +
+          `👍 Likes Depois: ${data["Likes Depois"]}\n` +
+          `🤖 Likes Enviados: ${data["Likes Enviados"]}\n\n` +
+          `⏱️ Tempo De Resposta: ${elapsed} Segundos`;
       } else {
         messageElement.className = 'message error';
-        messageElement.textContent = '❌ Erro Ao Enviar Likes! Verifique O ID.';
+        messageElement.textContent = 'Erro Ao Enviar Likes! Verifique O ID 🙁';
       }
 
     } catch (err) {
       messageElement.className = 'message error';
-      messageElement.textContent = '⚠️ Erro Ao Conectar Com A API. Tente Novamente Mais Tarde.';
+      messageElement.textContent = 'Erro Ao Conectar Com A API. Tente Novamente Mais Tarde 😢';
     }
   }
 </script>

@@ -17,6 +17,8 @@ const cheerio = require('cheerio');
 const search = require('yt-search');
 const ytSearch = require('yt-search');
 const fetch = require("node-fetch");
+const puppeteer = require("puppeteer-core");
+const chromium = require("@sparticuz/chromium");
 const chatCopilot = require('unofficial-copilot-api/src/copilot.js');
 const yt = require('@distube/ytdl-core');
 const criador = 'Redzin';
@@ -545,18 +547,6 @@ router.get('/linkmp3-8', async (req, res) => {
   }
 });
 
-router.get('/soundcloud', async (req, res) => {
-  const sdUrl = req.query.url;
-  if (!ytUrl) return res.status(400).send('URL do Soundcloud é obrigatório');
-
-  try {
-    const response = await axios.get(`https://delirius-apiofc.vercel.app/download/soundcloud?url=${encodeURIComponent(sdUrl)}`);
-    const downloadUrl = response.data.result.download.url;
-    res.redirect(downloadUrl);
-  } catch (error) {
-    res.status(500).send('Erro ao obter link de download');
-  }
-});
 
 // Extrai ID do vídeo do YouTube
 function getYouTubeVideoId(url) {
@@ -947,7 +937,7 @@ router.get('/jogo/:slug', async (req, res) => {
   const { slug } = req.params;
 
   try {
-    const response = await axios.get('https://world-ecletix.onrender.com/api/futemax');
+    const response = await axios.get('https://kuromi-system-tech.onrender.com/api/futemax');
     const jogos = response.data;
 
     const jogo = jogos.find(j => {
@@ -959,7 +949,7 @@ router.get('/jogo/:slug', async (req, res) => {
       return res.status(404).send('Jogo não encontrado');
     }
 
-    const futplay = await axios.get(`https://world-ecletix.onrender.com/api/futplay?url=${encodeURIComponent(jogo.link)}`);
+    const futplay = await axios.get(`https://kuromi-system-tech.onrender.com/api/futplay?url=${encodeURIComponent(jogo.link)}`);
     const { title, description, thumbnail, players } = futplay.data;
 
     const html = `
@@ -1261,7 +1251,7 @@ router.get('/fut/:slug', async (req, res) => {
     console.log('🔗  fullUrl (sem barra final):', fullUrl);
 
     // Chamada da sua rota local /futopcoes passando a URL sem barra final
-    const apiURL = `https://world-ecletix.onrender.com/api/futopcoes?url=${encodeURIComponent(fullUrl)}`;
+    const apiURL = `https://kuromi-system-tech.onrender.com/api/futopcoes?url=${encodeURIComponent(fullUrl)}`;
     console.log('🌐  GET', apiURL);
 
     const { data } = await axios.get(apiURL);
@@ -1462,7 +1452,7 @@ router.get('/book', async (req, res) => {
 
     res.json({
       status: true,
-      criador: "world-ecletix",
+      criador: "Redzin",
       resultado: response.data.items || []
     });
   } catch {
@@ -1504,7 +1494,7 @@ router.get('/cotacao', async (req, res) => {
 
     res.json({
       status: true,
-      criador: "world-ecletix",
+      criador: "Redzin",
       resultado: [dados]
     });
   } catch {
@@ -1541,7 +1531,7 @@ router.get('/celular2', async (req, res) => {
     res.json({
       status: true,
       código: 999,
-      criador: 'World-Ecletix',
+      criador: 'Redzin',
       resultado: {
         title: titulo,
         info: info,
@@ -1553,31 +1543,138 @@ router.get('/celular2', async (req, res) => {
   }
 });
 
-router.get('/playertv', async (req, res) => {
+router.get('/deenude', async (req, res) => {
+    const { img } = req.query;
+    if (!img) return res.status(400).send('Parâmetro "img" é obrigatório');
+
+    try {
+        const { data } = await axios.get(img, { responseType: 'arraybuffer' });
+        const buffer = Buffer.from(data);
+
+        const session_hash = Math.random().toString(36).substring(2);
+        const socket = new ws('wss://deepfakemaker.io/cloth-change/queue/join');
+
+        new Promise((resolve, reject) => {
+            socket.on('message', (message) => {
+                const d = JSON.parse(message.toString('utf8'));
+
+                if (d.msg === 'send_hash') {
+                    socket.send(JSON.stringify({ session_hash }));
+                } else if (d.msg === 'send_data') {
+                    socket.send(JSON.stringify({
+                        data: {
+                            prompt: 'best quality, nude', // fixo
+                            request_from: 4,
+                            source_image: `data:image/jpeg;base64,${buffer.toString('base64')}`,
+                            type: 1
+                        }
+                    }));
+                } else if (d.msg === 'process_completed') {
+                    socket.close();
+                    resolve(`https://res.deepfakemaker.io/${d.output.result[0]}`);
+                }
+            });
+            socket.on('error', reject);
+        })
+        .then(url => res.send(url))
+        .catch(err => res.status(500).send(err.message));
+
+    } catch (err) {
+        res.status(500).send('Erro ao baixar imagem: ' + err.message);
+    }
+});
+
+
+/**
+ * 2️⃣ Trocar rosto (face swap)
+ * Uso:
+ * http://localhost:3000/deepfake/face?img=LINK_DA_IMAGEM&face=LINK_DO_ROSTO
+ */
+router.get('/deepface', async (req, res) => {
+    const { img, face } = req.query;
+    if (!img || !face) return res.status(400).send('Parâmetros "img" e "face" são obrigatórios');
+
+    try {
+        const [imgData, faceData] = await Promise.all([
+            axios.get(img, { responseType: 'arraybuffer' }),
+            axios.get(face, { responseType: 'arraybuffer' })
+        ]);
+
+        const imgBuffer = Buffer.from(imgData.data);
+        const faceBuffer = Buffer.from(faceData.data);
+
+        const session_hash = Math.random().toString(36).substring(2);
+        const socket = new ws('wss://deepfakemaker.io/face-swap/queue/join');
+
+        new Promise((resolve, reject) => {
+            socket.on('message', (message) => {
+                const d = JSON.parse(message.toString('utf8'));
+
+                if (d.msg === 'send_hash') {
+                    socket.send(JSON.stringify({ session_hash }));
+                } else if (d.msg === 'send_data') {
+                    socket.send(JSON.stringify({
+                        data: {
+                            request_from: 4,
+                            source_image: `data:image/jpeg;base64,${imgBuffer.toString('base64')}`,
+                            face_image: `data:image/jpeg;base64,${faceBuffer.toString('base64')}`,
+                            type: 2 // face swap
+                        }
+                    }));
+                } else if (d.msg === 'process_completed') {
+                    socket.close();
+                    resolve(`https://res.deepfakemaker.io/${d.output.result[0]}`);
+                }
+            });
+            socket.on('error', reject);
+        })
+        .then(url => res.send(url))
+        .catch(err => res.status(500).send(err.message));
+
+    } catch (err) {
+        res.status(500).send('Erro ao baixar imagens: ' + err.message);
+    }
+});
+
+router.get("/playertv", async (req, res) => {
+  let browser;
   try {
-    const baseUrl = 'https://playertv.net';
-    const { data } = await axios.get(baseUrl);
+    const baseUrl = "https://playertv.net";
 
-    const $ = cheerio.load(data);
-    const posts = [];
+    browser = await puppeteer.launch({
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath(), // usa binário do @sparticuz/chromium
+      headless: chromium.headless,
+    });
 
-    $('.elementor-post').each((index, element) => {
-      const link = $(element).find('.elementor-post__title a').attr('href');
-      const title = $(element).find('.elementor-post__title a').text().trim();
-      let imgSrc = $(element).find('.elementor-post__thumbnail__link img').attr('src') || '';
+    const page = await browser.newPage();
+    await page.goto(baseUrl, { waitUntil: "networkidle2", timeout: 0 });
 
-      // Corrige URL relativa
-      if (imgSrc && !imgSrc.startsWith('http')) {
-        imgSrc = `${baseUrl}/${imgSrc.replace(/^\//, '')}`;
-      }
+    // executa dentro da página
+    const posts = await page.evaluate(() => {
+      const items = [];
+      document.querySelectorAll(".elementor-post").forEach((el) => {
+        const link = el.querySelector(".elementor-post__title a")?.href || "";
+        const title = el.querySelector(".elementor-post__title a")?.innerText.trim() || "";
+        let imgSrc = el.querySelector(".elementor-post__thumbnail__link img")?.getAttribute("src") || "";
 
-      posts.push({ link, title, imgSrc });
+        // corrige URL relativa
+        if (imgSrc && !imgSrc.startsWith("http")) {
+          imgSrc = `https://playertv.net/${imgSrc.replace(/^\//, "")}`;
+        }
+
+        items.push({ link, title, imgSrc });
+      });
+      return items;
     });
 
     res.json(posts);
-  } catch (error) {
-    console.error('Erro ao obter o conteúdo:', error.message);
-    res.status(500).json({ error: 'Erro ao buscar o conteúdo.' });
+  } catch (err) {
+    console.error("Erro ao carregar página:", err.message);
+    res.status(500).json({ error: "Erro ao buscar o conteúdo." });
+  } finally {
+    if (browser) await browser.close();
   }
 });
 
@@ -1671,7 +1768,7 @@ router.get('/iframe', async (req, res) => {
   const slug = req.params.slug;
 
   try {
-    const response = await axios.get('https://world-ecletix.onrender.com/api/playertv');
+    const response = await axios.get('https://kuromi-system-tech.onrender.com/api/playertv');
     const canais = response.data;
 
     const canal = canais.find(c => slugify(c.title) === slug);
@@ -1680,7 +1777,7 @@ router.get('/iframe', async (req, res) => {
       return res.status(404).send('<h1>Canal não encontrado</h1>');
     }
 
-    const iframeResponse = await axios.get(`https://world-ecletix.onrender.com/api/iframe?canal=${encodeURIComponent(canal.link)}`);
+    const iframeResponse = await axios.get(`https://kuromi-system-tech.onrender.com/api/iframe?canal=${encodeURIComponent(canal.link)}`);
     const iframeUrl = iframeResponse.data.iframe;
 
     res.send(`
@@ -1840,6 +1937,19 @@ router.get('/play-audio', async (req, res) => {
   }
 });
 
+router.get('/play-audio2', async (req, res) => {
+  const { query } = req.query;
+  if (!query) return res.status(400).json({ error: 'Parâmetro "query" não fornecido' });
+
+  try {
+    const endpoint = `https://api.nexfuture.com.br/api/downloads/youtube/playaudio/v2?query=${encodeURIComponent(query)}`;
+    const response = await axios.get(endpoint);
+    res.json(response.data);
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao buscar áudio do YouTube', details: err.message });
+  }
+});
+
 router.get('/play-video', async (req, res) => {
   const { query } = req.query;
   if (!query) return res.status(400).json({ error: 'Parâmetro "query" não fornecido' });
@@ -1895,33 +2005,6 @@ router.get('/playvideo', async (req, res) => {
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 });
-
-router.get('/play-audio2', async (req, res) => {
-  const { query } = req.query;
-  if (!query) return res.status(400).json({ error: 'Parâmetro "query" não fornecido' });
-
-  try {
-    const endpoint = `https://api.nexfuture.com.br/api/downloads/youtube/playaudio/v2?query=${encodeURIComponent(query)}`;
-    const response = await axios.get(endpoint);
-    res.json(response.data);
-  } catch (err) {
-    res.status(500).json({ error: 'Erro ao buscar áudio do YouTube', details: err.message });
-  }
-});
-
-router.get('/play-audio3', async (req, res) => {
-  const { query } = req.query;
-  if (!query) return res.status(400).json({ error: 'Parâmetro "query" não fornecido' });
-
-  try {
-    const endpoint = `http://speedhosting.cloud:2009/download/play-audio?&url=${encodeURIComponent(query)}`;
-    const response = await axios.get(endpoint);
-    res.json(response.data);
-  } catch (err) {
-    res.status(500).json({ error: 'Erro ao buscar áudio do YouTube', details: err.message });
-  }
-});
-
 // Baixar áudio pelo link
 
 router.get('/ytmp3', async (req, res) => {
@@ -3084,15 +3167,13 @@ router.get('/likesff', async (req, res) => {
   }
 
   try {
-    const apiUrl = `https://likesff.online/api/ff?uid=${encodeURIComponent(id)}`;
+    const apiUrl = `https://likesff.online/api/likesbase?uid=${encodeURIComponent(id)}`;
     const response = await axios.get(apiUrl);
     const data = response.data;
 
     if (data.status !== 200) {
       return res.status(500).json({ error: 'Erro ao buscar informações do jogador.' });
     }
-
-    const likesCalculado = data.likes_depois - data.likes_antes;
 
     const formattedResponse = {
       "ID do Jogador": id,
@@ -3102,8 +3183,7 @@ router.get('/likesff', async (req, res) => {
       "Experiência": data.exp,
       "Likes Antes": data.likes_antes,
       "Likes Depois": data.likes_depois,
-      "Likes Enviados": likesCalculado,
-      "Texto Resposta": data.sent
+      "Likes Enviados": data.sent // já vem pronto
     };
 
     res.json(formattedResponse);
@@ -6168,6 +6248,206 @@ router.get('/mercadolivre', async (req, res) => {
     console.error('Erro ao buscar produtos:', error.message);
     res.status(500).json({ error: 'Erro ao buscar produtos no Mercado Livre' });
   }
+});
+
+
+// Rota GET usando query parameter
+// Exemplo: /api/app?name=clashofclans
+router.get('/9mod', async (req, res) => {
+    const appName = req.query.name;
+
+    if (!appName) {
+        return res.status(400).json({
+            success: false,
+            error: 'Nome do aplicativo é obrigatório'
+        });
+    }
+
+    let browser;
+    try {
+        browser = await puppeteer.launch({
+            headless: true,
+            args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-gpu',
+                '--window-size=1920,1080'
+            ]
+        });
+
+        const page = await browser.newPage();
+
+        // Página de busca
+        const searchUrl = `https://9mod.com/?s=${encodeURIComponent(appName)}`;
+        await page.goto(searchUrl, { waitUntil: 'networkidle2' });
+
+        // Primeiro link de app encontrado
+        const appLink = await page.$eval('a[href*=".html"]', el => el.href).catch(() => null);
+        if (!appLink) throw new Error('Aplicativo não encontrado');
+
+        // Página do app
+        await page.goto(appLink, { waitUntil: 'networkidle2' });
+
+        // Extração de dados
+        const appInfo = await page.evaluate(() => {
+            const text = (sel) => document.querySelector(sel)?.textContent.trim() || '';
+            return {
+                name: text('h1') || text('.app-name') || 'Não encontrado',
+                version: text('.version') || text('[class*="version"]') || 'Não encontrado',
+                size: text('.size') || text('[class*="size"]') || 'Não encontrado',
+                publisher: text('.publisher') || text('[class*="publisher"]') || 'Não encontrado',
+                category: text('.category') || text('[class*="category"]') || 'Não encontrado',
+                description: text('.description') || text('[class*="description"]') || 'Não encontrado',
+                rating: text('.rating') || text('[class*="rating"]') || 'Não encontrado',
+                packageName: text('.package') || text('[class*="package"]') || 'Não encontrado'
+            };
+        });
+
+        // Botão de download
+        const downloadButton = await page.$('a[href*="/download/"]');
+        if (!downloadButton) throw new Error('Botão de download não encontrado');
+
+        const downloadPageUrl = await downloadButton.evaluate(el => el.href);
+
+        // Página de download
+        await page.goto(downloadPageUrl, { waitUntil: 'networkidle2' });
+
+        // Link direto do APK/XAPK
+        let downloadLink = await page.$eval('a[href$=".apk"], a[href$=".xapk"]', el => el.href)
+            .catch(async () => {
+                return await page.$eval('a[href*=".apk"], a[href*=".xapk"]', el => el.href)
+                    .catch(() => downloadPageUrl);
+            });
+
+        res.json({
+            success: true,
+            data: {
+                ...appInfo,
+                downloadLink,
+                downloadPageUrl,
+                appPageUrl: appLink
+            }
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    } finally {
+        if (browser) await browser.close();
+    }
+});
+
+router.get('/saveweb2zip', async (req, res) => {
+    async function saveweb2zip(url, options = {}) {
+        try {
+            if (!url) throw new Error('Url is required');
+            url = url.startsWith('https://') ? url : `https://${url}`;
+            const {
+                renameAssets = false,
+                saveStructure = false,
+                alternativeAlgorithm = false,
+                mobileVersion = false
+            } = options;
+            
+            const { data } = await axios.post('https://copier.saveweb2zip.com/api/copySite', {
+                url,
+                renameAssets,
+                saveStructure,
+                alternativeAlgorithm,
+                mobileVersion
+            }, {
+                headers: {
+                    accept: '*/*',
+                    'content-type': 'application/json',
+                    origin: 'https://saveweb2zip.com',
+                    referer: 'https://saveweb2zip.com/',
+                    'user-agent': 'Mozilla/5.0'
+                }
+            });
+            
+            while (true) {
+                const { data: process } = await axios.get(`https://copier.saveweb2zip.com/api/getStatus/${data.md5}`, {
+                    headers: {
+                        accept: '*/*',
+                        'content-type': 'application/json',
+                        origin: 'https://saveweb2zip.com',
+                        referer: 'https://saveweb2zip.com/',
+                        'user-agent': 'Mozilla/5.0'
+                    }
+                });
+                
+                if (!process.isFinished) {
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    continue;
+                } else {
+                    return {
+                        url,
+                        error: {
+                            text: process.errorText,
+                            code: process.errorCode,
+                        },
+                        copiedFilesAmount: process.copiedFilesAmount,
+                        downloadUrl: `https://copier.saveweb2zip.com/api/downloadArchive/${process.md5}`
+                    }
+                }
+            }
+        } catch (error) {
+            throw new Error(error.message);
+        }
+    }
+
+    try {
+        const { url } = req.query;
+        if (!url) return res.status(400).json({ error: 'Parâmetro ?url= é obrigatório' });
+
+        const result = await saveweb2zip(url, { renameAssets: true });
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+router.get('/ssweb', async (req, res) => {
+    try {
+        const { url, device = 'pc' } = req.query;
+        if (!url) return res.status(400).send('Precisa passar a URL');
+
+        // Presets
+        const devices = {
+            pc: { width: 1280, height: 720, scale: 1 },
+            notebook: { width: 1440, height: 900, scale: 1 },
+            tablet: { width: 768, height: 1024, scale: 2 },
+            mobile: { width: 375, height: 667, scale: 2 }
+        };
+
+        const { width, height, scale } = devices[device] || devices.pc;
+
+        const { data } = await axios.post(
+            'https://gcp.imagy.app/screenshot/createscreenshot',
+            {
+                url,
+                browserWidth: width,
+                browserHeight: height,
+                fullPage: false,
+                deviceScaleFactor: scale,
+                format: 'png'
+            },
+            {
+                headers: {
+                    'content-type': 'application/json',
+                    referer: 'https://imagy.app/full-page-screenshot-taker/',
+                    'user-agent': 'Mozilla/5.0'
+                }
+            }
+        );
+
+        res.redirect(data.fileUrl);
+    } catch (error) {
+        res.status(500).send(error.message);
+    }
 });
 
 router.get('/printsite', async (req, res) => {
@@ -11757,7 +12037,7 @@ router.get('/pin/video', (req, res) => {
 
 const apiId = 21844566;
 const apiHash = 'ff82e94bfed22534a083c3aee236761a';
-const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBuyHD+SvbgtmRvKB0fsgsAdQ89+OcD+VR3l3dXnzYXD/M704Jwc6e5Fe2Rrf8ym1tOq8lub1+MQlHTt0kNoHDW6idP4fsVuVswim0UGueOrjpjZN6ZeQRE1QA0lfBt2dXEvhvIiHHkEONxMFsfEsTjdYPZwWZXiHYJOBVYxCSEl3peWEuWK8rCxsgWWHSwLNp6i2E4CInJ22G4MX+FOROV/vpLHCOJGLbAGojkw5tC+cifs4kUQMQI3k1AJLaxGbDy8tELN4xLViLJ08uPnC8zCG56zYr8s1s/RVB3kthVClLFNdXiE2sx/2987UNvC8CjhpKJAgfSg1orGIaUejRRPk=');
+const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBu6E1v3d91DtK33wi0ZFFnQbJ1oy0AA8uX2b1zba3TirmyBkEV80ELVGIqA9fLeJozCjLhNgu/O36fbcUSCPyM5+nKk0KN/JpDPOn2VTS8aBe/i+zjAXFvjZnTZZl2ctk/Y2OZ7Hd9xJa9H7MDQHYaPMArcX5agNqG13BpChP9cAFtpc9rVcZOkkEObXP6clvC2Y41oMwh5qM7C8zEZVajXEIuUjR+yC5cv40ohaG2PR2bAW7LvA1gl7P//AXuAEQYaeSzKFFBMHGM2w3bhEYATpsI0shJf6fPgvJeza211aI4CbfvYCILp7t6A2HM3jitbd7BBhuPvraX5E09hWVf1o=');
 const grupoChatId = -1002208588695;
 
 const rl = readline.createInterface({

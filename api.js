@@ -21,11 +21,10 @@ const puppeteer = require("puppeteer-core");
 const chromium = require("@sparticuz/chromium");
 const chatCopilot = require('unofficial-copilot-api/src/copilot.js');
 const yt = require('@distube/ytdl-core');
-const criador = 'World Ecletix';
+const criador = 'Redzin';
 const { exec } = require('child_process');
 const sharp = require('sharp'); // Biblioteca para conversão WebP
 const cors = require('cors');
-const { yts, ytmp4, ytmp3, alldl, ai } = require('@hiudyy/ytdl');
 const archiver = require('archiver');
 const YTMusic = require('@tnfangel/ytmusic-api');
 const iconv = require('iconv-lite'); // Biblioteca para lidar com codificação de caracteres
@@ -64,6 +63,7 @@ function userAgent() {
 
   return `Mozilla/5.0 (${oos[Math.floor(Math.random() * oos.length)]}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${Math.floor(Math.random() * 3) + 87}.0.${Math.floor(Math.random() * 190) + 4100}.${Math.floor(Math.random() * 50) + 140} Safari/537.36`;
 }
+
 
 
 const {
@@ -937,7 +937,7 @@ router.get('/jogo/:slug', async (req, res) => {
   const { slug } = req.params;
 
   try {
-    const response = await axios.get('https://kuromi-system-tech.onrender.com/api/futemax');
+    const response = await axios.get('https://kuromi.onrender.com/api/futemax');
     const jogos = response.data;
 
     const jogo = jogos.find(j => {
@@ -949,7 +949,7 @@ router.get('/jogo/:slug', async (req, res) => {
       return res.status(404).send('Jogo não encontrado');
     }
 
-    const futplay = await axios.get(`https://kuromi-system-tech.onrender.com/api/futplay?url=${encodeURIComponent(jogo.link)}`);
+    const futplay = await axios.get(`https://kuromi.onrender.com/api/futplay?url=${encodeURIComponent(jogo.link)}`);
     const { title, description, thumbnail, players } = futplay.data;
 
     const html = `
@@ -1251,7 +1251,7 @@ router.get('/fut/:slug', async (req, res) => {
     console.log('🔗  fullUrl (sem barra final):', fullUrl);
 
     // Chamada da sua rota local /futopcoes passando a URL sem barra final
-    const apiURL = `https://kuromi-system-tech.onrender.com/api/futopcoes?url=${encodeURIComponent(fullUrl)}`;
+    const apiURL = `https://kuromi.onrender.com/api/futopcoes?url=${encodeURIComponent(fullUrl)}`;
     console.log('🌐  GET', apiURL);
 
     const { data } = await axios.get(apiURL);
@@ -1768,7 +1768,7 @@ router.get('/iframe', async (req, res) => {
   const slug = req.params.slug;
 
   try {
-    const response = await axios.get('https://kuromi-system-tech.onrender.com/api/playertv');
+    const response = await axios.get('https://kuromi.onrender.com/api/playertv');
     const canais = response.data;
 
     const canal = canais.find(c => slugify(c.title) === slug);
@@ -1777,7 +1777,7 @@ router.get('/iframe', async (req, res) => {
       return res.status(404).send('<h1>Canal não encontrado</h1>');
     }
 
-    const iframeResponse = await axios.get(`https://kuromi-system-tech.onrender.com/api/iframe?canal=${encodeURIComponent(canal.link)}`);
+    const iframeResponse = await axios.get(`https://kuromi.onrender.com/api/iframe?canal=${encodeURIComponent(canal.link)}`);
     const iframeUrl = iframeResponse.data.iframe;
 
     res.send(`
@@ -1840,7 +1840,19 @@ async function searchVideoByName(name) {
   throw new Error('Vídeo não encontrado');
 }
 
-const { ytmp3: play, ytmp4: clipe } = require('@vreden/youtube_scraper');
+//const { ytmp3: play, ytmp4: clipe } = require('@vreden/youtube_scraper');
+
+const ytScraper = require("./youtube_scraper");
+
+(async () => {
+  const { ytmp3: ytmp3DL, ytmp4: ytmp4DL } = await ytScraper;
+
+  const mp3 = await ytmp3DL("https://www.youtube.com/watch?v=xxxx");
+  const mp4 = await ytmp4DL("https://www.youtube.com/watch?v=xxxx");
+
+  console.log("MP3:", mp3);
+  console.log("MP4:", mp4);
+})();
 
 // Função para baixar e enviar o arquivo diretamente como buffer
 const sendMediaAsBuffer = async (res, url, type) => {
@@ -12024,7 +12036,7 @@ router.get('/pin/video', (req, res) => {
 
 const apiId = 21844566;
 const apiHash = 'ff82e94bfed22534a083c3aee236761a';
-const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBuzRX46JmL+cJ1zTB3TE8anDPV6L70OyK0pbym6SB0KVGjntna8eGVWezHKvvN309QVfCg0m7JyKc2f9kh1r1LnuIUGHayqnMI5Kk8zcqlbV/0T2JSp7MT6CC/Go7J6EGRzJ6aE1L5FUGZvIZ4XAjgwTRWuumXYT9X1RrQX72r3H7PkPqKxgRbrNZMxo5HUTF7slWYvv0yi9DSymJQXJKaSizlc104uA6e+WxWlxMhY+zh1qT03G3C8FTkUzQcR4CGWwtcbR+G+amrquScpENmMzVahHrM+ZOC8jBebPLOwikMel8W+vzGjFS4RPH+6lBuxy/wpSgS32oFr3QlFofd1U=');
+const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBu3ZYQcidGraX8Z/9t8iOH3+k+ac0icKyvo7BRPFsS3BVvwhv19u0T6F+50qGMMCHERTM0oSVmPh+LgR/mdWBNXpCEVjUfFbH+it6unozJcavAOJe/gseWBbbI4Wx5kehFDPVu1xo31gR/dTwDIaRkrZA2yu0tF1qSIPAtZHCuTcd7jVW7PF/4rnypfrEAXow2R0Zw8yamGPZFeXmF7r7nYY4DJdZjoe7hVi3/EB3xS52uBhzXW06loiFi+OkfhRVbbyTSPdb8Y0dPgaR6aISuHFLu4ByjzwlbgNU54gOczXU8LuvKOX1Cr4AHZ05o8dWAee1De4r/NkOY/pIfkILrxc=');
 const grupoChatId = -1002208588695;
 
 const rl = readline.createInterface({
@@ -14545,7 +14557,7 @@ router.get('/pesquisayt', async (req, res) => {
             duration: video.timestamp
         }));
 
-        res.json({ criador: 'World Ecletix', formattedVideos });
+        res.json({ criador: 'Redzin', formattedVideos });
     } catch (error) {
         console.error('Erro ao buscar vídeos do YouTube:', error.message);
         res.status(500).json({ error: 'Erro ao buscar vídeos do YouTube' });
@@ -14700,7 +14712,7 @@ router.get('/consulta/cep/:cep', async (req, res) => {
         const { state, city, neighborhood, street } = data;
 
         res.json({
-            criador: 'World Ecletix',
+            criador: 'Redzin',
             cep: cep,
             estado: state,
             cidade: city,
@@ -14730,7 +14742,7 @@ router.get('/api/consulta/ddd/:ddd', async (req, res) => {
         const cities = data.cities;
 
         res.json({
-            criador: 'World Ecletix',
+            criador: 'Redzin',
             state: state,
             cities: cities
         });
@@ -14764,7 +14776,7 @@ router.get('/api/consulta/clima/aeroporto/:codigoICAO', async (req, res) => {
 
         // Formata os dados conforme o modelo desejado
         const formattedData = {
-            criador: 'World Ecletix',
+            criador: 'Redzin',
             umidade: umidade,
             visibilidade: visibilidade,
             codigo_icao: codigo_icao,
@@ -14894,7 +14906,7 @@ router.get('/dados-pessoais', async (req, res) => {
             foto: userData.picture.large
         };
 
-        res.json({ criador: 'World Ecletix', resultado: personalData });
+        res.json({ criador: 'Redzin', resultado: personalData });
     } catch (error) {
         console.error('Erro ao obter dados do usuário:', error);
         res.status(500).json({ error: 'Erro ao obter dados do usuário' });
@@ -14904,7 +14916,7 @@ router.get('/dados-pessoais', async (req, res) => {
 // Rota para gerar CPF aleatório
 router.get('/gerar-cpf', (req, res) => {
     const cpf = gerarCPF();
-    res.json({ criador: 'World Ecletix', cpf: cpf });
+    res.json({ criador: 'Redzin', cpf: cpf });
 });
 router.get('/videozinhos', async (req, res) => {
     try {
@@ -18494,7 +18506,7 @@ router.get('/contasonly', (req, res) => {
         const randomLink = linksData[randomIndex];
 
         // Enviar o link e o nome como resposta
-        res.json({ criador: 'World Ecletix', nome: randomLink.nome, link: randomLink.link });
+        res.json({ criador: 'Redzin', nome: randomLink.nome, link: randomLink.link });
     } catch (error) {
         console.error('Erro ao obter o link aleatório:', error);
         res.status(500).json({ error: 'Erro ao obter o link aleatório' });
@@ -18521,7 +18533,7 @@ router.get('/metadinhas', (req, res) => {
 
         // Enviar os links masculinos e femininos como resposta
         res.json({
-            criador: 'world ecletix',
+            criador: 'Redzin',
             masculina: randomLink.masculina,
             feminina: randomLink.feminina
         });

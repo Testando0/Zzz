@@ -937,7 +937,7 @@ router.get('/jogo/:slug', async (req, res) => {
   const { slug } = req.params;
 
   try {
-    const response = await axios.get('https://kuromi.onrender.com/api/futemax');
+    const response = await axios.get('https://kuromi-system-tech.onrender.com/api/futemax');
     const jogos = response.data;
 
     const jogo = jogos.find(j => {
@@ -949,7 +949,7 @@ router.get('/jogo/:slug', async (req, res) => {
       return res.status(404).send('Jogo não encontrado');
     }
 
-    const futplay = await axios.get(`https://kuromi.onrender.com/api/futplay?url=${encodeURIComponent(jogo.link)}`);
+    const futplay = await axios.get(`https://kuromi-system-tech.onrender.com/api/futplay?url=${encodeURIComponent(jogo.link)}`);
     const { title, description, thumbnail, players } = futplay.data;
 
     const html = `
@@ -1251,7 +1251,7 @@ router.get('/fut/:slug', async (req, res) => {
     console.log('🔗  fullUrl (sem barra final):', fullUrl);
 
     // Chamada da sua rota local /futopcoes passando a URL sem barra final
-    const apiURL = `https://kuromi.onrender.com/api/futopcoes?url=${encodeURIComponent(fullUrl)}`;
+    const apiURL = `https://kuromi-system-tech.onrender.com/api/futopcoes?url=${encodeURIComponent(fullUrl)}`;
     console.log('🌐  GET', apiURL);
 
     const { data } = await axios.get(apiURL);
@@ -1768,7 +1768,7 @@ router.get('/iframe', async (req, res) => {
   const slug = req.params.slug;
 
   try {
-    const response = await axios.get('https://kuromi.onrender.com/api/playertv');
+    const response = await axios.get('https://kuromi-system-tech.onrender.com/api/playertv');
     const canais = response.data;
 
     const canal = canais.find(c => slugify(c.title) === slug);
@@ -1777,7 +1777,7 @@ router.get('/iframe', async (req, res) => {
       return res.status(404).send('<h1>Canal não encontrado</h1>');
     }
 
-    const iframeResponse = await axios.get(`https://kuromi.onrender.com/api/iframe?canal=${encodeURIComponent(canal.link)}`);
+    const iframeResponse = await axios.get(`https://kuromi-system-tech.onrender.com/api/iframe?canal=${encodeURIComponent(canal.link)}`);
     const iframeUrl = iframeResponse.data.iframe;
 
     res.send(`
@@ -9232,7 +9232,7 @@ router.get('/netersg', async (req, res) => {
         res.status(500).json({ status: false, mensagem: "Erro interno ao processar a solicitação." });
     }
 });
-//gerar imagem by Redzin 
+//gerar imagem by luan 
 
 router.get('/gerar-imagem', async (req, res) => {
   const { prompt } = req.query;
@@ -9298,7 +9298,7 @@ router.get('/gerar-imagem2', async (req, res) => {
 
 //fim 
 
-// play e playvideo by Redzin
+// play e playvideo by luan vulgo come primas 
 
 const got = require('got');
 const ytsr = require('yt-search');
@@ -12036,7 +12036,7 @@ router.get('/pin/video', (req, res) => {
 
 const apiId = 21844566;
 const apiHash = 'ff82e94bfed22534a083c3aee236761a';
-const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBu3ZYQcidGraX8Z/9t8iOH3+k+ac0icKyvo7BRPFsS3BVvwhv19u0T6F+50qGMMCHERTM0oSVmPh+LgR/mdWBNXpCEVjUfFbH+it6unozJcavAOJe/gseWBbbI4Wx5kehFDPVu1xo31gR/dTwDIaRkrZA2yu0tF1qSIPAtZHCuTcd7jVW7PF/4rnypfrEAXow2R0Zw8yamGPZFeXmF7r7nYY4DJdZjoe7hVi3/EB3xS52uBhzXW06loiFi+OkfhRVbbyTSPdb8Y0dPgaR6aISuHFLu4ByjzwlbgNU54gOczXU8LuvKOX1Cr4AHZ05o8dWAee1De4r/NkOY/pIfkILrxc=');
+const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBuwQIZGtCw63gAhufAEr6X5xC45cLDsr9NiXCI/lSyX2aQfmhuQl9MaHzRPQHvi4zFuTn64Vv/NUqPz4/kWC481Etln9v0d2Mp+th6Wl0L11zp99NQrtk10+cO7gp86zgysaDtPTQY581WtWqlmKrej/iC9RCYc1QSdsdUzUuQlf2sha2qNrbosYoXGmdWYav6KkxAWCeSo2KNe7kUPeG+CJW++k7pD0NYVrl4/fjs98OF9Wg0/uViN+ewj62PjqDXg4lOUPtdko1pkQ6lnGIydsdlmtRlcjAlxNVfuHX+oL5tDpEmqIHUdGSbheX2qf8YDYwl5I/V9m3jdN51d833eQ=');
 const grupoChatId = -1002208588695;
 
 const rl = readline.createInterface({

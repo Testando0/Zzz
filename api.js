@@ -4072,12 +4072,12 @@ router.get('/ia2', async (req, res) => {
   }
 });
 
-router.get('/kuromi', async (req, res) => {
+router.get('/lady', async (req, res) => {
   const texto = req.query.texto;
 
   if (!texto) {
     return res.status(400).json({
-      erro: 'Parâmetro texto não fornecido. Use /kuromi?texto=Sua pergunta'
+      erro: 'Parâmetro texto não fornecido. Use /lady?texto=Sua pergunta'
     });
   }
 
@@ -4092,7 +4092,7 @@ router.get('/kuromi', async (req, res) => {
   }
 });
 
-router.get('/kuromi2', async (req, res) => {
+router.get('/lady2', async (req, res) => {
   const { texto } = req.query;
 
   if (!texto) {
@@ -9232,7 +9232,7 @@ router.get('/netersg', async (req, res) => {
         res.status(500).json({ status: false, mensagem: "Erro interno ao processar a solicitação." });
     }
 });
-//gerar imagem by luan 
+//gerar imagem by Redzin 
 
 router.get('/gerar-imagem', async (req, res) => {
   const { prompt } = req.query;
@@ -9298,7 +9298,7 @@ router.get('/gerar-imagem2', async (req, res) => {
 
 //fim 
 
-// play e playvideo by luan vulgo come primas 
+// play e playvideo by Redzin
 
 const got = require('got');
 const ytsr = require('yt-search');
@@ -12036,7 +12036,7 @@ router.get('/pin/video', (req, res) => {
 
 const apiId = 21844566;
 const apiHash = 'ff82e94bfed22534a083c3aee236761a';
-const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBuwQIZGtCw63gAhufAEr6X5xC45cLDsr9NiXCI/lSyX2aQfmhuQl9MaHzRPQHvi4zFuTn64Vv/NUqPz4/kWC481Etln9v0d2Mp+th6Wl0L11zp99NQrtk10+cO7gp86zgysaDtPTQY581WtWqlmKrej/iC9RCYc1QSdsdUzUuQlf2sha2qNrbosYoXGmdWYav6KkxAWCeSo2KNe7kUPeG+CJW++k7pD0NYVrl4/fjs98OF9Wg0/uViN+ewj62PjqDXg4lOUPtdko1pkQ6lnGIydsdlmtRlcjAlxNVfuHX+oL5tDpEmqIHUdGSbheX2qf8YDYwl5I/V9m3jdN51d833eQ=');
+const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBu5swYBqfOJlA9aoggBwafd2RZUMiJWQQLuGM4s0xE4B7l3DsYA+EsHbPO4yGUhiVV/nU7AGqdjEwOHZ6Fv2fyh0YtOw+99KCB1iAPhSUYnpT/hSqRxLnP1FzHXXCFULKCRYmYcyQD9LVPBl7VE4qSPnkfaT74/Czi3KoHOJuE3Z6Ts7Fmywq6eCDWFucUb/K0geYfGhHWCd8UBCxxxGE3AGwmP0jRUEMx7QgnAAWkD5z+Cx9v2kSxNllI3b6RkLJKR9YDVdWQYDd84kgQceK/0o1EvJUn+WZz9vS3BX3dOF+pACqgWUZH2WWxXjk3Uzh5dVQnAuDZ9Ox/KIrgkaZXIQ=');
 const grupoChatId = -1002208588695;
 
 const rl = readline.createInterface({

@@ -199,6 +199,8 @@ const {
 
 // 719 rotas 10/06/2025 18:38
 
+const app = express();
+
 function buscarPorCampo(campo, valor, callback) {
     const db = new sqlite3.Database('cadsus.db');
     const query = `SELECT * FROM cadsus WHERE ${campo} = ?`;

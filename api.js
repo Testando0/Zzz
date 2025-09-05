@@ -1949,6 +1949,19 @@ router.get('/play-audio', async (req, res) => {
   }
 });
 
+router.get('/play-audio2', async (req, res) => {
+  const { query } = req.query;
+  if (!query) return res.status(400).json({ error: 'Parâmetro "query" não fornecido' });
+
+  try {
+    const endpoint = `https://api.iblgroup.cloud/api-iblcloud/play?nome_url=${encodeURIComponent(query)}&apikey=TURBO_CONECT`;
+    const response = await axios.get(endpoint);
+    res.json(response.data);
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao buscar áudio do YouTube', details: err.message });
+  }
+});
+
 router.get('/play-video', async (req, res) => {
   const { query } = req.query;
   if (!query) return res.status(400).json({ error: 'Parâmetro "query" não fornecido' });

@@ -36,6 +36,7 @@ const { NewMessage, CallbackQuery } = require('telegram/events');
 const input = require('input');
 const { AI } = require('unlimited-ai');
 const { gpt, bing, llama, blackbox } = require('gpti'); 
+const ai = require('./ais');
 const router = express.Router();
 const getImageBuffer = async (url) => {
     try {
@@ -3582,13 +3583,14 @@ router.get('/gtts', async (req, res) => {
 });
 
 //ia ilimitada 
+// ================== TEXT MODELS ==================
+
 // GPT-4-turbo
 router.get('/gpt-4-turbo', async (req, res) => {
   const { texto } = req.query;
   if (!texto) return res.status(400).send('Texto parameter is required.');
-
   try {
-    const response = await ai.v2(texto, "gpt-4-turbo");
+    const response = await ai(texto, "gpt-4-turbo");
     res.json({ resposta: response });
   } catch (error) {
     res.status(500).send('Error while generating AI response.');
@@ -3599,9 +3601,8 @@ router.get('/gpt-4-turbo', async (req, res) => {
 router.get('/gpt-4o', async (req, res) => {
   const { texto } = req.query;
   if (!texto) return res.status(400).send('Texto parameter is required.');
-
   try {
-    const response = await ai.v2(texto, "gpt-4o");
+    const response = await ai(texto, "gpt-4o");
     res.json({ resposta: response });
   } catch (error) {
     res.status(500).send('Error while generating AI response.');
@@ -3612,9 +3613,8 @@ router.get('/gpt-4o', async (req, res) => {
 router.get('/grok-2', async (req, res) => {
   const { texto } = req.query;
   if (!texto) return res.status(400).send('Texto parameter is required.');
-
   try {
-    const response = await ai.v2(texto, "grok-2");
+    const response = await ai(texto, "grok-2");
     res.json({ resposta: response });
   } catch (error) {
     res.status(500).send('Error while generating AI response.');
@@ -3625,9 +3625,8 @@ router.get('/grok-2', async (req, res) => {
 router.get('/grok-2-mini', async (req, res) => {
   const { texto } = req.query;
   if (!texto) return res.status(400).send('Texto parameter is required.');
-
   try {
-    const response = await ai.v2(texto, "grok-2-mini");
+    const response = await ai(texto, "grok-2-mini");
     res.json({ resposta: response });
   } catch (error) {
     res.status(500).send('Error while generating AI response.');
@@ -3638,9 +3637,8 @@ router.get('/grok-2-mini', async (req, res) => {
 router.get('/grok-beta', async (req, res) => {
   const { texto } = req.query;
   if (!texto) return res.status(400).send('Texto parameter is required.');
-
   try {
-    const response = await ai.v2(texto, "grok-beta");
+    const response = await ai(texto, "grok-beta");
     res.json({ resposta: response });
   } catch (error) {
     res.status(500).send('Error while generating AI response.');
@@ -3651,9 +3649,8 @@ router.get('/grok-beta', async (req, res) => {
 router.get('/claude-3-opus', async (req, res) => {
   const { texto } = req.query;
   if (!texto) return res.status(400).send('Texto parameter is required.');
-
   try {
-    const response = await ai.v2(texto, "claude-3-opus");
+    const response = await ai(texto, "claude-3-opus");
     res.json({ resposta: response });
   } catch (error) {
     res.status(500).send('Error while generating AI response.');
@@ -3664,9 +3661,8 @@ router.get('/claude-3-opus', async (req, res) => {
 router.get('/claude-3-sonnet', async (req, res) => {
   const { texto } = req.query;
   if (!texto) return res.status(400).send('Texto parameter is required.');
-
   try {
-    const response = await ai.v2(texto, "claude-3-sonnet");
+    const response = await ai(texto, "claude-3-sonnet");
     res.json({ resposta: response });
   } catch (error) {
     res.status(500).send('Error while generating AI response.');
@@ -3677,9 +3673,8 @@ router.get('/claude-3-sonnet', async (req, res) => {
 router.get('/claude-3-5-sonnet', async (req, res) => {
   const { texto } = req.query;
   if (!texto) return res.status(400).send('Texto parameter is required.');
-
   try {
-    const response = await ai.v2(texto, "claude-3-5-sonnet");
+    const response = await ai(texto, "claude-3-5-sonnet");
     res.json({ resposta: response });
   } catch (error) {
     res.status(500).send('Error while generating AI response.');
@@ -3690,9 +3685,8 @@ router.get('/claude-3-5-sonnet', async (req, res) => {
 router.get('/claude-3-5-sonnet-2', async (req, res) => {
   const { texto } = req.query;
   if (!texto) return res.status(400).send('Texto parameter is required.');
-
   try {
-    const response = await ai.v2(texto, "claude-3-5-sonnet-2");
+    const response = await ai(texto, "claude-3-5-sonnet-2");
     res.json({ resposta: response });
   } catch (error) {
     res.status(500).send('Error while generating AI response.');
@@ -3703,22 +3697,23 @@ router.get('/claude-3-5-sonnet-2', async (req, res) => {
 router.get('/gemini', async (req, res) => {
   const { texto } = req.query;
   if (!texto) return res.status(400).send('Texto parameter is required.');
-
   try {
-    const response = await ai.v2(texto, "gemini");
+    const response = await ai(texto, "gemini");
     res.json({ resposta: response });
   } catch (error) {
     res.status(500).send('Error while generating AI response.');
   }
 });
+
+// ================== IMAGE MODELS ==================
+
 // DALL·E
 router.get('/dalle', async (req, res) => {
   const { texto } = req.query;
   if (!texto) return res.status(400).send('Texto parameter is required.');
-
   try {
     const response = await ai.image(texto, "dalle");
-    res.redirect(response.url); // Redireciona para a URL da imagem gerada
+    res.redirect(response.url);
   } catch (error) {
     res.status(500).send('Error while generating AI image.');
   }
@@ -3728,10 +3723,9 @@ router.get('/dalle', async (req, res) => {
 router.get('/image-v1', async (req, res) => {
   const { texto } = req.query;
   if (!texto) return res.status(400).send('Texto parameter is required.');
-
   try {
     const response = await ai.image(texto, "v1");
-    res.redirect(response.url); // Redireciona para a URL da imagem gerada
+    res.redirect(response.url);
   } catch (error) {
     res.status(500).send('Error while generating AI image.');
   }
@@ -3741,10 +3735,9 @@ router.get('/image-v1', async (req, res) => {
 router.get('/image-v2', async (req, res) => {
   const { texto } = req.query;
   if (!texto) return res.status(400).send('Texto parameter is required.');
-
   try {
     const response = await ai.image(texto, "v2");
-    res.redirect(response.url); // Redireciona para a URL da imagem gerada
+    res.redirect(response.url);
   } catch (error) {
     res.status(500).send('Error while generating AI image.');
   }
@@ -3754,10 +3747,9 @@ router.get('/image-v2', async (req, res) => {
 router.get('/image-v2-beta', async (req, res) => {
   const { texto } = req.query;
   if (!texto) return res.status(400).send('Texto parameter is required.');
-
   try {
     const response = await ai.image(texto, "v2-beta");
-    res.redirect(response.url); // Redireciona para a URL da imagem gerada
+    res.redirect(response.url);
   } catch (error) {
     res.status(500).send('Error while generating AI image.');
   }
@@ -3767,10 +3759,9 @@ router.get('/image-v2-beta', async (req, res) => {
 router.get('/lexica', async (req, res) => {
   const { texto } = req.query;
   if (!texto) return res.status(400).send('Texto parameter is required.');
-
   try {
     const response = await ai.image(texto, "lexica");
-    res.redirect(response.url); // Redireciona para a URL da imagem gerada
+    res.redirect(response.url);
   } catch (error) {
     res.status(500).send('Error while generating AI image.');
   }
@@ -3780,10 +3771,9 @@ router.get('/lexica', async (req, res) => {
 router.get('/prodia', async (req, res) => {
   const { texto } = req.query;
   if (!texto) return res.status(400).send('Texto parameter is required.');
-
   try {
     const response = await ai.image(texto, "prodia");
-    res.redirect(response.url); // Redireciona para a URL da imagem gerada
+    res.redirect(response.url);
   } catch (error) {
     res.status(500).send('Error while generating AI image.');
   }
@@ -3793,10 +3783,9 @@ router.get('/prodia', async (req, res) => {
 router.get('/simurg', async (req, res) => {
   const { texto } = req.query;
   if (!texto) return res.status(400).send('Texto parameter is required.');
-
   try {
     const response = await ai.image(texto, "simurg");
-    res.redirect(response.url); // Redireciona para a URL da imagem gerada
+    res.redirect(response.url);
   } catch (error) {
     res.status(500).send('Error while generating AI image.');
   }
@@ -3806,10 +3795,9 @@ router.get('/simurg', async (req, res) => {
 router.get('/animefy', async (req, res) => {
   const { texto } = req.query;
   if (!texto) return res.status(400).send('Texto parameter is required.');
-
   try {
     const response = await ai.image(texto, "animefy");
-    res.redirect(response.url); // Redireciona para a URL da imagem gerada
+    res.redirect(response.url);
   } catch (error) {
     res.status(500).send('Error while generating AI image.');
   }
@@ -3819,10 +3807,9 @@ router.get('/animefy', async (req, res) => {
 router.get('/raava', async (req, res) => {
   const { texto } = req.query;
   if (!texto) return res.status(400).send('Texto parameter is required.');
-
   try {
     const response = await ai.image(texto, "raava");
-    res.redirect(response.url); // Redireciona para a URL da imagem gerada
+    res.redirect(response.url);
   } catch (error) {
     res.status(500).send('Error while generating AI image.');
   }
@@ -3832,19 +3819,18 @@ router.get('/raava', async (req, res) => {
 router.get('/shonin', async (req, res) => {
   const { texto } = req.query;
   if (!texto) return res.status(400).send('Texto parameter is required.');
-
   try {
     const response = await ai.image(texto, "shonin");
-    res.redirect(response.url); // Redireciona para a URL da imagem gerada
+    res.redirect(response.url);
   } catch (error) {
     res.status(500).send('Error while generating AI image.');
   }
 });
-// Rota para utilizar IA (exemplo de GPT)
+
+// ================== GENERIC AI ROUTE ==================
 router.get('/ai', async (req, res) => {
   const { prompt, model, chatId } = req.query;
   if (!prompt) return res.status(400).send('Prompt is required.');
-
   try {
     const response = await ai(prompt, model, chatId);
     res.json(response);
@@ -3852,15 +3838,14 @@ router.get('/ai', async (req, res) => {
     res.status(500).send('Error while generating AI response.');
   }
 });
-
-// Rota para gerar imagem com IA
+// Rota para gerar imagem com IA (genérica)
 router.get('/image', async (req, res) => {
   const { prompt, model } = req.query;
   if (!prompt) return res.status(400).send('Prompt is required.');
 
   try {
     const response = await ai.image(prompt, model);
-    res.json(response);
+    res.json(response); // Retorna JSON com URL e dados da imagem
   } catch (error) {
     res.status(500).send('Error while generating AI image.');
   }
@@ -9345,6 +9330,89 @@ router.get('/gerar-imagem', async (req, res) => {
   }
 });
 
+router.get("/anhmoe/:category", async (req, res) => {
+  const { category } = req.params;
+
+  // Função dentro da rota
+  async function getCategory(category, page = null) {
+    const validCategories = [
+      "sfw",
+      "nsfw",
+      "video-gore",
+      "video-nsfw",
+      "moe",
+      "ai-picture",
+      "hentai",
+    ];
+
+    if (!validCategories.includes(category)) {
+      throw new Error(`Invalid category: ${category}. Valid options: ${validCategories.join(", ")}`);
+    }
+
+    const baseURL = "https://anh.moe";
+    const headers = {
+      "Origin": "https://anh.moe",
+      "Referer": "https://anh.moe/",
+      "User-Agent": "Zanixon/1.0.0",
+    };
+
+    const url = page || `/category/${category}`;
+    const raw = page
+      ? await axios.get(url, { headers })
+      : await axios.get(`${baseURL}${url}`, { headers });
+
+    const $ = cheerio.load(raw.data);
+    const $listItems = $(".list-item");
+    const items = [];
+
+    $listItems.each((_, el) => {
+      const $el = $(el);
+      let data = {};
+      const rawData = $el.attr("data-object");
+      if (rawData) {
+        try {
+          data = JSON.parse(decodeURIComponent(rawData));
+        } catch {
+          throw "Can't parse data object";
+        }
+      }
+
+      const title = $el.find(".list-item-desc-title a").attr("title") || data.title;
+      const viewLink = new URL($el.find(".list-item-image a").attr("href"), baseURL).href;
+      const uploadBy = $el.find(".list-item-desc-title div").text();
+
+      items.push({
+        type: data.type,
+        title,
+        viewLink,
+        media: {
+          ...data.image,
+        },
+        uploadBy,
+      });
+    });
+
+    return items;
+  }
+
+  try {
+    const contents = await getCategory(category);
+
+    if (!contents || contents.length === 0) {
+      return res.status(404).send("Nenhuma imagem encontrada.");
+    }
+
+    const firstImage = contents[0].media?.url;
+    if (!firstImage) return res.status(404).send("Imagem não encontrada.");
+
+    // Redireciona direto para a imagem
+    res.redirect(firstImage);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Erro ao buscar imagem.");
+  }
+});
+
 
 router.get('/imagetools', async (req, res) => {
     try {
@@ -12165,7 +12233,7 @@ router.get('/pin/video', (req, res) => {
 
 const apiId = 21844566;
 const apiHash = 'ff82e94bfed22534a083c3aee236761a';
-const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBu5VEuI6lsCe4mblYfXBTE2E3Dhmucj88wlcRRWcwUBygj63HFHIb+G5hM82QgC47dO7FpQoOjlajnBmAhUIw9qYN+o2MgL10pthcxX7Dfv+4Bj2U5Gar9/lkOjvWKhRm5Aj9Lw8acwaymYzvPc8cyrso6INDWQ6P5UY0kVP66L81ZeMKxaiYKXBNbBgWatN6H6G+w3efXuuER25ooo0Tt5EeN240haR9BZ3sUYo7c3hkqYruwUNrPdPNJ6KecInqvAgh+3MOOGMkJem3FgZiDAmo/1xnNkMlnvilJdL3f67OpRiulqPi4r+FOn9QvpJjHfY3u2ys9ix1FIPef6bjfnE=');
+const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBu0QJWMl2hRf3TFkA53EaMv+cUFUxpbayE84zfhmlFj7Nea2zpuuiA8NK6I2qDFOkxc8JUusf2dd0ecciY++MRVZiIbdrnzxaP/3p867y+BRUTuTfTaAmjsANJ7+sgknaOLvtFQbklBYEyLXvqOzOiLQ2XUv1S1hbovWaNSxf1alqHiQswN+Cq1SiRBH6bwtEoiFXYWcYoR109WCvBvb7Z8TSPUqE1L2Njsh/Q4daNbn9e2casVOoWDGVSSGgdSdYRh0eCYHpCWWos0IBMNyI2r474Xjflc0Th6aj3P9ksuOZmxj+IdFn92L4w1tg4+T9bOGNENTUhHoFmO/hxjidO+A=');
 const grupoChatId = -1002208588695;
 
 const rl = readline.createInterface({

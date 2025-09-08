@@ -1949,19 +1949,6 @@ router.get('/play-audio', async (req, res) => {
   }
 });
 
-router.get('/play-audio2', async (req, res) => {
-  const { query } = req.query;
-  if (!query) return res.status(400).json({ error: 'Parâmetro "query" não fornecido' });
-
-  try {
-    const endpoint = `https://api.iblgroup.cloud/api-iblcloud/play?nome_url=${encodeURIComponent(query)}&apikey=TURBO_CONECT`;
-    const response = await axios.get(endpoint);
-    res.json(response.data);
-  } catch (err) {
-    res.status(500).json({ error: 'Erro ao buscar áudio do YouTube', details: err.message });
-  }
-});
-
 router.get('/play-video', async (req, res) => {
   const { query } = req.query;
   if (!query) return res.status(400).json({ error: 'Parâmetro "query" não fornecido' });
@@ -2835,16 +2822,40 @@ router.get('/hd', async (req, res) => {
         res.status(500).json({ error: 'Erro ao melhorar imagem' });
     }
 });
+
 router.get('/imagine', async (req, res) => {
     const { prompt } = req.query;
     if (!prompt) return res.status(400).json({ error: 'Informe um prompt' });
 
+    // função auxiliar pra gerar IP fake
+    function ip() {
+        const x = (a) => (Math.random() * a).toFixed();
+        return `${x(300)}.${x(300)}.${x(300)}.${x(300)}`;
+    }
+
     try {
-        const response = await axios.get(`https://hercai.onrender.com/v3/text2image?prompt=${encodeURIComponent(prompt)}`);
+        const response = await axios.post(
+            "https://internal.users.n8n.cloud/webhook/ai_image_generator",
+            { prompt },
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'User-Agent': 'Zanixon/1.0.0',
+                    'X-Client-Ip': ip()
+                }
+            }
+        );
+
         const data = response.data;
-        res.json({ url: data.url });
+        if (!data.result || !Array.isArray(data.result) || data.result.length === 0) {
+            return res.status(500).json({ error: "Erro ao gerar imagem" });
+        }
+
+        // mantém a mesma estrutura antiga -> retorna só a primeira url
+        res.json({ url: data.result[0].url });
     } catch (error) {
-        res.status(500).json({ error: 'Erro ao gerar imagem' });
+        console.error(error);
+        res.status(500).json({ error: 'Erro ao gerar imagem', details: error.message });
     }
 });
 router.get('/baixarsite', async (req, res) => {
@@ -4084,6 +4095,49 @@ router.get('/ia2', async (req, res) => {
     res.status(500).json({ status: false, mensagem: 'Erro interno do servidor.' });
   }
 });
+
+
+router.get('/chatgpt', async (req, res) => {
+  const texto = req.query.texto;
+
+  if (!texto) {
+    return res.status(400).json({
+      erro: 'Parâmetro texto não fornecido. Use /chatgpt?texto=Sua+pergunta'
+    });
+  }
+
+  try {
+    const { data } = await axios.post('https://chatgpt-2022.vercel.app/api/chat', {
+      conversationId: Date.now().toString(),
+      messages: [{
+        role: 'user',
+        content: texto
+      }],
+      model: 'gpt-5'
+    }, {
+      headers: {
+        'content-type': 'application/json',
+        'user-agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Mobile Safari/537.36'
+      }
+    });
+
+    const resposta = data.split('\n\n')
+      .filter(line => line)
+      .map(line => JSON.parse(line.substring(6)))
+      .filter(line => line.type === 'text-delta')
+      .map(line => line.textDelta)
+      .join('') || '';
+
+    res.json({ resposta });
+
+  } catch (err) {
+    res.status(500).json({
+      erro: 'Erro ao consultar ChatGPT-5',
+      detalhes: err.message
+    });
+  }
+});
+
 
 router.get('/kuromi', async (req, res) => {
   const texto = req.query.texto;
@@ -7041,7 +7095,7 @@ router.get('/orbital-img', async (req, res) => {
     }
 });
 
-// Endpoint personalizado: /imgsys
+// Endpoint personalizado: /ai-imgsys
 router.get('/ai-imgsys', async (req, res) => {
     const texto = req.query.texto;
 
@@ -7050,9 +7104,9 @@ router.get('/ai-imgsys', async (req, res) => {
     }
 
     try {
-        // Fazendo a solicitação para a API externa
+        // Fazendo a solicitação para a nova API externa
         const response = await axios.get(
-            `https://api.giftedtech.web.id/api/ai/imgsys?apikey=gifted&prompt=${encodeURIComponent(texto)}`
+            `https://api.giftedtech.web.id/api/ai/deepimg?apikey=gifted&prompt=${encodeURIComponent(texto)}`
         );
 
         // Verificando a resposta
@@ -9247,22 +9301,84 @@ router.get('/netersg', async (req, res) => {
 });
 //gerar imagem by Redzin 
 
+
 router.get('/gerar-imagem', async (req, res) => {
   const { prompt } = req.query;
-  if (!prompt) return res.status(400).json({ error: 'Informe um prompt' });
+  if (!prompt) return res.status(400).send('Informe um prompt');
+
+  // Função dentro da rota
+  async function writecreamimg(prompt, ratio = '9:16') {
+    try {
+      const availableRatios = ['1:1', '16:9', '2:3', '3:2', '4:5', '5:4', '9:16', '21:9', '9:21'];
+      if (!availableRatios.includes(ratio)) throw new Error(`Available ratios: ${availableRatios.join(', ')}`);
+
+      const { data } = await axios.get(
+        'https://1yjs1yldj7.execute-api.us-east-1.amazonaws.com/default/ai_image',
+        {
+          headers: {
+            accept: '*/*',
+            'content-type': 'application/json',
+            origin: 'https://www.writecream.com',
+            referer: 'https://www.writecream.com/',
+            'user-agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Mobile Safari/537.36'
+          },
+          params: {
+            prompt: prompt,
+            aspect_ratio: ratio,
+            link: 'writecream.com'
+          }
+        }
+      );
+
+      return data.image_link;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  }
 
   try {
-    const response = await axios.get(
-      'https://api.siputzx.my.id/api/ai/stable-diffusion',
-      { params: { prompt }, responseType: 'stream' }
-    );
-
-    res.setHeader('Content-Type', response.headers['content-type'] || 'image/png');
-    response.data.pipe(res);
+    const imageUrl = await writecreamimg(prompt);
+    // Redireciona direto para a imagem gerada
+    res.redirect(imageUrl);
   } catch (error) {
-    res.status(500).json({ error: 'Erro ao gerar imagem' });
+    res.status(500).send('Erro ao gerar imagem: ' + error.message);
   }
 });
+
+
+router.get('/imagetools', async (req, res) => {
+    try {
+        const { imageUrl, type } = req.query;
+        if (!imageUrl) return res.status(400).send('Informe a URL da imagem');
+        if (!type) return res.status(400).send('Informe o tipo de edição');
+
+        const _type = ['removebg', 'enhance', 'upscale', 'restore', 'colorize'];
+        if (!_type.includes(type)) return res.status(400).send(`Tipos disponíveis: ${_type.join(', ')}`);
+
+        // Baixa a imagem
+        const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+        const buffer = Buffer.from(response.data);
+
+        // Envia para edição
+        const form = new FormData();
+        form.append('file', buffer, `${Date.now()}_image.jpg`);
+        form.append('type', type);
+
+        const { data } = await axios.post('https://imagetools.rapikzyeah.biz.id/upload', form, {
+            headers: form.getHeaders()
+        });
+
+        const $ = cheerio.load(data);
+        const resUrl = $('img#memeImage').attr('src');
+        if (!resUrl) throw new Error('Nenhum resultado encontrado');
+
+        // Redireciona para a imagem final
+        res.redirect(resUrl);
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+
 
 
 // Rota para gerar a imagem usando um parâmetro de consulta
@@ -12049,7 +12165,7 @@ router.get('/pin/video', (req, res) => {
 
 const apiId = 21844566;
 const apiHash = 'ff82e94bfed22534a083c3aee236761a';
-const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBuzqWsZD7lJSAAp8T51WnGUluxZT5eLhNGtp2Q63pActX+aptLeNv1mFud9q4uQy8A63PWDLD76Z/70pe+SInNQd5AeBg2DIvvI+G134LMu9DJ33IJs1GqK5WvchyZW4/3lgzDnt72fovg8DAScqa3akRJXKgd/MV8X3jX8uNaEM5NqQaj1Y95nf/8XPO/GJptAykJNljtO9GbxfEeqRO93wl408A1Hi4f/CJSFh3KBbxS++dKVhPF4FzJjrQFoStvuTHnmMZ7sEgBQl4QcH9tXDuBenOxRdGBJ2f1Ls8AJXGlPGjm/Bvfu5nLUaBHow4N/UueusZzvHjQpX3vQhngTI=');
+const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBu5VEuI6lsCe4mblYfXBTE2E3Dhmucj88wlcRRWcwUBygj63HFHIb+G5hM82QgC47dO7FpQoOjlajnBmAhUIw9qYN+o2MgL10pthcxX7Dfv+4Bj2U5Gar9/lkOjvWKhRm5Aj9Lw8acwaymYzvPc8cyrso6INDWQ6P5UY0kVP66L81ZeMKxaiYKXBNbBgWatN6H6G+w3efXuuER25ooo0Tt5EeN240haR9BZ3sUYo7c3hkqYruwUNrPdPNJ6KecInqvAgh+3MOOGMkJem3FgZiDAmo/1xnNkMlnvilJdL3f67OpRiulqPi4r+FOn9QvpJjHfY3u2ys9ix1FIPef6bjfnE=');
 const grupoChatId = -1002208588695;
 
 const rl = readline.createInterface({
@@ -12473,7 +12589,7 @@ router.get('/likes', async (req, res) => {
 
   const getUserInfo = async () => {
     try {
-      const { data } = await axios.get(`https://kryptorinfo.squareweb.app/api/player_info?uid=${id}&region=${region}`);
+      const { data } = await axios.get(`https://freefireapis.squareweb.app/api/info_player?uid=${id}&region=${region}&clothes=false`);
 
       return {
         liked: data.basicInfo?.liked || 0,
@@ -12910,7 +13026,7 @@ router.get('/infoff', async (req, res) => {
     }
 
     try {
-        const response = await axios.get(`https://freefirefwx-beta.squareweb.app/api/info_player?uid=${id}&region=br&clothes=true`);
+        const response = await axios.get(`https://freefireapis.squareweb.app/api/info_player?uid=${id}&region=br&clothes=true`);
 
         // Verifica se retornou erro
         if (response.data.error) {

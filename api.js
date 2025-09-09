@@ -3585,6 +3585,403 @@ router.get('/gtts', async (req, res) => {
 //ia ilimitada 
 // ================== TEXT MODELS ==================
 
+// GPT-4
+router.get('/gpt-4', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).send('Texto parameter is required.');
+  try {
+    const response = await ai.v2(texto, "gpt-4");
+    res.json({ resposta: response });
+  } catch (error) {
+    res.status(500).send('Error while generating GPT-4 response.');
+  }
+});
+
+// GPT-4-0613
+router.get('/gpt-4-0613', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).send('Texto parameter is required.');
+  try {
+    const response = await ai.v2(texto, "gpt-4-0613");
+    res.json({ resposta: response });
+  } catch (error) {
+    res.status(500).send('Error while generating GPT-4-0613 response.');
+  }
+});
+
+// GPT-4-32k
+router.get('/gpt-4-32k', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).send('Texto parameter is required.');
+  try {
+    const response = await ai.v2(texto, "gpt-4-32k");
+    res.json({ resposta: response });
+  } catch (error) {
+    res.status(500).send('Error while generating GPT-4-32k response.');
+  }
+});
+
+// GPT-4-0314
+router.get('/gpt-4-0314', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).send('Texto parameter is required.');
+  try {
+    const response = await ai.v2(texto, "gpt-4-0314");
+    res.json({ resposta: response });
+  } catch (error) {
+    res.status(500).send('Error while generating GPT-4-0314 response.');
+  }
+});
+
+// GPT-4-32k-0314
+router.get('/gpt-4-32k-0314', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).send('Texto parameter is required.');
+  try {
+    const response = await ai.v2(texto, "gpt-4-32k-0314");
+    res.json({ resposta: response });
+  } catch (error) {
+    res.status(500).send('Error while generating GPT-4-32k-0314 response.');
+  }
+});
+
+// GPT-3.5-turbo
+router.get('/gpt-3.5-turbo', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).send('Texto parameter is required.');
+  try {
+    const response = await ai.v2(texto, "gpt-3.5-turbo");
+    res.json({ resposta: response });
+  } catch (error) {
+    res.status(500).send('Error while generating GPT-3.5 response.');
+  }
+});
+
+// GPT-3.5-turbo-16k
+router.get('/gpt-3.5-turbo-16k', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).send('Texto parameter is required.');
+  try {
+    const response = await ai.v2(texto, "gpt-3.5-turbo-16k");
+    res.json({ resposta: response });
+  } catch (error) {
+    res.status(500).send('Error while generating GPT-3.5-16k response.');
+  }
+});
+
+// GPT-3.5-turbo-0613
+router.get('/gpt-3.5-turbo-0613', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).send('Texto parameter is required.');
+  try {
+    const response = await ai.v2(texto, "gpt-3.5-turbo-0613");
+    res.json({ resposta: response });
+  } catch (error) {
+    res.status(500).send('Error while generating GPT-3.5-0613 response.');
+  }
+});
+
+// GPT-3.5-turbo-16k-0613
+router.get('/gpt-3.5-turbo-16k-0613', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).send('Texto parameter is required.');
+  try {
+    const response = await ai.v2(texto, "gpt-3.5-turbo-16k-0613");
+    res.json({ resposta: response });
+  } catch (error) {
+    res.status(500).send('Error while generating GPT-3.5-16k-0613 response.');
+  }
+});
+
+// GPT-3.5-turbo-0301
+router.get('/gpt-3.5-turbo-0301', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).send('Texto parameter is required.');
+  try {
+    const response = await ai.v2(texto, "gpt-3.5-turbo-0301");
+    res.json({ resposta: response });
+  } catch (error) {
+    res.status(500).send('Error while generating GPT-3.5-0301 response.');
+  }
+});
+
+// text-davinci-003
+router.get('/text-davinci-003', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).send('Texto parameter is required.');
+  try {
+    const response = await ai.v2(texto, "text-davinci-003");
+    res.json({ resposta: response });
+  } catch (error) {
+    res.status(500).send('Error while generating text-davinci-003 response.');
+  }
+});
+
+// text-davinci-002
+router.get('/text-davinci-002', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).send('Texto parameter is required.');
+  try {
+    const response = await ai.v2(texto, "text-davinci-002");
+    res.json({ resposta: response });
+  } catch (error) {
+    res.status(500).send('Error while generating text-davinci-002 response.');
+  }
+});
+
+// code-davinci-002
+router.get('/code-davinci-002', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).send('Texto parameter is required.');
+  try {
+    const response = await ai.v2(texto, "code-davinci-002");
+    res.json({ resposta: response });
+  } catch (error) {
+    res.status(500).send('Error while generating code-davinci-002 response.');
+  }
+});
+
+// gpt-3
+router.get('/gpt-3', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).send('Texto parameter is required.');
+  try {
+    const response = await ai.v2(texto, "gpt-3");
+    res.json({ resposta: response });
+  } catch (error) {
+    res.status(500).send('Error while generating gpt-3 response.');
+  }
+});
+
+// text-curie-001
+router.get('/text-curie-001', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).send('Texto parameter is required.');
+  try {
+    const response = await ai.v2(texto, "text-curie-001");
+    res.json({ resposta: response });
+  } catch (error) {
+    res.status(500).send('Error while generating text-curie-001 response.');
+  }
+});
+
+// text-babbage-001
+router.get('/text-babbage-001', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).send('Texto parameter is required.');
+  try {
+    const response = await ai.v2(texto, "text-babbage-001");
+    res.json({ resposta: response });
+  } catch (error) {
+    res.status(500).send('Error while generating text-babbage-001 response.');
+  }
+});
+
+// text-ada-001
+router.get('/text-ada-001', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).send('Texto parameter is required.');
+  try {
+    const response = await ai.v2(texto, "text-ada-001");
+    res.json({ resposta: response });
+  } catch (error) {
+    res.status(500).send('Error while generating text-ada-001 response.');
+  }
+});
+
+// davinci
+router.get('/davinci', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).send('Texto parameter is required.');
+  try {
+    const response = await ai.v2(texto, "davinci");
+    res.json({ resposta: response });
+  } catch (error) {
+    res.status(500).send('Error while generating davinci response.');
+  }
+});
+
+// curie
+router.get('/curie', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).send('Texto parameter is required.');
+  try {
+    const response = await ai.v2(texto, "curie");
+    res.json({ resposta: response });
+  } catch (error) {
+    res.status(500).send('Error while generating curie response.');
+  }
+});
+
+// babbage
+router.get('/babbage', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).send('Texto parameter is required.');
+  try {
+    const response = await ai.v2(texto, "babbage");
+    res.json({ resposta: response });
+  } catch (error) {
+    res.status(500).send('Error while generating babbage response.');
+  }
+});
+
+// ada
+router.get('/ada', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).send('Texto parameter is required.');
+  try {
+    const response = await ai.v2(texto, "ada");
+    res.json({ resposta: response });
+  } catch (error) {
+    res.status(500).send('Error while generating ada response.');
+  }
+});
+
+// babbage-002
+router.get('/babbage-002', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).send('Texto parameter is required.');
+  try {
+    const response = await ai.v2(texto, "babbage-002");
+    res.json({ resposta: response });
+  } catch (error) {
+    res.status(500).send('Error while generating babbage-002 response.');
+  }
+});
+
+// davinci-002
+router.get('/davinci-002', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).send('Texto parameter is required.');
+  try {
+    const response = await ai.v2(texto, "davinci-002");
+    res.json({ resposta: response });
+  } catch (error) {
+    res.status(500).send('Error while generating davinci-002 response.');
+  }
+});
+
+
+// v3
+router.get('/v3', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).send('Texto parameter is required.');
+  try {
+    const response = await ai.v3(texto, "v3");
+    res.json({ resposta: response });
+  } catch (error) {
+    res.status(500).send('Error while generating v3 response.');
+  }
+});
+
+// v3-32k
+router.get('/v3-32k', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).send('Texto parameter is required.');
+  try {
+    const response = await ai.v3(texto, "v3-32k");
+    res.json({ resposta: response });
+  } catch (error) {
+    res.status(500).send('Error while generating v3-32k response.');
+  }
+});
+
+// turbo
+router.get('/turbo', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).send('Texto parameter is required.');
+  try {
+    const response = await ai.v3(texto, "turbo");
+    res.json({ resposta: response });
+  } catch (error) {
+    res.status(500).send('Error while generating turbo response.');
+  }
+});
+
+// turbo-16k
+router.get('/turbo-16k', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).send('Texto parameter is required.');
+  try {
+    const response = await ai.v3(texto, "turbo-16k");
+    res.json({ resposta: response });
+  } catch (error) {
+    res.status(500).send('Error while generating turbo-16k response.');
+  }
+});
+
+// gemini
+router.get('/gemini-v3', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).send('Texto parameter is required.');
+  try {
+    const response = await ai.v3(texto, "gemini");
+    res.json({ resposta: response });
+  } catch (error) {
+    res.status(500).send('Error while generating gemini v3 response.');
+  }
+});
+
+// llama3-70b
+router.get('/llama3-70b', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).send('Texto parameter is required.');
+  try {
+    const response = await ai.v3(texto, "llama3-70b");
+    res.json({ resposta: response });
+  } catch (error) {
+    res.status(500).send('Error while generating llama3-70b response.');
+  }
+});
+
+// llama3-8b
+router.get('/llama3-8b', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).send('Texto parameter is required.');
+  try {
+    const response = await ai.v3(texto, "llama3-8b");
+    res.json({ resposta: response });
+  } catch (error) {
+    res.status(500).send('Error while generating llama3-8b response.');
+  }
+});
+
+// mixtral-8x7b
+router.get('/mixtral-8x7b', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).send('Texto parameter is required.');
+  try {
+    const response = await ai.v3(texto, "mixtral-8x7b");
+    res.json({ resposta: response });
+  } catch (error) {
+    res.status(500).send('Error while generating mixtral-8x7b response.');
+  }
+});
+
+// gemma-7b
+router.get('/gemma-7b', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).send('Texto parameter is required.');
+  try {
+    const response = await ai.v3(texto, "gemma-7b");
+    res.json({ resposta: response });
+  } catch (error) {
+    res.status(500).send('Error while generating gemma-7b response.');
+  }
+});
+
+// gemma2-9b
+router.get('/gemma2-9b', async (req, res) => {
+  const { texto } = req.query;
+  if (!texto) return res.status(400).send('Texto parameter is required.');
+  try {
+    const response = await ai.v3(texto, "gemma2-9b");
+    res.json({ resposta: response });
+  } catch (error) {
+    res.status(500).send('Error while generating gemma2-9b response.');
+  }
+});
+
 // GPT-4-turbo
 router.get('/gpt-4-turbo', async (req, res) => {
   const { texto } = req.query;
@@ -12233,7 +12630,7 @@ router.get('/pin/video', (req, res) => {
 
 const apiId = 21844566;
 const apiHash = 'ff82e94bfed22534a083c3aee236761a';
-const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBu0QJWMl2hRf3TFkA53EaMv+cUFUxpbayE84zfhmlFj7Nea2zpuuiA8NK6I2qDFOkxc8JUusf2dd0ecciY++MRVZiIbdrnzxaP/3p867y+BRUTuTfTaAmjsANJ7+sgknaOLvtFQbklBYEyLXvqOzOiLQ2XUv1S1hbovWaNSxf1alqHiQswN+Cq1SiRBH6bwtEoiFXYWcYoR109WCvBvb7Z8TSPUqE1L2Njsh/Q4daNbn9e2casVOoWDGVSSGgdSdYRh0eCYHpCWWos0IBMNyI2r474Xjflc0Th6aj3P9ksuOZmxj+IdFn92L4w1tg4+T9bOGNENTUhHoFmO/hxjidO+A=');
+const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBu7micPbRIpiJbzlCXhrcSycFarVYGhpFo3hyMyGI6kXo1q33/jQ3kY0UsB9RLpV4xkdcuOmVyazY7WOFABcKpT3t9PV2sg6yxAcO1Aj4UTm1D+iIRszBmi0vqkg/Cjhjfm+RkiumHkcs+7UQN/6k3TyhaRHGaLuEFln+ijhmQKc6+YZ2fq/pmwOQU7BYVzs5TdkFlK8HEho6+LQlOIQseXfS41HrKY1rStqgYGihrubarkK/LB8MntrYNCtSKCTfxQadNU+Nnsg15iapf7Pm1+YKxyuBjq9qALg2bmdQ2oJM+NZ7KqGJHkn0gu+H/Fnc26+lLbpaQ2iqRxSd4ODpzCA=');
 const grupoChatId = -1002208588695;
 
 const rl = readline.createInterface({

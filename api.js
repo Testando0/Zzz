@@ -199,60 +199,85 @@ const {
 
 // 719 rotas 10/06/2025 18:38
 
-
 router.get('/boneco', async (req, res) => {
+  const playerId = req.query.id;
+  if (!playerId) return res.status(400).send('Parâmetro ?id= é obrigatório');
+
   try {
+    // URL das roupas
+    const skinUrl = `https://www.freefiremania.com.br/paginas/dados-jogador-api-roupas.php?tag=${playerId}`;
+    const response = await axios.get(skinUrl);
+    const $ = cheerio.load(response.data);
+
+    // Mapeia roupas pelo tipo usando o nome do arquivo
+    const roupas = {};
+    $('div.d-flex.flex-wrap.justify-content-start img').each((_, el) => {
+      const src = $(el).attr('src');
+      if (!src) return;
+
+      // Detecta tipo pelo nome do arquivo
+      const lower = src.toLowerCase();
+      if (lower.includes('hair')) roupas.cabelo = src;
+      else if (lower.includes('headadditive') || lower.includes('hat') || lower.includes('chapeu')) roupas.chapeu = src;
+      else if (lower.includes('mask') || lower.includes('mascara')) roupas.mascara = src;
+      else if (lower.includes('facepaint') || lower.includes('maquiagem')) roupas.maquiagem = src;
+      else if (lower.includes('tshirt') || lower.includes('blusa')) roupas.blusa = src;
+      else if (lower.includes('bottom') || lower.includes('calca')) roupas.calca = src;
+      else if (lower.includes('shoe') || lower.includes('sapato')) roupas.sapato = src;
+      else if (lower.includes('accessory')) roupas.acessorio = src;
+    });
+
+    // Canvas
     const largura = 512;
     const altura = 900;
-    const tamanhoPadrao = 200;
-
     const canvas = createCanvas(largura, altura);
     const ctx = canvas.getContext('2d');
-
     ctx.clearRect(0, 0, largura, altura);
 
-    // Ordem: chapéu, máscara, maquiagem, blusa, calça, sapato
-    const partes = [
-      { nome: 'chapeu', url: req.query.chapeu },
-      { nome: 'mascara', url: req.query.mascara },
-      { nome: 'maquiagem', url: req.query.maquiagem },
-      { nome: 'blusa', url: req.query.blusa },
-      { nome: 'calca', url: req.query.calca },
-      { nome: 'sapato', url: req.query.sapato },
-    ];
+    // Ordem das camadas
+    const ordemCamadas = ['calca', 'blusa', 'sapato', 'cabelo', 'chapeu', 'mascara', 'maquiagem', 'acessorio'];
 
-    const posicoesFixas = [
-      { x: 156, y: 0 },    // chapéu
-      { x: 156, y: 140 },  // máscara
-      { x: 156, y: 280 },  // maquiagem
-      { x: 156, y: 420 },  // blusa
-      { x: 156, y: 560 },  // calça
-      { x: 156, y: 700 },  // sapato
-    ];
+    // Posições base
+    const posicoesBase = {
+      calca: 560,
+      blusa: 420,
+      sapato: 700,
+      cabelo: 120,
+      chapeu: 0,
+      mascara: 140,
+      maquiagem: 280,
+      acessorio: 200
+    };
 
-    for (let i = 0; i < partes.length; i++) {
-      const parte = partes[i];
-      if (parte.url && parte.url.trim() !== '') {
-        try {
-          const response = await axios.get(parte.url, { responseType: 'arraybuffer' });
-          const buffer = Buffer.from(response.data, 'binary');
-          const img = await loadImage(buffer);
+    // Desenha cada peça
+    const proporcao = 0.8; // escala proporcional
+    for (const tipo of ordemCamadas) {
+      if (!roupas[tipo]) continue;
+      try {
+        const resp = await axios.get(roupas[tipo], { responseType: 'arraybuffer' });
+        const img = await loadImage(Buffer.from(resp.data, 'binary'));
 
-          const { x, y } = posicoesFixas[i];
-          ctx.drawImage(img, x, y, tamanhoPadrao, tamanhoPadrao);
-        } catch (err) {
-          console.error(`Erro na parte ${parte.nome}:`, err.message);
-        }
+        const larguraImg = img.width * proporcao;
+        const alturaImg = img.height * proporcao;
+
+        const x = (canvas.width - larguraImg) / 2;
+        const y = posicoesBase[tipo];
+
+        ctx.drawImage(img, x, y, larguraImg, alturaImg);
+      } catch (err) {
+        console.error(`Erro ao carregar ${tipo}:`, err.message);
       }
     }
 
+    // Retorna PNG
     res.setHeader('Content-Type', 'image/png');
     res.send(canvas.toBuffer());
   } catch (err) {
-    console.error('Erro na rota /boneco:', err);
+    console.error('[boneco] Erro:', err.message);
     res.status(500).send('Erro ao gerar boneco');
   }
 });
+
 
 
 async function generateAudio(res, voiceId, text) {
@@ -4317,25 +4342,41 @@ const modelos = [
   "imagen-4.0-ultra-generate-exp-05-20"
 ];
 
-// rota: /ias/NOME_DO_MODELO?texto=...
-modelos.forEach((modeloId) => {
-  router.get(`/ias/${modeloId}`, async (req, res) => {
-    const { texto } = req.query;
-    if (!texto) {
-      return res.status(400).json({ resposta: 'Parâmetro ?texto= é obrigatório.' });
-    }
-
-    try {
-      const ia = new AI()
-        .setModel(modeloId)
-        .addMessage({ role: 'user', content: texto });
-
-      const resposta = await ia.generate();
-      res.json({ resposta });
-    } catch (err) {
-      res.status(500).json({ resposta: 'Erro ao gerar resposta: ' + err.message });
-    }
+// rota: /ias → mostra os modelos disponíveis
+router.get('/ias', (req, res) => {
+  res.json({
+    mensagem: "Modelos disponíveis para uso:",
+    modelos
   });
+});
+
+// rota: /ias/:modelo?texto=...
+router.get('/ias/:modelo', async (req, res) => {
+  const { modelo } = req.params;
+  const { texto } = req.query;
+
+  // Verifica se o modelo existe
+  if (!modelos.includes(modelo)) {
+    return res.status(404).json({
+      erro: "Modelo não encontrado",
+      disponiveis: modelos
+    });
+  }
+
+  if (!texto) {
+    return res.status(400).json({ erro: 'Parâmetro ?texto= é obrigatório.' });
+  }
+
+  try {
+    const ia = new AI()
+      .setModel(modelo)
+      .addMessage({ role: 'user', content: texto });
+
+    const resposta = await ia.generate();
+    res.json({ modelo, resposta });
+  } catch (err) {
+    res.status(500).json({ erro: 'Erro ao gerar resposta: ' + err.message });
+  }
 });
 const gptModels = [
   'gpt-4', 'gpt-4-0613', 'gpt-4-32k', 'gpt-4-0314', 'gpt-4-32k-0314',
@@ -4346,27 +4387,44 @@ const gptModels = [
   'davinci', 'curie', 'babbage', 'ada', 'babbage-002', 'davinci-002'
 ];
 
-// GPT models (via gpt.v1)
-gptModels.forEach(modelId => {
-  router.get(`/ia/${modelId}`, async (req, res) => {
-    const { texto } = req.query;
-    if (!texto) return res.status(400).json({ resposta: 'Parâmetro ?texto= é obrigatório.' });
-
-    try {
-      const resposta = await gpt.v1({
-        model: modelId,
-        messages: [{ role: 'user', content: texto }],
-        prompt: texto,
-        markdown: false
-      });
-
-      res.json({ resposta });
-    } catch (err) {
-      res.status(500).json({ resposta: 'Erro ao gerar resposta: ' + err.message });
-    }
+// rota: /ia → lista todos os modelos GPT disponíveis
+router.get('/ia', (req, res) => {
+  res.json({
+    mensagem: "Modelos GPT disponíveis:",
+    modelos: gptModels
   });
 });
 
+// rota: /ia/:modelo?texto=...
+router.get('/ia/:modelo', async (req, res) => {
+  const { modelo } = req.params;
+  const { texto } = req.query;
+
+  // Verifica se o modelo existe
+  if (!gptModels.includes(modelo)) {
+    return res.status(404).json({
+      erro: "Modelo não encontrado",
+      disponiveis: gptModels
+    });
+  }
+
+  if (!texto) {
+    return res.status(400).json({ erro: 'Parâmetro ?texto= é obrigatório.' });
+  }
+
+  try {
+    const resposta = await gpt.v1({
+      model: modelo,
+      messages: [{ role: 'user', content: texto }],
+      prompt: texto,
+      markdown: false
+    });
+
+    res.json({ modelo, resposta });
+  } catch (err) {
+    res.status(500).json({ erro: 'Erro ao gerar resposta: ' + err.message });
+  }
+});
 // GPT-4o (via gpt.v3)
 router.get('/ia/gpt-4o', async (req, res) => {
   const { texto } = req.query;
@@ -9728,10 +9786,9 @@ router.get('/gerar-imagem', async (req, res) => {
 });
 
 router.get("/anhmoe/:category", async (req, res) => {
-  const { category } = req.params;
+  try {
+    const { category } = req.params;
 
-  // Função dentro da rota
-  async function getCategory(category, page = null) {
     const validCategories = [
       "sfw",
       "nsfw",
@@ -9742,67 +9799,66 @@ router.get("/anhmoe/:category", async (req, res) => {
       "hentai",
     ];
 
+    // Validação da categoria
     if (!validCategories.includes(category)) {
-      throw new Error(`Invalid category: ${category}. Valid options: ${validCategories.join(", ")}`);
+      return res.status(400).json({
+        erro: `Categoria inválida: ${category}`,
+        disponiveis: validCategories
+      });
     }
 
-    const baseURL = "https://anh.moe";
-    const headers = {
-      "Origin": "https://anh.moe",
-      "Referer": "https://anh.moe/",
-      "User-Agent": "Zanixon/1.0.0",
-    };
+    async function getCategory(category, page = null) {
+      const baseURL = "https://anh.moe";
+      const headers = {
+        "Origin": "https://anh.moe",
+        "Referer": "https://anh.moe/",
+        "User-Agent": "Zanixon/1.0.0",
+      };
 
-    const url = page || `/category/${category}`;
-    const raw = page
-      ? await axios.get(url, { headers })
-      : await axios.get(`${baseURL}${url}`, { headers });
+      const url = page || `/category/${category}`;
+      const response = page
+        ? await axios.get(url, { headers })
+        : await axios.get(`${baseURL}${url}`, { headers });
 
-    const $ = cheerio.load(raw.data);
-    const $listItems = $(".list-item");
-    const items = [];
+      const $ = cheerio.load(response.data);
+      const items = [];
 
-    $listItems.each((_, el) => {
-      const $el = $(el);
-      let data = {};
-      const rawData = $el.attr("data-object");
-      if (rawData) {
-        try {
-          data = JSON.parse(decodeURIComponent(rawData));
-        } catch {
-          throw "Can't parse data object";
+      $(".list-item").each((_, el) => {
+        const $el = $(el);
+        let data = {};
+        const rawData = $el.attr("data-object");
+
+        if (rawData) {
+          try {
+            data = JSON.parse(decodeURIComponent(rawData));
+          } catch {
+            console.warn("Não foi possível parsear data-object");
+          }
         }
-      }
 
-      const title = $el.find(".list-item-desc-title a").attr("title") || data.title;
-      const viewLink = new URL($el.find(".list-item-image a").attr("href"), baseURL).href;
-      const uploadBy = $el.find(".list-item-desc-title div").text();
+        const title = $el.find(".list-item-desc-title a").attr("title") || data.title;
+        const viewLink = new URL($el.find(".list-item-image a").attr("href"), baseURL).href;
+        const uploadBy = $el.find(".list-item-desc-title div").text().trim();
 
-      items.push({
-        type: data.type,
-        title,
-        viewLink,
-        media: {
-          ...data.image,
-        },
-        uploadBy,
+        items.push({
+          type: data.type,
+          title,
+          viewLink,
+          media: data.image || {},
+          uploadBy,
+        });
       });
-    });
 
-    return items;
-  }
+      return items;
+    }
 
-  try {
     const contents = await getCategory(category);
 
-    if (!contents || contents.length === 0) {
-      return res.status(404).send("Nenhuma imagem encontrada.");
-    }
+    if (!contents.length) return res.status(404).send("Nenhuma imagem encontrada.");
 
     const firstImage = contents[0].media?.url;
     if (!firstImage) return res.status(404).send("Imagem não encontrada.");
 
-    // Redireciona direto para a imagem
     res.redirect(firstImage);
   } catch (err) {
     console.error(err);
@@ -9810,38 +9866,51 @@ router.get("/anhmoe/:category", async (req, res) => {
   }
 });
 
-
 router.get('/imagetools', async (req, res) => {
-    try {
-        const { imageUrl, type } = req.query;
-        if (!imageUrl) return res.status(400).send('Informe a URL da imagem');
-        if (!type) return res.status(400).send('Informe o tipo de edição');
+  try {
+    const { imageUrl, type } = req.query;
+    const _type = ['removebg', 'enhance', 'upscale', 'restore', 'colorize'];
 
-        const _type = ['removebg', 'enhance', 'upscale', 'restore', 'colorize'];
-        if (!_type.includes(type)) return res.status(400).send(`Tipos disponíveis: ${_type.join(', ')}`);
-
-        // Baixa a imagem
-        const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
-        const buffer = Buffer.from(response.data);
-
-        // Envia para edição
-        const form = new FormData();
-        form.append('file', buffer, `${Date.now()}_image.jpg`);
-        form.append('type', type);
-
-        const { data } = await axios.post('https://imagetools.rapikzyeah.biz.id/upload', form, {
-            headers: form.getHeaders()
-        });
-
-        const $ = cheerio.load(data);
-        const resUrl = $('img#memeImage').attr('src');
-        if (!resUrl) throw new Error('Nenhum resultado encontrado');
-
-        // Redireciona para a imagem final
-        res.redirect(resUrl);
-    } catch (err) {
-        res.status(500).send(err.message);
+    // Se não mandou type ou imageUrl → apenas lista os tipos
+    if (!type || !imageUrl) {
+      return res.json({
+        mensagem: "Tipos de edição de imagem disponíveis:",
+        tipos: _type,
+        exemplo: "/imagetools?type=removebg&imageUrl=https://site.com/imagem.jpg"
+      });
     }
+
+    if (!_type.includes(type)) {
+      return res.status(400).json({
+        erro: "Tipo inválido",
+        disponiveis: _type
+      });
+    }
+
+    // Baixa a imagem
+    const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+    const buffer = Buffer.from(response.data);
+
+    // Envia para edição
+    const form = new FormData();
+    form.append('file', buffer, `${Date.now()}_image.jpg`);
+    form.append('type', type);
+
+    const { data } = await axios.post(
+      'https://imagetools.rapikzyeah.biz.id/upload',
+      form,
+      { headers: form.getHeaders() }
+    );
+
+    const $ = cheerio.load(data);
+    const resUrl = $('img#memeImage').attr('src');
+    if (!resUrl) throw new Error('Nenhum resultado encontrado');
+
+    // Redireciona para a imagem final
+    res.redirect(resUrl);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
 });
 
 
@@ -12630,7 +12699,7 @@ router.get('/pin/video', (req, res) => {
 
 const apiId = 21844566;
 const apiHash = 'ff82e94bfed22534a083c3aee236761a';
-const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBu7micPbRIpiJbzlCXhrcSycFarVYGhpFo3hyMyGI6kXo1q33/jQ3kY0UsB9RLpV4xkdcuOmVyazY7WOFABcKpT3t9PV2sg6yxAcO1Aj4UTm1D+iIRszBmi0vqkg/Cjhjfm+RkiumHkcs+7UQN/6k3TyhaRHGaLuEFln+ijhmQKc6+YZ2fq/pmwOQU7BYVzs5TdkFlK8HEho6+LQlOIQseXfS41HrKY1rStqgYGihrubarkK/LB8MntrYNCtSKCTfxQadNU+Nnsg15iapf7Pm1+YKxyuBjq9qALg2bmdQ2oJM+NZ7KqGJHkn0gu+H/Fnc26+lLbpaQ2iqRxSd4ODpzCA=');
+const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBu0lYKKbFunDzyXpWGVvwD2E8+oDbWlbe5bcstgch7xC7ZFGGtCCsa4wdJNdCK5PwbFZ+3lbXie3TBNFO30NNB+6zEJs2K590hj089zM77M5YKLZ/5tM1i82vp1riQpdujwzCSGs4LI7pHqpeF/zKGQPKhHosn+jUD7OO+X6Lj9XvTPMgJNQaKufu5S3CtWPJgHq45vVDIEv6s0AGb4ju/j1JHoyXyOXvwc4j1m1OMKZMTmhtQqlF/OEF2cBdYTwaUtBxAV4HKekKhbNUMJlTkZyp7Ql8/JmFN6jbiE2y07CtLenfGZdDUTfe1KbH8hZE34pLQMzAmde0e79jjjey9VA=');
 const grupoChatId = -1002208588695;
 
 const rl = readline.createInterface({
@@ -13294,7 +13363,7 @@ router.get('/perfilff', async (req, res) => {
 
     const getLiValue = (label) => {
       const li = $(`li strong:contains("${label}")`).first().parent();
-      if (!li) return null;
+      if (!li || li.length === 0) return null;
       const text = li.contents().filter((_, el) => el.type === 'text').text().trim();
       return text || null;
     };
@@ -13320,6 +13389,7 @@ router.get('/perfilff', async (req, res) => {
     const experiencia = expMatch ? expMatch[1].replace(/\./g, '') : null;
     const likes = likes_text ? likes_text.replace(/\D/g, '') : null;
 
+    // Buscar roupas
     let roupas = [];
     try {
       const skinHtml = await (await fetch(skinUrl)).text();
@@ -13330,13 +13400,13 @@ router.get('/perfilff', async (req, res) => {
         if (src) {
           const urlCompleta = src.startsWith('http')
             ? src
-            : 'https://www.freefiremania.com.br/' + src.replace(/^\/+/, '');
+            : `https://www.freefiremania.com.br/${src.replace(/^\/+/, '')}`;
           roupas.push(urlCompleta);
         }
       });
     } catch (e) {
       console.warn('[perfilff] ⚠️ Erro ao buscar roupas:', e.message);
-      roupas = false;
+      roupas = [];
     }
 
     return res.json({
@@ -13349,8 +13419,8 @@ router.get('/perfilff', async (req, res) => {
         level,
         experiencia,
         bio,
-        avatar: avatar ? 'https://www.freefiremania.com.br/' + avatar.replace(/^\/+/, '') : null,
-        banner: banner ? 'https://www.freefiremania.com.br/' + banner.replace(/^\/+/, '') : null,
+        avatar: avatar ? `https://www.freefiremania.com.br/${avatar.replace(/^\/+/, '')}` : null,
+        banner: banner ? `https://www.freefiremania.com.br/${banner.replace(/^\/+/, '')}` : null,
         roupas,
         data_criacao,
         ultimo_login,

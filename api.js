@@ -10193,7 +10193,7 @@ router.get('/gerar-imagem2', async (req, res) => {
 
 //fim 
 
-// play e playvideo by Redzin
+// play e playvideo by Redzin 
 
 const got = require('got');
 const ytsr = require('yt-search');
@@ -12931,7 +12931,7 @@ router.get('/pin/video', (req, res) => {
 
 const apiId = 21844566;
 const apiHash = 'ff82e94bfed22534a083c3aee236761a';
-const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBu20SpWuF47QXuLkZPT/F+ZDeR1Kb6ZsUEegL369cAdkVi/5oEN40psbsfDg2MQbtzbC8SN3STcgtIK/AeQh1MGiuWRg4XWd2zd5UeTobKwVgT5qUZ0XdNcvuV7xw1DhvgF9q7gsVrdbd2CDjx3MEMBKiohl4ddcjUGMM7ci0ENNEG8rZKAQF4QUeGicN67umxZ2iMjxphqHmOssHdbF00N4eVu+klH4qKQmpsV1uPL3FobmnfK5aYOBVXxgXhLrIGVNcDEj9mHgBBCGWzUEwry9W/GIgQl0Woq7QTdREBq1ER7i/mr/FKl7PlEHEZ09bfbEutKaXmd08gf4nhYhIBHM=');
+const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBu214EIjqwoM+DfTZdB2ofu29SYjK2AL1FNhigEZLLYqwPjk8rVBs5VIbl+8jk9LTd6eIkC3Ylt5FRAZs06sjZ5XaQ9ZLKseLQUvnbeh/CFjnInM9PBlPXT8eHNdN6Pi+pHIsA+vQu21gP7tKyMTiJ9hko4K5fP/sDZQZOG4x6XRQMckWhz4b5J5RR98EKaq65u2nBcIw23sh44ZPajR4HYFLWFO8aqrhnnBfU1qcVMaVWAy6eMUwuBnrlp7lqkGiYXPHM1k+TO2/oIvvd50ZdaZfuI7gCwDWfr+G/Js8lC485n//7nVRo6ylfudhocJ7l0Yxp0xzwYwLc7H/3be5j4I=');
 const grupoChatId = -1002208588695;
 
 const rl = readline.createInterface({
@@ -13339,8 +13339,8 @@ console.log(`Mensagem de consulta enviada para o grupo ${grupoChatId}: /${type.t
   }
 });
 
-const idDoGrupoDeLikes = -1002208588695;
-
+// ID do bot em vez de grupo
+const botAlvo = 8370354978;
 
 router.get('/likes', async (req, res) => {
   const id = req.query.id;
@@ -13355,7 +13355,9 @@ router.get('/likes', async (req, res) => {
 
   const getUserInfo = async () => {
     try {
-      const { data } = await axios.get(`https://freefireapis.squareweb.app/api/info_player?uid=${id}&region=${region}&clothes=false`);
+      const { data } = await axios.get(
+        `https://freefireapis.squareweb.app/api/info_player?uid=${id}&region=${region}&clothes=false`
+      );
 
       return {
         liked: data.basicInfo?.liked || 0,
@@ -13376,13 +13378,14 @@ router.get('/likes', async (req, res) => {
   }
 
   try {
-    await client.sendMessage(idDoGrupoDeLikes, { message: `/likes ${id}` });
-    console.log(`✅ Mensagem enviada: /likes ${id}`);
+    // 👉 agora manda direto pro bot
+    await client.sendMessage(botAlvo, { message: `/likes ${id}` });
+    console.log(`✅ Mensagem enviada para o bot: /likes ${id}`);
 
     let infoDepois = null;
 
     for (let i = 0; i < 10; i++) {
-      await new Promise(resolve => setTimeout(resolve, 2000)); // espera 2 segundos
+      await new Promise(resolve => setTimeout(resolve, 2000));
       infoDepois = await getUserInfo();
 
       if (!infoDepois) {

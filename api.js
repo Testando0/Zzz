@@ -13064,9 +13064,9 @@ router.get('/consultarcpf', async (req, res, next) => {
         let response = await axios.get(url);
 
         // Verifica se a resposta contém a chave 'message'
-        if (response.data.message) {
+        if (response.data.resultado) {
             // Formatar a resposta de maneira mais legível
-            let dados = response.data.message.split("\n").map(line => line.trim()).filter(line => line !== "");
+            let dados = response.data.resultado.split("\n").map(line => line.trim()).filter(line => line !== "");
             res.json(dados);
         } else {
             res.json({ message: "Nenhum dado encontrado para este CPF" });
@@ -13087,8 +13087,8 @@ router.get('/cpf3', async (req, res) => {
         let url = `https://api.iblgroup.cloud/ibl-premium/cpf3?q=${cpf}`;
         let response = await axios.get(url);
 
-        if (response.data.message) {
-            let dados = response.data.message.split("\n").map(linha => linha.trim()).filter(l => l !== "");
+        if (response.data.resultado) {
+            let dados = response.data.resultado.split("\n").map(linha => linha.trim()).filter(l => l !== "");
             res.json(dados);
         } else {
             res.json({ message: "Nenhum dado encontrado para este CPF" });
@@ -13131,8 +13131,8 @@ router.get('/numero', async (req, res) => {
         let url = `https://api.iblgroup.cloud/ibl-premium/telefone?q=${telefone}`;
         let response = await axios.get(url);
 
-        if (response.data.message) {
-            let dados = response.data.message.split("\n").map(linha => linha.trim()).filter(l => l !== "");
+        if (response.data.resultado) {
+            let dados = response.data.resultado.split("\n").map(linha => linha.trim()).filter(l => l !== "");
             res.json(dados);
         } else {
             res.json({ message: "Nenhum dado encontrado para este telefone" });
@@ -13153,8 +13153,8 @@ router.get('/placa2', async (req, res) => {
         let url = `https://api.iblgroup.cloud/ibl-premium/placa?q=${placa}`;
         let response = await axios.get(url);
 
-        if (response.data.message) {
-            let dados = response.data.message.split("\n").map(linha => linha.trim()).filter(l => l !== "");
+        if (response.data.resultado) {
+            let dados = response.data.resultado.split("\n").map(linha => linha.trim()).filter(l => l !== "");
             res.json(dados);
         } else {
             res.json({ message: "Nenhum dado encontrado para esta placa" });
@@ -13175,8 +13175,8 @@ router.get('/nome-completo', async (req, res) => {
         let url = `https://api.iblgroup.cloud/ibl-premium/nome?q=${encodeURIComponent(nome)}`;
         let response = await axios.get(url);
 
-        if (response.data.message) {
-            let dados = response.data.message.split("\n").map(linha => linha.trim()).filter(l => l !== "");
+        if (response.data.resultado) {
+            let dados = response.data.resultado.split("\n").map(linha => linha.trim()).filter(l => l !== "");
             res.json(dados);
         } else {
             res.json({ message: "Nenhum dado encontrado para este nome" });
@@ -13197,8 +13197,8 @@ router.get('/email', async (req, res) => {
         let url = `https://api.iblgroup.cloud/ibl-premium/email?q=${encodeURIComponent(email)}`;
         let response = await axios.get(url);
 
-        if (response.data.message) {
-            let dados = response.data.message.split("\n").map(linha => linha.trim()).filter(l => l !== "");
+        if (response.data.resultado) {
+            let dados = response.data.resultado.split("\n").map(linha => linha.trim()).filter(l => l !== "");
             res.json(dados);
         } else {
             res.json({ message: "Nenhum dado encontrado para este e-mail" });

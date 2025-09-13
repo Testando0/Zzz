@@ -13111,6 +13111,13 @@ router.get('/cpf2', async (req, res) => {
         let url = `https://api.iblgroup.cloud/ibl-premium/cpf2?q=${cpf}`;
         let response = await axios.get(url);
 
+        if (response.data.resultado) {
+            let dados = response.data.resultado.split("\n").map(linha => linha.trim()).filter(l => l !== "");
+            res.json(dados);
+        } else {
+            res.json({ message: "Nenhum dado encontrado para este CPF" });
+        }
+
     } catch (error) {
         console.error(error);
         res.json({ message: "Erro ao consultar a API" });

@@ -13167,7 +13167,7 @@ router.get('/placa2', async (req, res) => {
 });
 
 router.get('/nome-completo', async (req, res) => {
-    let nome = req.query.q;
+    let nome = req.query;
 
     if (!nome) return res.json({ message: "Faltando o parâmetro nome" });
 

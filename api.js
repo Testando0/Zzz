@@ -13172,7 +13172,7 @@ router.get('/nome-completo', async (req, res) => {
     if (!nome) return res.json({ message: "Faltando o parâmetro nome" });
 
     try {
-        let url = `https://api.iblgroup.cloud/ibl-premium/nome?q=${encodeURIComponent(nome)}`;
+        let url = `https://api.iblgroup.cloud/ibl-premium/nome?q=${nome}`;
         let response = await axios.get(url);
 
         if (response.data.resultado) {

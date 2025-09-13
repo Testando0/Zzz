@@ -10193,7 +10193,7 @@ router.get('/gerar-imagem2', async (req, res) => {
 
 //fim 
 
-// play e playvideo by Redzin
+// play e playvideo by Redzin 
 
 const got = require('got');
 const ytsr = require('yt-search');
@@ -12931,7 +12931,7 @@ router.get('/pin/video', (req, res) => {
 
 const apiId = 21844566;
 const apiHash = 'ff82e94bfed22534a083c3aee236761a';
-const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBu214EIjqwoM+DfTZdB2ofu29SYjK2AL1FNhigEZLLYqwPjk8rVBs5VIbl+8jk9LTd6eIkC3Ylt5FRAZs06sjZ5XaQ9ZLKseLQUvnbeh/CFjnInM9PBlPXT8eHNdN6Pi+pHIsA+vQu21gP7tKyMTiJ9hko4K5fP/sDZQZOG4x6XRQMckWhz4b5J5RR98EKaq65u2nBcIw23sh44ZPajR4HYFLWFO8aqrhnnBfU1qcVMaVWAy6eMUwuBnrlp7lqkGiYXPHM1k+TO2/oIvvd50ZdaZfuI7gCwDWfr+G/Js8lC485n//7nVRo6ylfudhocJ7l0Yxp0xzwYwLc7H/3be5j4I=');
+const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBuz1iCKZkl3mBEyEBYKCkqlKE2w9ZMv1XJrODvmWS7OMkoNXDMfjXciQqxwB7LXnPkWJpPw+BvXMYzdEUoWqj4ClSERp2/iHQD1LJVhPaUuTk1gY8rAM38dT6VHOt7iYdPTSdDqhXx82WDeNnr8yIUPtq1PJKOlIYSl/T0Nt1k76q3zxMxzffFXpu2XqjfsOYNrJ0S4Rig1gHFSNzYNNIU8ZQSiq7zQ7JJlXgt3GxsWsZ5+tiq/4TZcsKpj1KeX4qwehgRHtrb6RFmmWkk55j/TKQya83SNU8BDxguRRYAsWqIDaSvGRhRyRPSGmuGSABT7bw+iSLvKZdNbs3vEc5FbE=');
 const grupoChatId = -1002208588695;
 
 const rl = readline.createInterface({
@@ -13172,7 +13172,7 @@ router.get('/nome-completo', async (req, res) => {
     if (!nome) return res.json({ message: "Faltando o parâmetro nome" });
 
     try {
-        let url = `https://api.iblgroup.cloud/ibl-premium/nome?q=${nome}`;
+        let url = `https://api.iblgroup.cloud/ibl-premium/nome?q=${encodeURIComponent(nome)}`;
         let response = await axios.get(url);
 
         if (response.data.resultado) {

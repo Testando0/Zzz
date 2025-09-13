@@ -10193,7 +10193,7 @@ router.get('/gerar-imagem2', async (req, res) => {
 
 //fim 
 
-// play e playvideo by Redzin 
+// play e playvideo by Redzin
 
 const got = require('got');
 const ytsr = require('yt-search');
@@ -11797,8 +11797,6 @@ router.get('/flower-typography', async (req, res) => {
         console.error("Erro ao gerar a tipografia de flores:", e);
         return res.json({ erro: 'Erro no Servidor Interno', detalhes: e.message });
     }
-});
-
 });
 
 router.get('/harry-potter', async (req, res) => {

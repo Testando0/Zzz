@@ -3477,30 +3477,80 @@ router.get('/likesff', async (req, res) => {
 });
 
 
+const idDoGrupoDeLikes = -1002940331751;
+
 router.get('/likesff2', async (req, res) => {
-    const { id, quantity = 10 } = req.query;
+  const id = req.query.id;
+  const region = req.query.region || 'br';
 
-    if (!id) {
-        return res.status(400).json({ error: 'O parâmetro "id" é obrigatório.' });
-    }
+  if (!id) {
+    console.log('❌ Parâmetro id ausente');
+    return res.json({ status: false, resultado: 'Cadê o parâmetro id?' });
+  }
 
+  console.log(`📩 Enviando likes para ID = ${id}`);
+
+  const getUserInfo = async () => {
     try {
-        const response = await axios.get(`https://adderfreefirelikes.squareweb.app/api/like?uid=${id}&quantity=${quantity}`);
-        const data = response.data;
+      const { data } = await axios.get(
+        `https://freefireapis.squareweb.app/api/info_player?uid=${id}&region=${region}&clothes=false`
+      );
 
-        const formattedResponse = {
-            "ID do Jogador": data.target_id,
-            "Likes Enviados": data.likes_enviados.toLocaleString(),
-            "Falhas": data.falhas,
-            "Sucessos": data.sucessos,
-            "Status": data.status === "ok" ? "Sucesso" : "Erro"
-        };
-
-        res.json(formattedResponse);
-    } catch (error) {
-        res.status(500).json({ error: 'Erro ao enviar likes.', details: error.message });
+      return {
+        liked: data.basicInfo?.liked || 0,
+        nickname: data.basicInfo?.nickname || 'Desconhecido',
+        level: data.basicInfo?.level || 0,
+        avatar: data.basicInfo?.avatars?.webp || '',
+        skin: data.profileInfo?.clothesImage || ''
+      };
+    } catch (err) {
+      console.error('❌ Erro na nova API:', err.message);
+      return null;
     }
+  };
+
+  const infoAntes = await getUserInfo();
+  if (!infoAntes) {
+    return res.json({ status: false, resultado: 'Erro ao consultar informações do jogador antes do envio.' });
+  }
+
+  try {
+    // Envia mensagem para o grupo do bot
+    await client.sendMessage(idDoGrupoDeLikes, { message: `/like br ${id}` });
+    console.log(`✅ Mensagem enviada: /likes ${id}`);
+
+    let infoDepois = null;
+
+    for (let i = 0; i < 10; i++) {
+      await new Promise(resolve => setTimeout(resolve, 2000)); // espera 2 segundos
+      infoDepois = await getUserInfo();
+
+      if (!infoDepois) {
+        return res.json({ status: false, resultado: 'Erro ao consultar informações após envio.' });
+      }
+
+      if (infoDepois.liked > infoAntes.liked) break;
+    }
+
+    return res.json({
+      status: true,
+      resultado: {
+        likesAntes: infoAntes.liked,
+        likesDepois: infoDepois.liked,
+        likesGanhos: infoDepois.liked - infoAntes.liked,
+        nick: infoDepois.nickname,
+        nivel: infoDepois.level,
+        avatar: infoDepois.avatar,
+        skin: infoDepois.skin,
+        região: region
+      }
+    });
+  } catch (err) {
+    console.error('❌ Erro na rota /likes:', err.message);
+    return res.json({ status: false, resultado: 'Erro ao tentar registrar os likes.' });
+  }
 });
+
 
 
 router.get('/instamp4', async (req, res) => {
@@ -10193,7 +10243,7 @@ router.get('/gerar-imagem2', async (req, res) => {
 
 //fim 
 
-// play e playvideo by Redzin 
+// play e playvideo by Redzin
 
 const got = require('got');
 const ytsr = require('yt-search');
@@ -12931,7 +12981,7 @@ router.get('/pin/video', (req, res) => {
 
 const apiId = 21844566;
 const apiHash = 'ff82e94bfed22534a083c3aee236761a';
-const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTIBuyJJ5MtBUEwrDBodrjtFac/VY7gtgErm3Ok81X/9iUzofRMri4uMqxueFquNVPyepEXxJi5FxW0U44PWjfQ9EzZJDs8Wzm2EkHqfAXcaFnnr/uMCJ14bCSilpwWqP+zQuL/xkKu0sSfpqbrAzmMzo6ylFka3k9S1apljjRg1OPGq9/A7xYXqOBBX4LJihAwrA+C8eMDU0SlxLjiYCoDEg+M/8oQnjEmpmjELHL826tszj9stUySLz1E362MLDybF+ykwtnwFm0SalGogSXe0p/+yYz/uz4T8iSARaNsiF8Re8dAtzd9VxLxtB+/DRFFhhEc0VFu3rnBLG5P0DaovAlQ=');
+const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTIBu5l6AMgBaTfji/3UUBYMS8S72FRXjZY5pJdfKzjZRc5pKPgBW4sfT/teUm/O2y+3IqN/U77ARkcV+5BRKLC8t36O/4IZ0gBP919/cSilfXV3zcxaSwzKQu0i4Yyewx0bs5vCIevWFmnf/CNs3fLuLnv/ZgBoWeAERZQalZeMTLK0SvGzfEEoCxA3gYZknKdDJaJOxzUDTe4P+KX4n8IYFiveXlcbehF5OC+Iv+eitBCXH1krPFPu8EkX2yOF33ivOvLHjcV4vwbfI1BcYuAv7/K3hjwO/MaKlOzaKItww81Ulw/YZY2bA8vEgPzvpZ4EsFsnq+CXt19RUx67T18zcL8=');
 const grupoChatId = -1002208588695;
 
 const rl = readline.createInterface({
@@ -13339,8 +13389,8 @@ console.log(`Mensagem de consulta enviada para o grupo ${grupoChatId}: /${type.t
   }
 });
 
-// ID do bot em vez de grupo
-const botAlvo = 8370354978;
+// Username do bot em vez de ID numérico
+const botAlvo = "@freefire777x_bot";
 
 router.get('/likes', async (req, res) => {
   const id = req.query.id;
@@ -13378,7 +13428,7 @@ router.get('/likes', async (req, res) => {
   }
 
   try {
-    // 👉 agora manda direto pro bot
+    // 👉 agora manda direto pro bot usando o username
     await client.sendMessage(botAlvo, { message: `/likes ${id}` });
     console.log(`✅ Mensagem enviada para o bot: /likes ${id}`);
 
@@ -13414,7 +13464,6 @@ router.get('/likes', async (req, res) => {
     return res.json({ status: false, resultado: 'Erro ao tentar registrar os likes.' });
   }
 });
-
 
 router.get('/calcularxp', (req, res) => {
   const tabelaXP = [

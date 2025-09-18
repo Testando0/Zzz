@@ -2229,7 +2229,7 @@ router.get('/play', async (req, res) => {
   }
 
   try {
-    const response = await axios.get(`https://api.vreden.my.id/api/ytplaymp3?query=${encodeURIComponent(name)}`);
+    const response = await axios.get(`https://api.vreden.my.id/api/v1/download/play/audio?query=${encodeURIComponent(name)}`);
     const downloadUrl = response.data.result.download.url;
 
     if (downloadUrl) {
@@ -4861,12 +4861,12 @@ router.get('/chatgpt', async (req, res) => {
 });
 
 
-router.get('/kuromi', async (req, res) => {
+router.get('/lady', async (req, res) => {
   const texto = req.query.texto;
 
   if (!texto) {
     return res.status(400).json({
-      erro: 'Parâmetro texto não fornecido. Use /kuromi?texto=Sua pergunta'
+      erro: 'Parâmetro texto não fornecido. Use /lady?texto=Sua pergunta'
     });
   }
 
@@ -4881,7 +4881,7 @@ router.get('/kuromi', async (req, res) => {
   }
 });
 
-router.get('/kuromi2', async (req, res) => {
+router.get('/lady2', async (req, res) => {
   const { texto } = req.query;
 
   if (!texto) {
@@ -12981,7 +12981,7 @@ router.get('/pin/video', (req, res) => {
 
 const apiId = 21844566;
 const apiHash = 'ff82e94bfed22534a083c3aee236761a';
-const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTIBu5l6AMgBaTfji/3UUBYMS8S72FRXjZY5pJdfKzjZRc5pKPgBW4sfT/teUm/O2y+3IqN/U77ARkcV+5BRKLC8t36O/4IZ0gBP919/cSilfXV3zcxaSwzKQu0i4Yyewx0bs5vCIevWFmnf/CNs3fLuLnv/ZgBoWeAERZQalZeMTLK0SvGzfEEoCxA3gYZknKdDJaJOxzUDTe4P+KX4n8IYFiveXlcbehF5OC+Iv+eitBCXH1krPFPu8EkX2yOF33ivOvLHjcV4vwbfI1BcYuAv7/K3hjwO/MaKlOzaKItww81Ulw/YZY2bA8vEgPzvpZ4EsFsnq+CXt19RUx67T18zcL8=');
+const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBuyBRDOoaudcrxFdP3ua09QuEmhu8om91VgLtRc1zur1BAnJbWDoCUK2/sqJMCroPOIE5OSDtK4mM0I39BuC+QTKoZOOh5/Retwzza4yOcTnN9gMexlMKiT9Zs7EiXBMtjTudvkf09HcfEAcrUuBLjhN17LpckZCQ4ZrntXuHqBdoyDd3LNkHYxF8mLfKHctcCBx6ilyJPSNGucosHYHpeGGiw9Evu3VAeN0oaP7iAYY0Ru24T+HvDK6uyvHF9rR01ad/yAwqqx36I9JPll6pepxOI97rnk/CiLqBJeVBSBTPwg/d3nvq6/nz8R8lI0IFZio5VchRnnkvBJOKFmNJ9Sc=');
 const grupoChatId = -1002208588695;
 
 const rl = readline.createInterface({

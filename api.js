@@ -10560,7 +10560,7 @@ router.get('/clipe2', async (req, res) => {
 
         // Pegar o primeiro vídeo da lista de resultados
         const videoId = searchResults.videos[0].videoId; // Obtém o ID do vídeo
-        const apiUrl = `https://api.giftedtech.web.id/api/download/dlmp3q?apikey=gifted&quality=128&url=https://youtu.be/${videoId}`;
+        const apiUrl = `https://api.giftedtech.web.id/api/download/ytmp3?apikey=gifted&url=https://youtu.be/${videoId}`;
 
         // Requisição à API para baixar o vídeo
         const response = await axios.get(apiUrl);

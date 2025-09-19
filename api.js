@@ -292,6 +292,92 @@ async function drawHex(ctx, x, y, r, imgBuffer, options = {}) {
   }
 }
 
+// rota lista de desejos
+router.get('/lista-de-desejos', async (req, res) => {
+  try {
+    const { id, region = 'br' } = req.query;
+    if (!id) return res.status(400).json({ error: "O parâmetro 'id' é obrigatório." });
+
+    console.log(`\n🔹 Gerando lista de desejos para ID: ${id} na região: ${region}`);
+
+    const apiUrl = `https://freefireapis.squareweb.app/api/wishlist?id=${id}&region=${region}`;
+    const { data: apiData } = await axios.get(apiUrl);
+
+    if (!apiData.success || !apiData.wishlistBasicInfo || !apiData.wishlistBasicInfo.Items) {
+      return res.status(404).json({ error: "Lista de desejos não encontrada ou vazia." });
+    }
+
+    const wishlistItems = apiData.wishlistBasicInfo.Items.slice(0, 9);
+    if (wishlistItems.length === 0) return res.status(404).json({ error: "Nenhum item na lista de desejos." });
+
+    console.log(`🔸 Itens encontrados: ${wishlistItems.length}`);
+
+    // baixar imagens usando ItemID2
+    const itemBuffers = await Promise.all(
+      wishlistItems.map(item => baixarItemBuffer(item.itemId, "Desejo"))
+    );
+    const validBuffers = itemBuffers.filter(Boolean);
+    console.log(`✅ Buffers de imagem prontos: ${validBuffers.length}`);
+    if (validBuffers.length === 0) return res.status(500).json({ error: "Não foi possível baixar as imagens dos itens." });
+
+    // canvas
+    const canvasW = 1280;
+    const canvasH = 720;
+    const canvas = Canvas.createCanvas(canvasW, canvasH);
+    const ctx = canvas.getContext("2d");
+
+    // fundo
+    const backgroundUrl = "https://files.catbox.moe/q4uv15.jpg";
+    try {
+      const bgImg = await loadImage(backgroundUrl);
+      ctx.drawImage(bgImg, 0, 0, canvasW, canvasH);
+    } catch {
+      ctx.fillStyle = "#101010";
+      ctx.fillRect(0, 0, canvasW, canvasH);
+    }
+
+    // grade de itens
+    const columns = 3;
+    const itemSize = 180;
+    const padding = 30;
+    const startX = 550; // ⬅️ alinhado à esquerda
+    const startY = (canvasH - Math.ceil(validBuffers.length / columns) * (itemSize + padding)) / 2;
+
+    for (let i = 0; i < validBuffers.length; i++) {
+      const row = Math.floor(i / columns);
+      const col = i % columns;
+      const x = startX + col * (itemSize + padding);
+      const y = startY + row * (itemSize + padding);
+
+      try {
+        const img = await loadImage(validBuffers[i]);
+        ctx.shadowColor = "rgba(0,0,0,0.7)";
+        ctx.shadowBlur = 15;
+        ctx.shadowOffsetX = 5;
+        ctx.shadowOffsetY = 5;
+
+        ctx.drawImage(img, x, y, itemSize, itemSize);
+
+        ctx.shadowColor = "transparent";
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+
+      } catch (err) {
+        console.error(`❌ Erro desenhar item ${wishlistItems[i].itemId}:`, err.message);
+      }
+    }
+
+    res.setHeader("Content-Type", "image/png");
+    res.send(canvas.toBuffer("image/png"));
+    console.log("✅ Imagem da lista de desejos enviada com sucesso!");
+
+  } catch (err) {
+    console.error("❌ Erro geral na rota /lista-de-desejos:", err);
+    res.status(500).json({ error: "Erro interno ao gerar a imagem da lista de desejos." });
+  }
+});
+
 router.get("/outfit-ff", async (req, res) => {
   try {
     const playerId = req.query.id;
@@ -2250,7 +2336,7 @@ router.get('/playvideo', async (req, res) => {
   }
 
   try {
-    const response = await axios.get(`https://api.vreden.my.id/api/ytplaymp4?query=${encodeURIComponent(name)}`);
+    const response = await axios.get(`https://api.vreden.my.id/api/v1/download/play/video?query=${encodeURIComponent(name)}`);
     const downloadUrl = response.data.result.download.url;
 
     if (downloadUrl) {
@@ -2272,7 +2358,7 @@ router.get('/ytmp3', async (req, res) => {
   }
 
   try {
-    const response = await axios.get(`https://api.vreden.my.id/api/ytmp3?url=${url}`);
+    const response = await axios.get(`https://api.vreden.my.id/api/v1/download/youtube/audio?url=${url}&quality=128`);
     const downloadUrl = response.data.result.download.url;
 
     if (downloadUrl) {
@@ -2295,7 +2381,7 @@ router.get('/ytmp4', async (req, res) => {
   }
 
   try {
-    const response = await axios.get(`https://api.vreden.my.id/api/ytmp4?url=${url}`);
+    const response = await axios.get(`https://api.vreden.my.id/api/v1/download/youtube/video?url=${url}&quality=360`);
     const downloadUrl = response.data.result.download.url;
 
     if (downloadUrl) {
@@ -3511,13 +3597,28 @@ router.get('/likesff2', async (req, res) => {
 
   const infoAntes = await getUserInfo();
   if (!infoAntes) {
-    return res.json({ status: false, resultado: 'Erro ao consultar informações do jogador antes do envio.' });
+    return res.json({
+      status: false,
+      resultado: 'Erro ao consultar informações do jogador antes do envio.'
+    });
   }
 
   try {
-    // Envia mensagem para o grupo do bot
-    await client.sendMessage(idDoGrupoDeLikes, { message: `/like br ${id}` });
-    console.log(`✅ Mensagem enviada: /likes ${id}`);
+    // 📩 Envia a mensagem de like no grupo
+    const sent = await client.sendMessage(idDoGrupoDeLikes, {
+      message: `/like ${region} ${id}`
+    });
+    console.log(`✅ Mensagem enviada: /like ${region} ${id}`);
+
+    // ⏳ Apaga automaticamente após 10 segundos
+    setTimeout(async () => {
+      try {
+        await client.deleteMessages(idDoGrupoDeLikes, [sent.id], { revoke: true });
+        console.log("🗑️ Mensagem apagada automaticamente após 10s");
+      } catch (err) {
+        console.error("❌ Erro ao apagar mensagem:", err.message);
+      }
+    }, 10000);
 
     let infoDepois = null;
 
@@ -3526,7 +3627,10 @@ router.get('/likesff2', async (req, res) => {
       infoDepois = await getUserInfo();
 
       if (!infoDepois) {
-        return res.json({ status: false, resultado: 'Erro ao consultar informações após envio.' });
+        return res.json({
+          status: false,
+          resultado: 'Erro ao consultar informações após envio.'
+        });
       }
 
       if (infoDepois.liked > infoAntes.liked) break;
@@ -3546,11 +3650,13 @@ router.get('/likesff2', async (req, res) => {
       }
     });
   } catch (err) {
-    console.error('❌ Erro na rota /likes:', err.message);
-    return res.json({ status: false, resultado: 'Erro ao tentar registrar os likes.' });
+    console.error('❌ Erro na rota /likesff2:', err.message);
+    return res.json({
+      status: false,
+      resultado: 'Erro ao tentar registrar os likes.'
+    });
   }
 });
-
 
 
 router.get('/instamp4', async (req, res) => {
@@ -12981,7 +13087,7 @@ router.get('/pin/video', (req, res) => {
 
 const apiId = 21844566;
 const apiHash = 'ff82e94bfed22534a083c3aee236761a';
-const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBuyBRDOoaudcrxFdP3ua09QuEmhu8om91VgLtRc1zur1BAnJbWDoCUK2/sqJMCroPOIE5OSDtK4mM0I39BuC+QTKoZOOh5/Retwzza4yOcTnN9gMexlMKiT9Zs7EiXBMtjTudvkf09HcfEAcrUuBLjhN17LpckZCQ4ZrntXuHqBdoyDd3LNkHYxF8mLfKHctcCBx6ilyJPSNGucosHYHpeGGiw9Evu3VAeN0oaP7iAYY0Ru24T+HvDK6uyvHF9rR01ad/yAwqqx36I9JPll6pepxOI97rnk/CiLqBJeVBSBTPwg/d3nvq6/nz8R8lI0IFZio5VchRnnkvBJOKFmNJ9Sc=');
+const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBu8IJTa1bfOS+/1WHs/eLZyUtu2DrQU2s/zHdAGvjNeZ1HYT8X0KUB1SKpxprepNNqJ8mWzfVIbdE2DiKJHY7PNnwtiuLl+HgtLyXta9cHmlqUoFyg+8rfIMxOJcybd2E7+YOrp4Vg2a/IUvfgeMV54VxH3LBAMqlrP3FEzcDYHbtEy6Y7jJCAjI8ArUu1bedM15g7ipIq29kUoFPvLBYoKZXoF0LnP7pQI1q6FkuYMBv1tdKDb2mmcbqEv6qcwNfS/gAz7kaWLvlHIfseYHp1o1J0qg5IiJZ2eulxVn5acagxUHaMGPaCafaqI2i7EDGsZH/u5z8mdTKAgkyODjzERE=');
 const grupoChatId = -1002208588695;
 
 const rl = readline.createInterface({

@@ -12,15 +12,18 @@
     <link rel="apple-touch-icon" href="./icones/apple-touch-icon.png">
     <link rel="manifest" href="./site.webmanifest">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Pacifico&family=Orbitron:wght@400;500;700;900&display=swap');
-
+        @import url('https://fonts.googleapis.com/css2?family=Pacifico&family=Poppins:wght@300;400;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+        
         :root {
-            --purple-dark: #5d3a9b;
-            --purple-light: #f1e4ff;
-            --pink-vibrant: #ff79e0;
-            --black-kuromi: #1a1a1a;
-            --white-glass: rgba(255, 255, 255, 0.25);
-            --purple-glass: rgba(199, 137, 255, 0.15);
+            --cor-principal: #5d3a9b; /* Roxo Kuromi */
+            --cor-secundaria: #ff00ff; /* Rosa neon */
+            --cor-fundo: #0c0a1f; /* Roxo escuro */
+            --cor-clara: #e9e4f5; /* Lilás bem claro */
+            --cor-vidro: rgba(255, 255, 255, 0.1);
+            --cor-borda: rgba(255, 255, 255, 0.2);
+            --cor-link-hover: rgba(255, 0, 255, 0.3);
+            --cor-sombra-neon: 0 0 10px var(--cor-secundaria), 0 0 20px var(--cor-secundaria);
         }
 
         body, html {
@@ -28,91 +31,78 @@
             padding: 0;
             width: 100%;
             min-height: 100vh;
-            font-family: 'Orbitron', sans-serif;
-            color: #fff;
-            background: linear-gradient(135deg, var(--black-kuromi), var(--purple-dark));
-            background-image: url('https://i.pinimg.com/originals/7c/ec/a5/7ceca5a30a21d212ebe5380b3270f44f.gif'); /* Fundo animado da Kuromi */
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
+            background: linear-gradient(45deg, var(--cor-fundo), #2a0050, var(--cor-fundo));
+            background-size: 400% 400%;
+            animation: gradient-animation 15s ease infinite;
+            font-family: 'Poppins', sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            position: relative;
-            overflow: hidden;
+            color: var(--cor-clara);
+            overflow-x: hidden;
         }
 
-        body::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 1;
+        @keyframes gradient-animation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
         .container {
-            position: relative;
-            z-index: 2;
             width: 90%;
-            max-width: 700px;
-            padding: 20px;
-            background-color: var(--white-glass);
+            max-width: 800px;
+            padding: 30px;
+            background-color: var(--cor-vidro);
             border-radius: 25px;
-            box-shadow: 0 8px 32px 0 var(--purple-glass);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border: 2px solid rgba(255, 255, 255, 0.18);
-            margin: 2em;
-            transform: translateY(0);
-            transition: transform 0.5s ease-in-out;
-        }
-
-        .container:hover {
-            transform: translateY(-5px);
+            box-shadow: 0 0 50px rgba(255, 0, 255, 0.3);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 2px solid var(--cor-borda);
+            margin: 2em auto;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.5s ease-in-out;
         }
 
         .header {
             text-align: center;
-            margin-bottom: 2em;
-            position: relative;
+            margin-bottom: 2.5em;
         }
 
         .kuromi-icon {
-            width: 80px;
+            width: 100px;
             height: auto;
-            margin-bottom: 10px;
-            animation: pulse 2s infinite;
+            filter: drop-shadow(0 0 15px var(--cor-secundaria));
+            animation: bounce-in 1.5s ease-out, pulse 2s infinite ease-in-out;
         }
 
-        .kuromi-star {
-            width: 40px;
-            height: auto;
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            filter: drop-shadow(0 0 5px var(--pink-vibrant));
-            animation: rotate-star 8s linear infinite;
+        @keyframes bounce-in {
+            0% { transform: scale(0.5); opacity: 0; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 5px var(--cor-secundaria)); }
+            50% { transform: scale(1.05); filter: drop-shadow(0 0 20px var(--cor-secundaria)); }
         }
 
         h1 {
             font-family: 'Pacifico', cursive;
-            font-size: 3.5em;
-            color: var(--pink-vibrant);
-            text-shadow: 0 0 10px var(--pink-vibrant), 0 0 20px var(--pink-vibrant);
+            font-size: 4em;
+            color: var(--cor-principal);
+            text-shadow: 0 0 15px var(--cor-secundaria), 0 0 30px var(--cor-secundaria);
             letter-spacing: 2px;
-            animation: text-glow 2s infinite alternate;
         }
 
         h2 {
-            font-size: 1.1em;
-            color: var(--purple-light);
-            font-weight: 500;
-            letter-spacing: 2px;
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+            font-family: 'VT323', monospace;
+            font-size: 1.8em;
+            color: var(--cor-secundaria);
+            font-weight: 400;
+            letter-spacing: 3px;
+            text-shadow: 0 0 8px var(--cor-secundaria);
         }
 
         .menu {
@@ -120,44 +110,68 @@
         }
 
         .menu-item {
-            background-color: rgba(255, 255, 255, 0.1);
-            margin: 0.8em 0;
-            border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            background-color: rgba(255, 255, 255, 0.05);
+            margin: 1.2em 0;
+            border-radius: 18px;
+            border: 1px solid var(--cor-borda);
+            box-shadow: 0 0 15px rgba(255, 0, 255, 0.2);
             cursor: pointer;
             overflow: hidden;
-            transition: all 0.3s ease-in-out;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.4s ease-in-out;
+            position: relative;
+            z-index: 1;
+        }
+
+        .menu-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, transparent, var(--cor-secundaria), transparent);
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .menu-item:hover::before {
+            opacity: 0.3;
         }
 
         .menu-item:hover {
-            background-color: rgba(255, 255, 255, 0.2);
-            transform: scale(1.02);
-            border-color: var(--pink-vibrant);
-            box-shadow: 0 0 10px var(--pink-vibrant), 0 0 20px var(--pink-vibrant);
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 0 25px var(--cor-secundaria), 0 0 40px var(--cor-secundaria);
+            border-color: var(--cor-secundaria);
         }
 
         .menu-item span {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 1em 1.5em;
-            font-size: 1.1em;
-            font-weight: 700;
-            color: var(--purple-light);
-            text-shadow: 1px 1px 2px var(--black-kuromi);
+            padding: 1.2em 1.8em;
+            font-size: 1.2em;
+            font-weight: 600;
+            color: var(--cor-clara);
+            text-shadow: 0 0 8px var(--cor-secundaria);
         }
 
         .menu-item span .icon {
-            margin-right: 1em;
-            color: var(--pink-vibrant);
-            font-size: 1.3em;
-            filter: drop-shadow(0 0 2px var(--pink-vibrant));
+            margin-right: 1.2em;
+            color: var(--cor-secundaria);
+            font-size: 1.4em;
+            transition: transform 0.3s;
+        }
+
+        .menu-item:hover .icon {
+            transform: rotate(10deg);
         }
 
         .arrow {
-            color: var(--pink-vibrant);
+            color: var(--cor-secundaria);
             transition: transform 0.3s ease-in-out;
+            font-size: 1.2em;
         }
         
         .menu-item.active .arrow {
@@ -168,37 +182,45 @@
             display: none;
             padding: 0 1.5em 1em 1.5em;
             background-color: rgba(0, 0, 0, 0.2);
-            backdrop-filter: blur(5px);
-            max-height: 250px;
+            max-height: 350px;
             overflow-y: auto;
             border-top: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .menu-item.active .submenu {
-            display: block;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            padding: 15px;
         }
 
         .submenu-item {
-            margin-top: 0.8em;
+            position: relative;
+            background-color: rgba(255, 0, 255, 0.1);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 0, 255, 0.2);
+            transition: all 0.3s ease-in-out;
+        }
+
+        .submenu-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 0 10px var(--cor-secundaria);
         }
 
         .submenu-item a {
-            color: var(--purple-light);
+            color: var(--cor-clara);
             text-decoration: none;
             display: block;
-            padding: 0.5em 1em;
-            border-radius: 10px;
-            transition: background-color 0.3s, color 0.3s;
-            font-weight: 500;
-            border: 1px solid transparent;
+            padding: 10px;
+            text-align: center;
+            font-weight: 400;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.9em;
         }
 
         .submenu-item a:hover {
-            background-color: var(--pink-vibrant);
-            color: var(--black-kuromi);
-            text-shadow: none;
-            transform: translateX(5px);
-            border-color: var(--purple-light);
+            color: #fff;
+            text-shadow: 0 0 5px #fff;
         }
         
         /* Estilizando a barra de rolagem */
@@ -207,31 +229,17 @@
         }
 
         .submenu::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
+            background: transparent;
         }
 
         .submenu::-webkit-scrollbar-thumb {
-            background-color: var(--pink-vibrant);
+            background-color: var(--cor-secundaria);
             border-radius: 10px;
-            border: 2px solid rgba(255, 255, 255, 0.1);
+            border: 2px solid transparent;
         }
 
-        /* Animações */
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-
-        @keyframes rotate-star {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        @keyframes text-glow {
-            from { text-shadow: 0 0 5px var(--pink-vibrant), 0 0 10px var(--pink-vibrant); }
-            to { text-shadow: 0 0 10px var(--pink-vibrant), 0 0 20px var(--pink-vibrant); }
+        .submenu::-webkit-scrollbar-thumb:hover {
+            background-color: #ff33ff;
         }
     </style>
 </head>
@@ -240,8 +248,7 @@
         <div class="header">
             <img src="https://i.pinimg.com/originals/40/a8/9a/40a89a89c89f251c8810e7b7e55a29a4.png" alt="Ícone da Kuromi" class="kuromi-icon">
             <h1>KUROMI APIS</h1>
-            <img src="https://www.pngall.com/wp-content/uploads/15/Star-PNG-Image.png" alt="Estrela brilhante" class="kuromi-star">
-            <h2>fofo, futurista e totalmente grátis!</h2>
+            <h2>totalmente grátis e super fofo!</h2>
         </div>
         <div class="menu">
             <div class="menu-item" onclick="toggleSubmenu(this)">
@@ -952,11 +959,13 @@
     </div>
     <script>
         function toggleSubmenu(element) {
+            // Fecha todos os outros menus
             document.querySelectorAll('.menu-item.active').forEach(item => {
                 if (item !== element) {
                     item.classList.remove('active');
                 }
             });
+            // Alterna o menu clicado
             element.classList.toggle('active');
         }
     </script>

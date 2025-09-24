@@ -16,14 +16,16 @@
         @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
         
         :root {
-            --cor-principal: #5d3a9b; /* Roxo Kuromi */
-            --cor-secundaria: #ff00ff; /* Rosa neon */
-            --cor-fundo: #0c0a1f; /* Roxo escuro */
-            --cor-clara: #e9e4f5; /* Lilás bem claro */
-            --cor-vidro: rgba(255, 255, 255, 0.1);
-            --cor-borda: rgba(255, 255, 255, 0.2);
-            --cor-link-hover: rgba(255, 0, 255, 0.3);
-            --cor-sombra-neon: 0 0 10px var(--cor-secundaria), 0 0 20px var(--cor-secundaria);
+            --cor-fundo: #191426; /* Roxo bem escuro, quase preto */
+            --cor-principal: #7042C4; /* Roxo Kuromi vibrante */
+            --cor-secundaria: #F778BA; /* Rosa chiclete, mais fofo */
+            --cor-destaque: #E5C3FF; /* Lilás claro para textos */
+            --cor-vidro: rgba(229, 195, 255, 0.1); /* Efeito vidro lilás */
+            --cor-borda: rgba(229, 195, 255, 0.2);
+        }
+
+        * {
+            box-sizing: border-box;
         }
 
         body, html {
@@ -31,16 +33,16 @@
             padding: 0;
             width: 100%;
             min-height: 100vh;
-            background: linear-gradient(45deg, var(--cor-fundo), #2a0050, var(--cor-fundo));
-            background-size: 400% 400%;
-            animation: gradient-animation 15s ease infinite;
+            background: linear-gradient(45deg, var(--cor-fundo), #2E1A47, var(--cor-fundo));
+            background-size: 300% 300%;
+            animation: gradient-animation 20s ease infinite;
             font-family: 'Poppins', sans-serif;
             display: flex;
-            flex-direction: column;
-            align-items: center;
             justify-content: center;
-            color: var(--cor-clara);
+            align-items: flex-start; /* Alinha ao topo para melhor visualização em telas menores */
+            color: var(--cor-destaque);
             overflow-x: hidden;
+            padding: 2em 0;
         }
 
         @keyframes gradient-animation {
@@ -50,59 +52,50 @@
         }
 
         .container {
-            width: 90%;
+            width: 95%;
             max-width: 800px;
-            padding: 30px;
+            padding: 25px;
             background-color: var(--cor-vidro);
-            border-radius: 25px;
-            box-shadow: 0 0 50px rgba(255, 0, 255, 0.3);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 2px solid var(--cor-borda);
-            margin: 2em auto;
-            position: relative;
-            overflow: hidden;
-            transition: all 0.5s ease-in-out;
+            border-radius: 30px; /* Bordas mais arredondadas e fofas */
+            box-shadow: 0 0 40px rgba(247, 120, 186, 0.3);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--cor-borda);
         }
 
         .header {
             text-align: center;
-            margin-bottom: 2.5em;
+            margin-bottom: 2em;
         }
 
         .kuromi-icon {
-            width: 100px;
+            width: 90px;
             height: auto;
-            filter: drop-shadow(0 0 15px var(--cor-secundaria));
-            animation: bounce-in 1.5s ease-out, pulse 2s infinite ease-in-out;
+            filter: drop-shadow(0 0 12px var(--cor-secundaria));
+            animation: float 4s ease-in-out infinite; /* Animação de flutuação suave */
         }
-
-        @keyframes bounce-in {
-            0% { transform: scale(0.5); opacity: 0; }
-            50% { transform: scale(1.1); opacity: 1; }
-            100% { transform: scale(1); }
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 5px var(--cor-secundaria)); }
-            50% { transform: scale(1.05); filter: drop-shadow(0 0 20px var(--cor-secundaria)); }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-12px); }
         }
 
         h1 {
             font-family: 'Pacifico', cursive;
-            font-size: 4em;
-            color: var(--cor-principal);
-            text-shadow: 0 0 15px var(--cor-secundaria), 0 0 30px var(--cor-secundaria);
-            letter-spacing: 2px;
+            font-size: 3.5em; /* Tamanho ajustado para harmonia */
+            color: var(--cor-destaque);
+            text-shadow: 0 0 10px var(--cor-secundaria), 0 0 20px var(--cor-secundaria);
+            margin: 0.2em 0;
         }
 
         h2 {
             font-family: 'VT323', monospace;
-            font-size: 1.8em;
+            font-size: 1.6em;
             color: var(--cor-secundaria);
             font-weight: 400;
-            letter-spacing: 3px;
-            text-shadow: 0 0 8px var(--cor-secundaria);
+            letter-spacing: 2px;
+            text-shadow: 0 0 5px var(--cor-secundaria);
+            margin: 0;
         }
 
         .menu {
@@ -110,136 +103,102 @@
         }
 
         .menu-item {
-            background-color: rgba(255, 255, 255, 0.05);
-            margin: 1.2em 0;
-            border-radius: 18px;
+            background-color: rgba(0, 0, 0, 0.2);
+            margin: 0.8em 0; /* Margem reduzida para um visual mais compacto */
+            border-radius: 25px; /* Mais arredondado */
             border: 1px solid var(--cor-borda);
-            box-shadow: 0 0 15px rgba(255, 0, 255, 0.2);
             cursor: pointer;
             overflow: hidden;
-            transition: all 0.4s ease-in-out;
-            position: relative;
-            z-index: 1;
-        }
-
-        .menu-item::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(45deg, transparent, var(--cor-secundaria), transparent);
-            opacity: 0;
-            transition: opacity 0.5s ease-in-out;
-            pointer-events: none;
-            z-index: -1;
-        }
-        
-        .menu-item:hover::before {
-            opacity: 0.3;
+            transition: all 0.3s ease-in-out;
         }
 
         .menu-item:hover {
-            transform: translateY(-8px) scale(1.02);
-            box-shadow: 0 0 25px var(--cor-secundaria), 0 0 40px var(--cor-secundaria);
+            border-color: var(--cor-secundaria);
+            box-shadow: 0 0 15px rgba(247, 120, 186, 0.5);
+            transform: scale(1.02);
+        }
+        
+        .menu-item.active {
             border-color: var(--cor-secundaria);
         }
 
-        .menu-item span {
+        .menu-item > span {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 1.2em 1.8em;
-            font-size: 1.2em;
-            font-weight: 600;
-            color: var(--cor-clara);
-            text-shadow: 0 0 8px var(--cor-secundaria);
+            padding: 0.9em 1.5em; /* Padding reduzido para "bolhas" menores */
+            font-size: 1.1em;
+            font-weight: 500;
         }
 
-        .menu-item span .icon {
-            margin-right: 1.2em;
+        .menu-item > span .icon {
+            margin-right: 1em;
             color: var(--cor-secundaria);
-            font-size: 1.4em;
-            transition: transform 0.3s;
-        }
-
-        .menu-item:hover .icon {
-            transform: rotate(10deg);
+            font-size: 1.2em;
         }
 
         .arrow {
             color: var(--cor-secundaria);
-            transition: transform 0.3s ease-in-out;
-            font-size: 1.2em;
+            transition: transform 0.4s ease;
         }
         
         .menu-item.active .arrow {
             transform: rotate(180deg);
         }
 
+        /* Animação suave para abrir e fechar o submenu */
         .submenu {
-            display: none;
-            padding: 0 1.5em 1em 1.5em;
+            display: grid;
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
             background-color: rgba(0, 0, 0, 0.2);
-            max-height: 350px;
-            overflow-y: auto;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            transition: max-height 0.5s ease-out, opacity 0.5s ease-out, padding 0.5s ease-out;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); /* Itens menores */
+            gap: 8px; /* Espaçamento reduzido */
+            padding: 0 15px;
         }
 
         .menu-item.active .submenu {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 10px;
+            max-height: 350px; /* Altura máxima para comportar os itens */
+            opacity: 1;
             padding: 15px;
+            overflow-y: auto;
         }
 
         .submenu-item {
-            position: relative;
-            background-color: rgba(255, 0, 255, 0.1);
-            border-radius: 10px;
-            border: 1px solid rgba(255, 0, 255, 0.2);
-            transition: all 0.3s ease-in-out;
+            background-color: var(--cor-vidro);
+            border-radius: 15px; /* Bordas arredondadas para parecer uma pílula */
+            border: 1px solid transparent;
+            transition: all 0.2s ease-in-out;
         }
 
         .submenu-item:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 0 10px var(--cor-secundaria);
+            background-color: rgba(247, 120, 186, 0.2);
+            border-color: rgba(247, 120, 186, 0.5);
+            transform: scale(1.05);
         }
 
         .submenu-item a {
-            color: var(--cor-clara);
+            color: var(--cor-destaque);
             text-decoration: none;
             display: block;
-            padding: 10px;
+            padding: 8px; /* Padding reduzido para bolhas menores */
             text-align: center;
+            font-size: 0.85em; /* Fonte menor */
             font-weight: 400;
-            font-family: 'Poppins', sans-serif;
-            font-size: 0.9em;
-        }
-
-        .submenu-item a:hover {
-            color: #fff;
-            text-shadow: 0 0 5px #fff;
         }
         
-        /* Estilizando a barra de rolagem */
+        /* Estilizando a barra de rolagem do submenu */
         .submenu::-webkit-scrollbar {
-            width: 8px;
+            width: 6px;
         }
-
         .submenu::-webkit-scrollbar-track {
             background: transparent;
         }
-
         .submenu::-webkit-scrollbar-thumb {
             background-color: var(--cor-secundaria);
             border-radius: 10px;
-            border: 2px solid transparent;
-        }
-
-        .submenu::-webkit-scrollbar-thumb:hover {
-            background-color: #ff33ff;
         }
     </style>
 </head>

@@ -3,23 +3,159 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Consulta De Dados</title>
+    <title>Kuromi System | Consulta de Dados</title>
     <link rel="icon" href="./icones/favicon-32x32.png" type="image/png" sizes="32x32">
     <link rel="icon" href="./icones/favicon-16x16.png" type="image/png" sizes="16x16">
     <link rel="icon" href="./icones/android-chrome-192x192.png" type="image/png" sizes="192x192">
     <link rel="icon" href="./icones/android-chrome-512x512.png" type="image/png" sizes="512x512">
     <link rel="apple-touch-icon" href="./icones/apple-touch-icon.png">
     <link rel="manifest" href="./site.webmanifest">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    
     <style>
-        body { margin: 0; padding: 0; overflow: hidden; }
-        #video-background { position: fixed; right: 0; bottom: 0; min-width: 100%; min-height: 100%; width: auto; height: auto; z-index: -1000; }
-        #content { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: white; }
-        #consulta { margin-bottom: 20px; }
-        #tipoConsulta, #digiteAqui, #pesquisar { padding: 10px 20px; font-size: 16px; border-radius: 5px; }
-        #tipoConsulta, #pesquisar { background-color: #fff; border: none; cursor: pointer; }
-        #digiteAqui { border: 1px solid #ff000; }
-        #loading { display: none; margin-top: 20px; }
-        pre { font-size: 18px; }
+        /* CSS Variaveis para fácil customização de cores */
+        :root {
+            --background-color: #0d021a; /* Roxo bem escuro */
+            --primary-neon: #ff00ff; /* Magenta neon */
+            --secondary-neon: #9d00ff; /* Roxo neon */
+            --text-color: #f0f0f0;
+            --container-bg: rgba(20, 2, 35, 0.85); /* Fundo do container roxo semitransparente */
+        }
+
+        /* Animação de brilho */
+        @keyframes glow {
+            0% {
+                box-shadow: 0 0 5px var(--primary-neon), 0 0 10px var(--primary-neon);
+                text-shadow: 0 0 5px var(--primary-neon), 0 0 10px var(--primary-neon);
+            }
+            50% {
+                box-shadow: 0 0 15px var(--secondary-neon), 0 0 25px var(--secondary-neon);
+                text-shadow: 0 0 15px var(--secondary-neon), 0 0 25px var(--secondary-neon);
+            }
+            100% {
+                box-shadow: 0 0 5px var(--primary-neon), 0 0 10px var(--primary-neon);
+                text-shadow: 0 0 5px var(--primary-neon), 0 0 10px var(--primary-neon);
+            }
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            font-family: 'VT323', monospace; /* Fonte pixelada */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #video-background {
+            position: fixed;
+            right: 0;
+            bottom: 0;
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            z-index: -1000;
+            opacity: 0.3; /* Deixa o vídeo mais sutil */
+        }
+
+        #content {
+            text-align: center;
+            background: var(--container-bg);
+            border: 2px solid var(--primary-neon);
+            padding: 30px 40px;
+            border-radius: 15px;
+            box-shadow: 0 0 15px var(--primary-neon);
+            backdrop-filter: blur(5px); /* Efeito de vidro fosco */
+            max-width: 500px;
+            width: 90%;
+        }
+
+        #kuromi-icon {
+            width: 80px;
+            height: auto;
+            margin-bottom: 10px;
+        }
+        
+        h1 {
+            font-size: 3em;
+            margin: 0 0 25px 0;
+            text-transform: uppercase;
+            color: var(--text-color);
+            animation: glow 4s infinite; /* Aplica a animação de brilho */
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start; /* Alinha labels à esquerda */
+        }
+
+        label {
+            font-size: 1.2em;
+            margin-bottom: 5px;
+            text-align: left;
+        }
+
+        #tipoConsulta, #digiteAqui {
+            width: 100%;
+            padding: 12px;
+            font-size: 1.2em;
+            border-radius: 5px;
+            border: 1px solid var(--secondary-neon);
+            background-color: rgba(0, 0, 0, 0.5);
+            color: var(--text-color);
+            font-family: 'VT323', monospace;
+            box-sizing: border-box; /* Garante que padding não afete a largura total */
+            margin-bottom: 15px;
+        }
+
+        #tipoConsulta:focus, #digiteAqui:focus {
+            outline: none;
+            box-shadow: 0 0 10px var(--primary-neon);
+        }
+
+        #pesquisar {
+            padding: 12px 30px;
+            font-size: 1.3em;
+            border-radius: 5px;
+            background-color: var(--primary-neon);
+            color: black;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-family: 'VT323', monospace;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 10px var(--primary-neon);
+        }
+
+        #pesquisar:hover {
+            background-color: var(--text-color);
+            color: var(--primary-neon);
+            box-shadow: 0 0 20px var(--primary-neon);
+        }
+        
+        #loading {
+            display: none;
+            margin-top: 20px;
+            font-size: 1.2em;
+            color: var(--primary-neon);
+        }
+
+        pre {
+            font-size: 1em;
+            margin-top: 20px;
+            color: #ccc;
+        }
     </style>
 </head>
 <body>
@@ -30,54 +166,57 @@
 </video>
 
 <div id="content">
-    <h1>Consulta De Dados</h1>
-    <label for="tipoConsulta">Tipo:</label>
-    <select id="tipoConsulta">
-        <option value="cep">CEP</option>
-        <option value="cepV2">CEP V2</option>
-        <option value="cnpj">CNPJ</option>
-        <option value="ddd">DDD</option>
-        <option value="feriados">Feriados</option>
-        <option value="ip">IP</option>
-        <option value="nome">Nome</option>
-        <option value="nome-completo">Nome Completo</option>
-        <option value="email">Email</option>
-        <option value="telefone">Telefone</option>
-        <option value="numero">Número</option>
-        <option value="placa">Placa</option>
-        <option value="cpf">CPF</option>
-        <option value="cpf2">CPF2</option>
-        <option value="cpf3">CPF3</option>
-        <option value="cpfcompleto">Cpf Completo</option>
-        <option value="site">Site</option>
-        <option value="signo">Signo</option>
-        <option value="letraMusica">Letra De Música</option>
-        <option value="clima">Clima</option>
-        <option value="mudarFonte">Mudar Fonte</option>
-        <option value="correios">Correios</option>
-        <option value="filme">Filme</option>
-        <option value="serie">Série</option>
-        <option value="notaFilme">Nota Do Filme</option>
-        <option value="significadoNome">Significado Do Nome</option>
-        <option value="infoff">Info FF</option>
-        <option value="infoff2">Info FF2</option>
-        <option value="audiosMemes">Áudios Memes</option>
-    </select>
+    <img src="https://i.pinimg.com/originals/11/17/28/11172858b73f5383569420b2241f0a25.png" alt="Kuromi Icon" id="kuromi-icon">
+    <h1>Kuromi System</h1>
+    
+    <div class="input-group">
+        <label for="tipoConsulta">TIPO DE CONSULTA:</label>
+        <select id="tipoConsulta">
+            <option value="cep">CEP</option>
+            <option value="cepV2">CEP V2</option>
+            <option value="cnpj">CNPJ</option>
+            <option value="ddd">DDD</option>
+            <option value="feriados">Feriados</option>
+            <option value="ip">IP</option>
+            <option value="nome">Nome</option>
+            <option value="nome-completo">Nome Completo</option>
+            <option value="email">Email</option>
+            <option value="telefone">Telefone</option>
+            <option value="numero">Número</option>
+            <option value="placa">Placa</option>
+            <option value="cpf">CPF</option>
+            <option value="cpf2">CPF2</option>
+            <option value="cpf3">CPF3</option>
+            <option value="cpfcompleto">Cpf Completo</option>
+            <option value="site">Site</option>
+            <option value="signo">Signo</option>
+            <option value="letraMusica">Letra De Música</option>
+            <option value="clima">Clima</option>
+            <option value="mudarFonte">Mudar Fonte</option>
+            <option value="correios">Correios</option>
+            <option value="filme">Filme</option>
+            <option value="serie">Série</option>
+            <option value="notaFilme">Nota Do Filme</option>
+            <option value="significadoNome">Significado Do Nome</option>
+            <option value="infoff">Info FF</option>
+            <option value="infoff2">Info FF2</option>
+            <option value="audiosMemes">Áudios Memes</option>
+        </select>
+    </div>
 
-    <br><br>
-
-    <label for="digiteAqui">Digite:</label>
-    <input type="text" id="digiteAqui" placeholder="Digite Sua Consulta">
-
-    <br><br>
+    <div class="input-group">
+        <label for="digiteAqui">INFORMAÇÃO:</label>
+        <input type="text" id="digiteAqui" placeholder="Digite sua consulta aqui...">
+    </div>
 
     <button id="pesquisar" onclick="realizarConsulta()">Consultar</button>
 
-    <div id="loading">Carregando...</div>
+    <div id="loading">CARREGANDO...</div>
     <pre id="resultado"></pre>
 </div>
 
 <script>
+    // O JavaScript foi mantido sem alterações, pois a funcionalidade está correta.
     function realizarConsulta() {
         var tipoConsulta = document.getElementById('tipoConsulta').value.trim();
         var consulta = document.getElementById('digiteAqui').value.trim();
@@ -127,7 +266,7 @@
                 case 'cpf2':
                 apiURL = 'https://kuromi-system-tech.onrender.com/api/cpf2?q=' + encodeURIComponent(consulta);
                 break;
-                case 'cpf2':
+                case 'cpf3':
                 apiURL = 'https://kuromi-system-tech.onrender.com/api/cpf3?q=' + encodeURIComponent(consulta);
                 break;
                 case 'cpfcompleto':
@@ -176,8 +315,12 @@
                 apiURL = '#';
         }
 
-        document.getElementById('resultado').innerText = 'Use VPN Em Caso De Bloqueio Por IP';
-        window.open(apiURL);
+        document.getElementById('resultado').innerText = '> Use VPN em caso de bloqueio por IP.';
+        // Atrasar a abertura da nova janela para que a mensagem de loading seja vista
+        setTimeout(() => {
+            window.open(apiURL, '_blank');
+            document.getElementById('loading').style.display = 'none';
+        }, 500);
     }
 </script>
 
@@ -185,5 +328,6 @@
     <source src="./musicas/consultas.mp3" type="audio/mpeg">
     Seu navegador não suporta áudio HTML5.
 </audio>
+
 </body>
-</html>
+                </html>

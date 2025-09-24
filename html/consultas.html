@@ -45,7 +45,18 @@
             margin: 0;
             padding: 0;
             overflow: hidden;
-            background-color: var(--background-color);
+            
+            /* --- ALTERAÇÃO: Fundo de imagem --- */
+            /* Cor de fundo caso a imagem não carregue */
+            background-color: var(--background-color); 
+            /* Substitua a URL abaixo pela sua imagem. O 'linear-gradient' escurece a imagem para manter o estilo e a legibilidade. */
+            background-image: linear-gradient(rgba(13, 2, 26, 0.7), rgba(13, 2, 26, 0.7)), url('https://i.ibb.co/R50x7cW/1002742186.jpg');
+            background-size: cover; /* Cobre toda a tela */
+            background-position: center; /* Centraliza a imagem */
+            background-repeat: no-repeat; /* Evita repetição */
+            background-attachment: fixed; /* Mantém a imagem fixa */
+            /* --- FIM DA ALTERAÇÃO --- */
+
             color: var(--text-color);
             font-family: 'VT323', monospace; /* Fonte pixelada */
             display: flex;
@@ -54,7 +65,8 @@
             height: 100vh;
         }
 
-        #video-background {
+        /* --- ALTERAÇÃO: Seletor do vídeo removido --- */
+        /* #video-background {
             position: fixed;
             right: 0;
             bottom: 0;
@@ -63,8 +75,9 @@
             width: auto;
             height: auto;
             z-index: -1000;
-            opacity: 0.3; /* Deixa o vídeo mais sutil */
-        }
+            opacity: 0.3;
+        } 
+        */
 
         #content {
             text-align: center;
@@ -160,13 +173,8 @@
 </head>
 <body>
 
-<video autoplay muted loop id="video-background">
-  <source src="./videos/consulta.mp4" type="video/mp4">
-  Seu navegador não suporta vídeo HTML5.
-</video>
-
 <div id="content">
-    <img src="https://i.pinimg.com/originals/11/17/28/11172858b73f5383569420b2241f0a25.png" alt="Kuromi Icon" id="kuromi-icon">
+    <img src="https://i.ibb.co/6cyhgKmr/1002742173.jpg" alt="Kuromi Icon" id="kuromi-icon">
     <h1>Kuromi System</h1>
     
     <div class="input-group">
@@ -216,7 +224,7 @@
 </div>
 
 <script>
-    // O JavaScript foi mantido sem alterações, pois a funcionalidade está correta.
+    // O JavaScript foi mantido sem alterações.
     function realizarConsulta() {
         var tipoConsulta = document.getElementById('tipoConsulta').value.trim();
         var consulta = document.getElementById('digiteAqui').value.trim();
@@ -315,7 +323,7 @@
                 apiURL = '#';
         }
 
-        document.getElementById('resultado').innerText = '> Use VPN em caso de bloqueio por IP.';
+        document.getElementById('resultado').innerText = '> Use VPN Em Caso De Bloqueio Por IP.';
         // Atrasar a abertura da nova janela para que a mensagem de loading seja vista
         setTimeout(() => {
             window.open(apiURL, '_blank');
@@ -330,4 +338,4 @@
 </audio>
 
 </body>
-                </html>
+</html>

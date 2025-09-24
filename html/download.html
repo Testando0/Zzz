@@ -37,17 +37,19 @@
             align-items: center;
             min-height: 100vh;
         }
-
-        #video-bg {
+        
+        /* Fundo com imagem e efeitos */
+        body::after {
+            content: '';
             position: fixed;
-            top: 50%;
-            left: 50%;
-            min-width: 100%;
-            min-height: 100%;
-            width: auto;
-            height: auto;
-            transform: translate(-50%, -50%);
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             z-index: -2;
+            background-image: url('https://i.ibb.co/RpsYbDK2/1002741956.jpg');
+            background-size: cover;
+            background-position: center;
             filter: blur(5px) brightness(0.4);
         }
         
@@ -167,10 +169,6 @@
     </style>
 </head>
 <body>
-    <video autoplay loop muted id="video-bg">
-        <source src="https://i.ibb.co/RpsYbDK2/1002741956.jpg" type="image/jpg">
-        Seu navegador não suporta a tag de vídeo.
-    </video>
 
     <div id="content">
         <img id="kuromi-icon" src="https://static.wikia.nocookie.net/sanrio/images/9/9d/Kuromi_skull.png/revision/latest/scale-to-width-down/1000?cb=20221127023145" alt="Kuromi Skull Icon">
@@ -294,4 +292,4 @@
         Seu navegador não suporta áudio HTML5.
     </audio>
 </body>
-                        </html>
+    </html>

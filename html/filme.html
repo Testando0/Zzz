@@ -1,17 +1,10 @@
 <!DOCTYPE html>
-
 <html lang="pt">
-
 <head>
-
     <meta charset="UTF-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>Filme</title>
-    <!-- Inclua a biblioteca Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <!-- Adicionando referências para favicons de diferentes tamanhos e tipos -->
     <link rel="icon" href="./icones/favicon-32x32.png" type="image/png" sizes="32x32">
     <link rel="icon" href="./icones/favicon-16x16.png" type="image/png" sizes="16x16">
     <link rel="icon" href="./icones/android-chrome-192x192.png" type="image/png" sizes="192x192">
@@ -20,65 +13,70 @@
     <link rel="manifest" href="./site.webmanifest">
 
     <style>
-
         body {
-
             font-family: Arial, sans-serif;
-
             background-color: #111;
-
             margin: 0;
-
             padding: 0;
-
             overflow: hidden; /* Impede rolagem da página */
+            display: flex; /* Centraliza o conteúdo */
+            justify-content: center;
+            align-items: center;
+            cursor: pointer; /* Adiciona um cursor de ponteiro para indicar que é clicável */
         }
 
         iframe {
-
             width: 100vw; /* Ajusta o iframe para ocupar toda a largura da tela */
-
             height: 100vh; /* Ajusta o iframe para ocupar toda a altura da tela */
-
             border: none; /* Remove a borda do iframe */
-
         }
-
     </style>
-
 </head>
-
 <body>
-
     <iframe id="videoPlayer" frameborder="0" allowfullscreen></iframe>
 
     <script>
-
         const API_KEY = 'cf72f14362cff1da8bed9fa86831de66';
-
         let filmeId = new URLSearchParams(window.location.search).get("id");
 
         function loadFilmeDetails() {
-
             fetch(`https://api.themoviedb.org/3/movie/${filmeId}?api_key=${API_KEY}&language=pt-BR`)
-
                 .then(response => response.json())
-
                 .then(data => {
+                    const videoPlayer = document.getElementById("videoPlayer");
+                    videoPlayer.src = `https://superflixapi.lat/filme/${filmeId}`;
 
-                    document.getElementById("videoPlayer").src = `https://superflixapi.lat/filme/${filmeId}`;
+                    // Função para iniciar a reprodução em tela cheia após a interação do usuário
+                    function playVideoAndFullscreen() {
+                        const iframeContent = videoPlayer.contentWindow;
+                        if (iframeContent) {
+                            try {
+                                // Tenta despausar o vídeo dentro do iframe
+                                iframeContent.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+                            } catch (e) {
+                                console.error("Não foi possível enviar a mensagem para despausar o vídeo.", e);
+                            }
+                        }
 
-                    // Força o modo de tela cheia assim que o iframe é carregado
-                    document.getElementById("videoPlayer").requestFullscreen();
+                        // Entra em tela cheia
+                        if (videoPlayer.requestFullscreen) {
+                            videoPlayer.requestFullscreen();
+                        } else if (videoPlayer.mozRequestFullScreen) { // Firefox
+                            videoPlayer.mozRequestFullScreen();
+                        } else if (videoPlayer.webkitRequestFullscreen) { // Chrome, Safari e Opera
+                            videoPlayer.webkitRequestFullscreen();
+                        } else if (videoPlayer.msRequestFullscreen) { // IE/Edge
+                            videoPlayer.msRequestFullscreen();
+                        }
+                    }
 
-                });
-
+                    // Adiciona um evento de clique para iniciar a reprodução e tela cheia
+                    document.body.addEventListener('click', playVideoAndFullscreen);
+                })
+                .catch(error => console.error("Erro ao carregar os detalhes do filme:", error));
         }
 
         loadFilmeDetails();
-
     </script>
-
 </body>
-
 </html>

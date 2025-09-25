@@ -4,603 +4,271 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>† KUROMI'S SYSTEM †</title>
-    
+    <title>☆ Mundo da Kuromi ☆</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Press+Start+2P&display=swap" rel="stylesheet">
-    
-    <link rel="icon" href="./icones/favicon-32x32.png" type="image/png">
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="./icones/favicon-32x32.png" type="image/png" sizes="32x32">
     <link rel="apple-touch-icon" href="./icones/apple-touch-icon.png">
     <link rel="manifest" href="./site.webmanifest">
 
-    <style>
-        /* PALETA DE CORES E FONTES DA KUROMI 💖 */
-        :root {
-            --bg-dark-purple: #1a001a;
-            --kuromi-pink: #FF00FF;
-            --kuromi-soft-pink: #FFC0CB;
-            --text-light: #E0E0E0;
-            --text-ghost-white: #F8F8FF;
-            --kuromi-gradient: linear-gradient(45deg, #8A2BE2, #FF00FF);
-            --font-pixel: 'Press Start 2P', cursive;
-            --font-tech: 'Orbitron', sans-serif;
-        }
+<style>
+    /* Estilos Globais e do Corpo */
+    body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Nunito', sans-serif;
+        background-image: url('https://i.pinimg.com/originals/a7/59/3a/a7593a55a2a16f1947b7496662e49c74.jpg');
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+        color: #fff;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        overflow: hidden;
+    }
 
-        /* ESTILOS GLOBAIS E RESET 🧹 */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+    /* Estrutura Principal */
+    .main-container {
+        text-align: center;
+        background-color: rgba(26, 13, 38, 0.8);
+        padding: 30px;
+        border-radius: 25px;
+        border: 3px solid #e040fb;
+        box-shadow: 0 0 25px rgba(224, 64, 251, 0.6);
+        max-width: 400px;
+        backdrop-filter: blur(5px);
+    }
 
-        html {
-            scroll-behavior: smooth;
-        }
+    .kuromi-avatar {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        border: 4px solid #f8bbd0;
+        margin-bottom: 20px;
+        box-shadow: 0 0 15px #f8bbd0;
+    }
 
-        body {
-            font-family: var(--font-tech);
-            color: var(--text-light);
-            background-color: var(--bg-dark-purple);
-            overflow-x: hidden;
-            position: relative;
-            /* Cursor personalizado! Troque pelo link da sua imagem de cursor! */
-            cursor: url('https://cur.cursors-4u.net/anime/ani-12/ani1140.cur'), auto;
-        }
-        
-        /* FUNDO ANIMADO E MÁGICO ✨ */
-        .video-fallback,
-        #video-background {
-            position: fixed;
-            right: 0;
-            bottom: 0;
-            min-width: 100%;
-            min-height: 100%;
-            z-index: -100;
-            object-fit: cover;
-            filter: brightness(0.6);
-        }
+    h1 {
+        font-family: 'Pacifico', cursive;
+        font-size: 2.5em;
+        color: #fce4ec;
+        text-shadow: 0 0 5px #e91e63, 0 0 10px #e91e63;
+        margin: 0;
+    }
 
-        .background-overlay {
-            position: fixed;
-            inset: 0; /* atalho para top, right, bottom, left = 0 */
-            background-color: rgba(70, 0, 70, 0.4);
-            z-index: -99;
-        }
-        
-        /* CABEÇALHO 😈 */
-        header {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px 0;
-            background-color: rgba(0, 0, 0, 0.6);
-            border-bottom: 2px solid var(--kuromi-pink);
-            box-shadow: 0 4px 15px rgba(255, 0, 255, 0.4);
-        }
+    .subtitle {
+        font-size: 1.1em;
+        color: #f8bbd0;
+        margin-top: 5px;
+        margin-bottom: 25px;
+    }
+    
+    #current-time {
+        color: #e040fb;
+        font-size: 1.5em;
+        margin-bottom: 25px;
+        font-weight: bold;
+        text-shadow: 0 0 8px rgba(224, 64, 251, 0.7);
+    }
 
-        .logo-container {
-            width: 250px;
-            height: 80px;
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0 0 15px var(--kuromi-pink);
-            animation: pulse 2s infinite alternate;
-        }
+    /* Estilo dos Botões Principais */
+    .action-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+    }
 
-        .logo-video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
+    .button {
+        background-color: #e91e63;
+        color: white;
+        padding: 12px 25px;
+        border: none;
+        border-radius: 50px;
+        font-size: 1em;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
 
-        h1 {
-            font-family: var(--font-pixel);
-            font-size: clamp(1.5rem, 5vw, 2.2rem); /* Tamanho de fonte responsivo */
-            color: var(--kuromi-pink);
-            text-shadow: 0 0 10px var(--kuromi-pink), 0 0 20px var(--kuromi-pink);
-            margin-top: 20px;
-            text-align: center;
-            padding: 0 10px;
-        }
+    .button:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 0 15px #e91e63;
+    }
 
-        /* CONTEÚDO PRINCIPAL 💀 */
-        main {
-            padding: 20px;
-        }
+    /* Estilos para o Menu Lateral */
+    .sidebar {
+        height: 100%;
+        width: 0;
+        position: fixed;
+        top: 0;
+        left: 0;
+        background-color: rgba(13, 7, 18, 0.95);
+        backdrop-filter: blur(8px);
+        overflow-x: hidden;
+        transition: 0.5s;
+        padding-top: 60px;
+        z-index: 1000;
+        border-right: 2px solid #e040fb;
+    }
 
-        .quick-actions {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-bottom: 30px;
-        }
-        
-        .kuromi-section {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 40px 20px;
-            margin: 0 auto 30px;
-            max-width: 900px;
-            background-color: rgba(0, 0, 0, 0.7);
-            border-radius: 20px;
-            border: 2px solid var(--kuromi-pink);
-            box-shadow: 0 0 20px rgba(255, 0, 255, 0.6);
-            text-align: center;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
+    .sidebar a {
+        padding: 10px 15px;
+        text-decoration: none;
+        font-size: 1.2em;
+        color: #fce4ec;
+        display: block;
+        transition: 0.3s;
+        margin: 5px 15px;
+        border-radius: 10px;
+    }
 
-        .kuromi-section:hover {
-            transform: scale(1.02);
-            box-shadow: 0 0 30px rgba(255, 0, 255, 0.8);
-        }
+    .sidebar a:hover {
+        background-color: #e91e63;
+        color: #1a0d26;
+    }
 
-        .kuromi-icon {
-            width: 120px;
-            height: 120px;
-            margin-bottom: 20px;
-            animation: float 4s ease-in-out infinite;
-            filter: drop-shadow(0 0 10px var(--kuromi-pink));
-        }
+    .sidebar .close-btn {
+        position: absolute;
+        top: 10px;
+        right: 25px;
+        font-size: 36px;
+    }
 
-        .kuromi-section h2 {
-            font-size: 2.2em;
-            color: var(--kuromi-soft-pink);
-            margin-bottom: 15px;
-            text-shadow: 0 0 8px rgba(255, 192, 203, 0.7);
-        }
+    /* Estilos para a mensagem de notificação */
+    .welcome-message {
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: #2c1a3b;
+        color: #fce4ec;
+        padding: 25px;
+        border-radius: 15px;
+        z-index: 1001;
+        border: 2px solid #e040fb;
+        box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    }
 
-        .kuromi-section p {
-            font-size: 1.1em;
-            line-height: 1.6;
-            color: var(--text-ghost-white);
-            max-width: 600px;
-        }
+    .welcome-message p {
+        margin: 0;
+        font-size: 1.2em;
+    }
 
-        /* BARRA DE "REBELDIA" ⚡ */
-        .speed-bar-container {
-            max-width: 400px;
-            margin: 20px auto;
-            background-color: rgba(0, 0, 0, 0.8);
-            border: 1px solid var(--kuromi-pink);
-            border-radius: 10px;
-            padding: 15px;
-            box-shadow: 0 0 15px rgba(255, 0, 255, 0.6);
-            text-align: center;
-        }
-
-        .speed-bar-container p {
-            margin: 0 0 10px;
-            font-size: 1.1em;
-            color: var(--kuromi-soft-pink);
-            text-shadow: 0 0 5px var(--kuromi-pink);
-        }
-        
-        .speed-bar {
-            background-color: rgba(0, 0, 0, 0.5);
-            border-radius: 8px;
-            padding: 3px;
-        }
-        
-        .speed-bar-fill {
-            height: 15px;
-            background: var(--kuromi-gradient);
-            border-radius: 5px;
-            width: 0%; /* JS vai cuidar disso! */
-            transition: width 0.5s ease-out;
-            box-shadow: 0 0 8px rgba(255, 0, 255, 0.7);
-        }
-
-        /* BOTÕES 🔘 */
-        .buttons-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 15px;
-            margin-top: 30px;
-        }
-
-        .button {
-            padding: 12px 25px;
-            font-size: 1.1em;
-            border: none;
-            border-radius: 30px;
-            cursor: pointer;
-            transition: all 0.4s ease;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            color: white;
-            background: var(--kuromi-gradient);
-            box-shadow: 0 0 10px rgba(255, 0, 255, 0.6);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .button:hover {
-            transform: translateY(-5px) scale(1.05);
-            box-shadow: 0 0 15px rgba(255, 0, 255, 0.8), 0 0 25px rgba(255, 0, 255, 0.5);
-        }
-        
-        .button::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.3);
-            transform: skewX(-30deg);
-            transition: 0.7s;
-        }
-
-        .button:hover::before {
-            left: 100%;
-        }
-
-        .button i {
-            margin-right: 10px;
-            font-size: 1.2em;
-        }
-
-        /* MENU SECRETO (SIDEBAR) 🤫 */
-        .sidebar {
-            height: 100%;
-            width: 0;
-            position: fixed;
-            top: 0;
-            left: 0;
-            background-image: url('./fundos/4.jpg');
-            background-size: cover;
-            overflow-x: hidden;
-            transition: width 0.5s ease;
-            padding-top: 80px; /* Mais espaço no topo */
-            z-index: 1000;
-        }
-
-        .sidebar a {
-            padding: 15px 25px;
-            text-decoration: none;
-            font-size: 1.4em;
-            color: var(--kuromi-soft-pink);
-            display: block;
-            transition: 0.3s;
-            background-color: rgba(0, 0, 0, 0.7);
-            border-left: 5px solid var(--kuromi-pink);
-            margin: 8px 15px;
-            border-radius: 0 10px 10px 0;
-        }
-
-        .sidebar a:hover {
-            color: white;
-            background-color: rgba(255, 0, 255, 0.3);
-            border-left-color: white;
-            transform: translateX(10px);
-        }
-
-        /* BOTÃO DE FECHAR (Genérico) ❌ */
-        .close-btn {
-            position: absolute;
-            top: 20px;
-            right: 25px;
-            font-size: 2.5em;
-            color: var(--kuromi-soft-pink);
-            background: none;
-            border: none;
-            cursor: pointer;
-            line-height: 1;
-            transition: transform 0.3s ease, color 0.3s ease;
-        }
-        
-        .close-btn:hover {
-            color: white;
-            transform: rotate(180deg);
-        }
-        
-        /* MENSAGEM DE BOAS-VINDAS 💌 */
-        .welcome-message {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: rgba(0, 0, 0, 0.9);
-            color: var(--kuromi-soft-pink);
-            padding: 30px 40px;
-            border-radius: 15px;
-            z-index: 1001;
-            box-shadow: 0 0 25px rgba(255, 0, 255, 0.8);
-            border: 2px solid var(--kuromi-pink);
-            text-align: center;
-            animation: fadeIn 0.5s ease-out;
-        }
-        
-        .welcome-message p {
-            margin: 0;
-            font-size: 1.3em;
-            text-shadow: 0 0 5px var(--kuromi-pink);
-        }
-        
-        .welcome-message .close-btn {
-            top: 10px;
-            right: 15px;
-            font-size: 1.8em;
-        }
-
-        /* RODAPÉ E PERSONAGEM 🎸 */
-        footer {
-            text-align: center;
-            padding: 20px;
-            margin-top: 50px;
-            background-color: rgba(0, 0, 0, 0.6);
-            border-top: 1px solid var(--kuromi-pink);
-            color: var(--kuromi-soft-pink);
-        }
-
-        .kuromi-char {
-            position: fixed;
-            bottom: -150px;
-            left: 5%;
-            width: 150px;
-            animation: slideUpAndWave 12s ease-in-out infinite;
-            z-index: 500;
-            filter: drop-shadow(0 0 10px rgba(255, 0, 255, 0.7));
-            pointer-events: none;
-        }
-
-        /* ANIMAÇÕES DIVERTIDAS 💥 */
-        @keyframes pulse {
-            from { box-shadow: 0 0 15px var(--kuromi-pink); }
-            to { box-shadow: 0 0 25px var(--kuromi-pink), 0 0 35px var(--kuromi-pink); }
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-20px); }
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translate(-50%, -60%); }
-            to { opacity: 1; transform: translate(-50%, -50%); }
-        }
-
-        @keyframes slideUpAndWave {
-            0%, 100% { bottom: -150px; transform: rotate(0deg); }
-            20% { bottom: 10px; transform: rotate(5deg); }
-            40% { bottom: 0px; transform: rotate(-5deg); }
-            60% { bottom: 15px; transform: rotate(3deg); }
-            80% { bottom: 5px; transform: rotate(-2deg); }
-        }
-    </style>
+    .welcome-message .close-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        font-size: 24px;
+        color: #fce4ec;
+    }
+    
+    .footer-credit {
+        position: absolute;
+        bottom: 10px;
+        width: 100%;
+        text-align: center;
+        color: #f8bbd0;
+        font-size: 0.9em;
+        text-shadow: 0 0 5px #000;
+    }
+</style>
 </head>
 
 <body>
-    <img src="./fundos/1.jpg" alt="Kuromi background fallback" class="video-fallback">
-    <video autoplay muted loop id="video-background">
-        <source src="./videos/fundo.mp4" type="video/mp4">
-        Seu navegador não é descolado o suficiente para vídeos.
-    </video>
-    <div class="background-overlay"></div>
 
-    <header>
-        <div class="logo-container">
-            <video class="logo-video" autoplay loop muted>
-                <source src="./videos/logo.mp4" type="video/mp4">
-            </video>
+    <div class="main-container">
+        <img src="https://i.pinimg.com/originals/c3/0d/2a/c30d2a71f763e05a76b67e00a2a46618.gif" alt="Kuromi" class="kuromi-avatar">
+        <h1>☆ Bem-vinda ao Mundo da Kuromi ☆</h1>
+        <p class="subtitle">Sua dose diária de anarquia e fofura!</p>
+        <div id="current-time"></div>
+        <div class="action-buttons">
+            <button class="button" onclick="openSidebar()"><i class="fas fa-bars"></i> Menu</button>
+            <button class="button" onclick="openWelcomeMessage()"><i class="fas fa-bell"></i> Notificação</button>
         </div>
-        <h1>† KUROMI'S SYSTEM †</h1>
-    </header>
-        <div class="quick-actions">
-            <button id="open-sidebar-btn" class="button"><i class="fas fa-bars"></i> Menu Secreto</button>
-            <button id="open-welcome-btn" class="button"><i class="fas fa-bell"></i> Notificação</button>
-        </div>
-
-        <section class="kuromi-section">
-            <img src="https://i.imgur.com/your-kuromi-icon.png" alt="Ícone da Kuromi" class="kuromi-icon">
-            <h2>Bem-vinde ao meu cantinho!</h2>
-            <p>Achou que era só fofura? Aqui o sistema é punk! Explore minhas ferramentas, jogos e segredos... se tiver coragem. Hehe!</p>
-        </section>
-
-        <div class="speed-bar-container">
-            <p><i class="fas fa-bolt"></i> Nível de Rebeldia: <span id="speed-text">Calculando...</span></p>
-            <div class="speed-bar">
-                <div id="speed-bar-fill" class="speed-bar-fill"></div>
-            </div>
-        </div>
-    
-    </main>
-
-    <aside id="sidebar" class="sidebar">
-        <button id="close-sidebar-btn" class="close-btn" aria-label="Fechar menu">&times;</button>
+    </div>
+     
+    <div id="sidebar" class="sidebar">
+        <a href="javascript:void(0)" class="close-btn" onclick="closeSidebar()">&times;</a>
         <a href="vips">Super Usuários</a>
-        <a href="ia">KUROMI IA</a>
         <a href="apk">Apps Mod</a>
-        <a href="sites">Sites Úteis</a>
-        <a href="estudos">Estudos</a>
         <a href="jogos">Jogos</a>
         <a href="games">Games</a>
+        <a href="ferramentas">Ferramentas</a>
+        <a href="cinema">Filmes/Séries</a>
+        <a href="kuromitv">Kuromi TV</a>
+        <a href="sites">Sites Úteis</a>
+        <a href="estudos">Estudos</a>
+        <a href="metodos">Métodos</a>
+        <a href="consultas">Consultas</a>
         <a href="download">Downloads</a>
-        <a href="ferramentas">Ferramentas</a>
-        <a href="cinema">Filmes/Séries</a>
-        <a href="consultas">Consultas</a>
         <a href="ia">Kuromi IA</a>
-        <a href="upload">Upload</a>
+        <a href="assistente">Assistente</a>
+        <a href="clima">Clima</a>
+        <a href="spamzap">Spam WhatApp</a>
+        <a href="upload">Upload imagens</a>
+        <a href="likesff">Likes FF</a>
         <a href="apis">Apis</a>
-    </aside>
-
-    <div id="welcome-message" class="welcome-message">
-        <button id="close-welcome-btn" class="close-btn" aria-label="Fechar notificação">&times;</button>
-        <p>E aí! Bem-vinde ao meu sistema! ^-^</p>
+        <a href="metodos">Métodos</a>
     </div>
 
-    <img src="https://i.imgur.com/your-animated-kuromi.gif" alt="Kuromi animada" class="kuromi-char">
+    <div id="welcome-message" class="welcome-message">
+        <p>Seja Bem Vinda(o), docinho! ^-^</p>
+        <button class="close-btn" onclick="closeWelcomeMessage()">&times;</button>
+    </div>
     
-    <footer>
-        <p>Feito com ódio e glitter <i class="fas fa-heart" style="color: var(--kuromi-pink)"></i> por Redzin para o Kuromi System</p>
-    </footer>
+    <p class="footer-credit">From Redzin with ♡</p>
 
     <audio autoplay loop>
         <source src="./musicas/m.mp3" type="audio/mpeg">
+        Seu navegador não suporta áudio HTML5.
     </audio>
 
     <script>
-        // Espera a página carregar pra não dar erro! ૮ ´• ˕ •` ა
-        document.addEventListener('DOMContentLoaded', () => {
+        // Funções para controlar o Menu Lateral
+        function openSidebar() {
+            document.getElementById("sidebar").style.width = "250px";
+        }
 
-            // --- SELEÇÃO DOS ELEMENTOS ---
-            // Pegando os elementos do HTML pra gente poder brincar com eles
-            const sidebar = document.getElementById('sidebar');
-            const openSidebarBtn = document.getElementById('open-sidebar-btn');
-            const closeSidebarBtn = document.getElementById('close-sidebar-btn');
+        function closeSidebar() {
+            document.getElementById("sidebar").style.width = "0";
+        }
 
-            const welcomeMessage = document.getElementById('welcome-message');
-            const openWelcomeBtn = document.getElementById('open-welcome-btn');
-            const closeWelcomeBtn = document.getElementById('close-welcome-btn');
+        // Funções para controlar a Mensagem de Boas-Vindas
+        function openWelcomeMessage() {
+            document.getElementById("welcome-message").style.display = "block";
+        }
 
-            const speedText = document.getElementById('speed-text');
-            const speedFill = document.getElementById('speed-bar-fill');
-
-            // --- FUNÇÕES ---
-            // Funções do menu secreto (sidebar)
-            const openSidebar = () => { sidebar.style.width = "280px"; };
-            const closeSidebar = () => { sidebar.style.width = "0"; };
-
-            // Funções da mensagem de boas-vindas
-            const openWelcomeMessage = () => { welcomeMessage.style.display = "block"; };
-            const closeWelcomeMessage = () => { welcomeMessage.style.display = "none"; };
-
-            // Função da barra de "rebeldia"
-            const updateSpeed = () => {
-                const minSpeed = 50;
-                const maxSpeed = 300;
-                const speed = Math.floor(Math.random() * (maxSpeed - minSpeed + 1)) + minSpeed;
-                
-                speedText.textContent = `${speed} KUROMIS!`;
-                speedFill.style.width = `${(speed / maxSpeed) * 100}%`;
-            };
-
-            // --- EVENT LISTENERS ---
-            // Adicionando os "escutadores" de eventos. Basicamente, "quando clicar aqui, faça isso"
-            openSidebarBtn.addEventListener('click', openSidebar);
-            closeSidebarBtn.addEventListener('click', closeSidebar);
-            
-            openWelcomeBtn.addEventListener('click', openWelcomeMessage);
-            closeWelcomeBtn.addEventListener('click', closeWelcomeMessage);
-
-            // --- INICIALIZAÇÃO ---
-            // Inicia a barra de rebeldia e a atualiza a cada 2 segundos
-            updateSpeed();
-            setInterval(updateSpeed, 2000);
-
-            console.log("Kuromi System carregado! Hehe... 😈");
-        });
-    </script>
-</body>
-    </html>            <p>Achou que era só fofura? Aqui o sistema é punk! Explore minhas ferramentas, jogos e segredos... se tiver coragem. Hehe!</p>
-        </section>
-
-        <div class="speed-bar-container">
-            <p><i class="fas fa-bolt"></i> Nível de Rebeldia: <span id="speed-text">Calculando...</span></p>
-            <div class="speed-bar">
-                <div id="speed-bar-fill" class="speed-bar-fill"></div>
-            </div>
-        </div>
+        function closeWelcomeMessage() {
+            document.getElementById("welcome-message").style.display = "none";
+        }
         
-        <nav class="buttons-container">
-            <a href="vips" class="button"><i class="fas fa-crown"></i> Super Usuários</a>
-            <a href="ia" class="button"><i class="fas fa-robot"></i> Kuromi IA</a>
-            <a href="consultas" class="button"><i class="fas fa-search"></i> Consultas Mágicas</a>
-            <a href="apk" class="button"><i class="fas fa-mobile-alt"></i> Apps Mod Fofos</a>
-            <a href="jogos" class="button"><i class="fas fa-gamepad"></i> Jogos Divertidos</a>
-            <a href="ferramentas" class="button"><i class="fas fa-tools"></i> Ferramentas Úteis</a>
-            <a href="cinema" class="button"><i class="fas fa-film"></i> Filmes & Séries</a>
-            <a href="sites" class="button"><i class="fas fa-link"></i> Sites Secretos</a>
-            <a href="estudos" class="button"><i class="fas fa-book-open"></i> Cantinho do Estudo</a>
-            <a href="download" class="button"><i class="fas fa-download"></i> Baixe Fofuras</a>
-            <a href="upload" class="button"><i class="fas fa-upload"></i> Upload de Imagens</a>
-            <a href="apis" class="button"><i class="fas fa-code"></i> APIs Mágicas</a>
-        </nav>
-    </main>
+        // Função para atualizar a hora
+        function updateCurrentTime() {
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const seconds = now.getSeconds().toString().padStart(2, '0');
+            const timeString = `${hours}:${minutes}:${seconds}`;
+            document.getElementById('current-time').textContent = timeString;
+        }
 
-    <aside id="sidebar" class="sidebar">
-        <button id="close-sidebar-btn" class="close-btn" aria-label="Fechar menu">&times;</button>
-        <a href="vips">Super Usuários</a>
-        <a href="apk">Apps Mod</a>
-        <a href="jogos">Jogos</a>
-        <a href="ferramentas">Ferramentas</a>
-        <a href="cinema">Filmes/Séries</a>
-        <a href="consultas">Consultas</a>
-        <a href="ia">Kuromi IA</a>
-    </aside>
+        // Atualiza a hora a cada segundo
+        setInterval(updateCurrentTime, 1000);
 
-    <div id="welcome-message" class="welcome-message">
-        <button id="close-welcome-btn" class="close-btn" aria-label="Fechar notificação">&times;</button>
-        <p>E aí! Bem-vinde ao meu sistema! ^-^</p>
-    </div>
-
-    <img src="https://i.imgur.com/your-animated-kuromi.gif" alt="Kuromi animada" class="kuromi-char">
-    
-    <footer>
-        <p>Feito com ódio e glitter <i class="fas fa-heart" style="color: var(--kuromi-pink)"></i> por Redzin para o Kuromi System</p>
-    </footer>
-
-    <audio autoplay loop>
-        <source src="./musicas/m.mp3" type="audio/mpeg">
-    </audio>
-
-    <script>
-        // Espera a página carregar pra não dar erro! ૮ ´• ˕ •` ა
-        document.addEventListener('DOMContentLoaded', () => {
-
-            // --- SELEÇÃO DOS ELEMENTOS ---
-            // Pegando os elementos do HTML pra gente poder brincar com eles
-            const sidebar = document.getElementById('sidebar');
-            const openSidebarBtn = document.getElementById('open-sidebar-btn');
-            const closeSidebarBtn = document.getElementById('close-sidebar-btn');
-
-            const welcomeMessage = document.getElementById('welcome-message');
-            const openWelcomeBtn = document.getElementById('open-welcome-btn');
-            const closeWelcomeBtn = document.getElementById('close-welcome-btn');
-
-            const speedText = document.getElementById('speed-text');
-            const speedFill = document.getElementById('speed-bar-fill');
-
-            // --- FUNÇÕES ---
-            // Funções do menu secreto (sidebar)
-            const openSidebar = () => { sidebar.style.width = "280px"; };
-            const closeSidebar = () => { sidebar.style.width = "0"; };
-
-            // Funções da mensagem de boas-vindas
-            const openWelcomeMessage = () => { welcomeMessage.style.display = "block"; };
-            const closeWelcomeMessage = () => { welcomeMessage.style.display = "none"; };
-
-            // Função da barra de "rebeldia"
-            const updateSpeed = () => {
-                const minSpeed = 50;
-                const maxSpeed = 300;
-                const speed = Math.floor(Math.random() * (maxSpeed - minSpeed + 1)) + minSpeed;
-                
-                speedText.textContent = `${speed} KUROMIS!`;
-                speedFill.style.width = `${(speed / maxSpeed) * 100}%`;
-            };
-
-            // --- EVENT LISTENERS ---
-            // Adicionando os "escutadores" de eventos. Basicamente, "quando clicar aqui, faça isso"
-            openSidebarBtn.addEventListener('click', openSidebar);
-            closeSidebarBtn.addEventListener('click', closeSidebar);
-            
-            openWelcomeBtn.addEventListener('click', openWelcomeMessage);
-            closeWelcomeBtn.addEventListener('click', closeWelcomeMessage);
-
-            // --- INICIALIZAÇÃO ---
-            // Inicia a barra de rebeldia e a atualiza a cada 2 segundos
-            updateSpeed();
-            setInterval(updateSpeed, 2000);
-
-            console.log("Kuromi System carregado! Hehe... 😈");
-        });
+        // Chama a função uma vez ao carregar para não esperar 1 segundo para aparecer
+        updateCurrentTime();
     </script>
-</body>
-    </html>
+</body>   
+</html>

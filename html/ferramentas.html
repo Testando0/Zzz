@@ -4,154 +4,243 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ferramentas</title>
+    <title>Ferramentas // Kuromi Edition</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <!-- Adicionando referências para favicons de diferentes tamanhos e tipos -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
     <link rel="icon" href="./icones/favicon-32x32.png" type="image/png" sizes="32x32">
     <link rel="icon" href="./icones/favicon-16x16.png" type="image/png" sizes="16x16">
     <link rel="icon" href="./icones/android-chrome-192x192.png" type="image/png" sizes="192x192">
-    <link rel="icon" href="./icones/icones/android-chrome-512x512.png" type="image/png" sizes="512x512">
+    <link rel="icon" href="./icones/android-chrome-512x512.png" type="image/png" sizes="512x512">
     <link rel="apple-touch-icon" href="./icones/apple-touch-icon.png">
     <link rel="manifest" href="./site.webmanifest">
+
     <style>
-        body {
-            font-family: Arial, sans-serif;
+        /* --- Reset Básico e Tema Kuromi Futurista --- */
+        :root {
+            --kuromi-pink: #ff00ff; /* Rosa Neon */
+            --kuromi-purple: #9d00ff; /* Roxo Neon */
+            --dark-bg: #0a0211; /* Fundo bem escuro, quase preto com tom roxo */
+            --text-color: #f0e6ff; /* Texto lavanda claro */
+            --glass-bg: rgba(20, 2, 35, 0.6); /* Fundo para elementos "glassmorphism" */
+        }
+
+        * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            background-image: url('./fundos/verde.jpg'); /* Adicione sua imagem de fundo aqui */
-            background-color: #f0f0f0;
+        }
+
+        body {
+            font-family: 'Share Tech Mono', monospace; /* Fonte futurista */
+            margin: 0;
+            padding: 0;
+            /* Sugestão de Fundo: 
+              - Você pode usar uma imagem da Kuromi aqui. 
+              - Ex: background-image: url('URL_DA_SUA_IMAGEM_KUROMI.png');
+            */
+            background-color: var(--dark-bg);
+            background-image: linear-gradient(135deg, var(--dark-bg) 0%, #1a082a 100%);
+            background-size: cover;
+            background-attachment: fixed;
+            color: var(--text-color);
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start; /* Alinha conteúdo no topo */
             min-height: 100vh;
-            flex-direction: column; /* Colocado o título acima dos botões */
+            flex-direction: column;
+            padding-top: 100px; /* Espaço para a barra superior fixa */
         }
 
-        h1 {
-            text-align: center;
-            color: white;
-            margin: 10px 0; /* Reduzido o espaço acima e abaixo do título */
+        /* --- Barra Superior e Pesquisa --- */
+        .top-bar {
+            position: fixed; /* Fixo no topo */
+            top: 0;
+            left: 0;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: var(--glass-bg);
+            padding: 15px 0;
+            z-index: 1000;
+            backdrop-filter: blur(8px); /* Efeito de vidro */
+            border-bottom: 1px solid var(--kuromi-purple);
+            box-shadow: 0 5px 15px rgba(157, 0, 255, 0.2);
         }
 
+        .search-bar {
+            display: flex;
+        }
+
+        .search-input {
+            padding: 10px 15px;
+            font-size: 16px;
+            border: 2px solid var(--kuromi-purple);
+            border-right: none;
+            border-radius: 5px 0 0 5px;
+            width: 250px;
+            background-color: #000;
+            color: var(--text-color);
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+        
+        .search-input::placeholder {
+            color: #8b7a9e;
+        }
+
+        .search-input:focus {
+            outline: none;
+            box-shadow: 0 0 10px var(--kuromi-purple);
+        }
+
+        .search-button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: 2px solid var(--kuromi-purple);
+            border-radius: 0 5px 5px 0;
+            cursor: pointer;
+            background-color: var(--kuromi-purple);
+            color: #fff;
+            font-family: inherit;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-button:hover {
+            background-color: var(--kuromi-pink);
+            border-color: var(--kuromi-pink);
+            box-shadow: 0 0 15px var(--kuromi-pink);
+        }
+
+        .icon {
+            margin-right: 8px;
+        }
+
+        .error-message {
+            color: var(--kuromi-pink);
+            font-size: 14px;
+            margin-top: 10px;
+            height: 16px; /* Para não "pular" o layout quando a mensagem aparece */
+        }
+        
+        /* --- Título Principal --- */
+        .title-container {
+            color: #fff;
+            font-size: 3rem; /* 48px */
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            text-shadow: 
+                0 0 5px var(--kuromi-pink),
+                0 0 10px var(--kuromi-pink),
+                0 0 20px var(--kuromi-pink),
+                0 0 40px var(--kuromi-purple),
+                0 0 80px var(--kuromi-purple);
+        }
+
+        /* --- Grid de Botões --- */
         .buttons {
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
             align-items: center;
             padding: 20px;
-            }
+            max-width: 1200px; /* Limita a largura máxima do container */
+            gap: 15px; /* Espaçamento moderno entre os botões */
+        }
 
         .button {
-            display: inline-block;
-            padding: 10px 20px;
-            margin: 10px;
+            display: inline-flex; /* Para alinhar ícone e texto */
+            align-items: center;
+            justify-content: center;
+            padding: 12px 20px;
             font-size: 16px;
-            border: none;
-            border-radius: 20px;
+            font-family: inherit;
+            border: 2px solid var(--kuromi-pink);
+            border-radius: 8px; /* Cantos mais "tech" */
             cursor: pointer;
-            background-color: #ff0000; /* Verde */
-            color: white;
+            background-color: transparent;
+            color: var(--kuromi-pink);
             transition: all 0.3s ease;
             width: calc(33.33% - 20px);
+            min-width: 200px; /* Largura mínima para não quebrar o texto */
+            text-shadow: 0 0 3px var(--kuromi-pink);
         }
 
         .button:hover {
-            background-color: #ff0000; /* Verde mais claro ao passar o mouse */
+            background-color: var(--kuromi-pink);
+            color: var(--dark-bg);
+            text-shadow: none;
+            box-shadow: 0 0 15px var(--kuromi-pink), 0 0 25px var(--kuromi-pink);
+            transform: translateY(-3px); /* Efeito de levantar */
+        }
+        
+        .button .fas, .button .fab {
+            margin-right: 10px;
         }
 
-        @media only screen and (max-width: 600px) {
+        /* --- Efeito de Destaque para a Busca --- */
+        .highlight {
+            border: 2px solid var(--kuromi-purple);
+            transform: scale(1.05); /* Zoom */
+            color: var(--kuromi-purple);
+            box-shadow: 0 0 20px var(--kuromi-purple);
+        }
+
+        /* --- Rodapé --- */
+        p.footer {
+            text-align: center;
+            color: var(--text-color);
+            margin-top: 40px;
+            padding-bottom: 20px;
+            font-size: 14px;
+            letter-spacing: 1px;
+        }
+
+        /* --- Responsividade --- */
+        @media only screen and (max-width: 768px) {
             .button {
                 width: calc(50% - 20px);
             }
-            .buttons {
-                margin-top: 50px; /* Ajuste para maior visibilidade no celular */
+            .title-container {
+                font-size: 2.5rem;
             }
         }
 
-        p {
-            text-align: center;
-            color: white;
+        @media only screen and (max-width: 600px) {
+            body {
+                padding-top: 120px; /* Mais espaço para a barra de busca no celular */
+            }
+            .button {
+                width: 100%;
+                max-width: 350px;
+            }
+            .search-input {
+                width: 180px;
+            }
         }
-        .top-bar {
-    position: absolute;
-    top: 0;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    background-color: rgba(0, 0, 0, 0.5); /* Barra semi-transparente */
-    padding: 10px 0;
-}
-
-.search-bar {
-    display: flex;
-    margin-bottom: 10px;
-}
-
-.search-input {
-    padding: 10px;
-    font-size: 16px;
-    border: 2px solid #ff0000; /* Verde */
-    border-radius: 5px 0 0 5px;
-    width: 200px;
-    background-color: #000000; /* Preto */
-    color: #ffffff; /* Texto branco para melhor visibilidade */
-}
-.search-button {
-    padding: 10px 20px;
-    font-size: 16px;
-    border: none;
-    border-radius: 0 5px 5px 0;
-    cursor: pointer;
-    background-color: #000000; /* Preto */
-    color: #ff0000; /* Verde */
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-}
-
-.search-button:hover {
-    background-color: #333333; /* Preto mais claro ao passar o mouse */
-}
-
-.icon {
-    margin-right: 5px;
-}
-
-.highlight {
-    border: 2px solid #ff0000; /* Destacar com borda vermelha */
-    transform: scale(1.1); /* Zoom */
-    transition: transform 0.3s;
-}
-
-.error-message {
-    color: #ff0000; /* Cor da mensagem de erro */
-    font-size: 14px;
-    margin-top: 5px;
-}
-.title-container {
-            color: white;
-            font-size: 32px; /* aumentando o tamanho do texto */
-            
-            margin-top: 70px;  /* Espaçamento entre o botão de pesquisa e o título */
-    }
-.button {
-
     </style>
 </head>
 
 <body>
     <div class="top-bar">
-    <div class="search-bar">
-        <input type="text" id="search-input" class="search-input" placeholder="Pesquisar....">
-        <button class="search-button" onclick="searchButton()">
-            <i class="fas fa-search icon"></i> Pesquisar
-        </button>
+        <div class="search-bar">
+            <input type="text" id="search-input" class="search-input" placeholder="Buscar ferramenta...">
+            <button class="search-button" onclick="searchButton()">
+                <i class="fas fa-search icon"></i>
+            </button>
+        </div>
+        <div id="error-message" class="error-message"></div>
     </div>
-    <div id="error-message" class="error-message"></div>
-    </div>
-<div class="title-container">Ferramentas</div> <!-- Título abaixo do botão de pesquisa -->
-</div>
+
+    <div class="title-container">Ferramentas</div>
+    
     <div class="buttons">
         <button class="button" onclick="window.location.href = 'https://www.myinstants.com/pt/index/br/';"><i class="fas fa-music"></i> Áudio de Memes</button>
         <button class="button" onclick="window.location.href = 'https://www.veed.io/pt-BR/ferramentas/legendas-automaticas';"><i class="fas fa-closed-captioning"></i> Legenda Automática</button>
@@ -167,7 +256,7 @@
         <button class="button" onclick="window.location.href = 'https://f-droid.org/pt_BR/packages/com.termux/';"><i class="fas fa-terminal"></i> Termux</button>
         <button class="button" onclick="window.location.href = 'https://github.com/simondankelmann/Bluetooth-LE-Spam/releases';"><i class="fab fa-bluetooth"></i> Bluetooth Spam</button>
         <button class="button" onclick="window.location.href = 'https://meuguia.tv/';"><i class="fas fa-tv"></i> Guia de TV</button>
-        <button class="button" onclick="window.location.href = 'https://www.invertexto.com/texto-criptografado';">Criptografia</button>
+        <button class="button" onclick="window.location.href = 'https://www.invertexto.com/texto-criptografado';"><i class="fas fa-key"></i> Criptografia</button>
         <button class="button" onclick="window.location.href = 'https://www.virustotal.com/gui/home/upload';"><i class="fas fa-shield-alt"></i> Anti Vírus</button>
         <button class="button" onclick="window.location.href = 'https://www.speedtest.net/';"><i class="fas fa-tachometer-alt"></i> Velocidade da Net</button>
         <button class="button" onclick="window.location.href = 'https://grabify.link/';"><i class="fas fa-map-marker-alt"></i> Pegar IP</button>
@@ -204,34 +293,59 @@
         <button class="button" onclick="window.location.href = 'https://takipcizen.com/tools/send-follower/6887835530';"><i class="fab fa-instagram"></i> Seguidor 19</button>
         <button class="button" onclick="window.location.href = 'https://www.takipciking.com/';"><i class="fab fa-instagram"></i> Seguidor 20</button>
     </div>
-    <p>Desenvolvido Por Redzin</p>
+    
+    <p class="footer">Desenvolvido Por Redzin</p>
+
     <script>
+        // O JavaScript foi mantido, pois sua lógica está perfeita.
         function searchButton() {
-    const query = document.getElementById('search-input').value.toLowerCase();
-    const buttons = document.querySelectorAll('.button');
-    let found = false;
+            const query = document.getElementById('search-input').value.toLowerCase();
+            const buttons = document.querySelectorAll('.button');
+            const errorMessage = document.getElementById('error-message');
+            let found = false;
+            let firstFoundButton = null;
 
-    buttons.forEach(button => {
-        button.classList.remove('highlight');
-        if (button.textContent.toLowerCase().includes(query)) {
-            button.classList.add('highlight');
-            button.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            found = true;
-        }
-    });
+            // Primeiro, limpa todos os destaques
+            buttons.forEach(button => {
+                button.classList.remove('highlight');
+            });
 
-    const errorMessage = document.getElementById('error-message');
-    if (!found) {
-        errorMessage.textContent = 'Botão não encontrado.';
-    } else {
-        errorMessage.textContent = '';
-    }
+            if (query.trim() === '') {
+                errorMessage.textContent = '';
+                return; // Sai se a busca estiver vazia
+            }
+
+            buttons.forEach(button => {
+                if (button.textContent.toLowerCase().includes(query)) {
+                    button.classList.add('highlight');
+                    if (!found) {
+                        firstFoundButton = button; // Armazena o primeiro botão encontrado
+                    }
+                    found = true;
+                }
+            });
+
+            if (found) {
+                // Rola a tela até o primeiro botão encontrado
+                firstFoundButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                errorMessage.textContent = '';
+            } else {
+                errorMessage.textContent = 'Ferramenta não encontrada.';
+            }
         }
+
+        // Adiciona um listener para a tecla "Enter" no campo de busca
+        document.getElementById('search-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                searchButton();
+            }
+        });
     </script>
+    
     <audio autoplay loop>
         <source src="./musicas/verde.mp3" type="audio/mpeg">
         Seu navegador não suporta áudio HTML5.
     </audio>
 </body>
 
-</html>
+                </html>

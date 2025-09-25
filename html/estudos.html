@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kuromi's Databank</title>
+    <title>Kuromi's Databank v3.0</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,7 +17,7 @@
     <link rel="apple-touch-icon" href="./icones/apple-touch-icon.png">
     <link rel="manifest" href="./site.webmanifest">
     <style>
-        /* --- KUROMI FUTURISTIC DATABANK THEME v2.0 --- */
+        /* --- KUROMI FUTURISTIC DATABANK THEME v3.0 (GLITCH) --- */
         :root {
             --kuromi-pink: #F72585;
             --kuromi-purple: #4a0e63;
@@ -27,14 +27,33 @@
         }
 
         /* Animações */
-        @keyframes text-flicker {
-            0%, 100% { text-shadow: 0 0 8px var(--kuromi-pink), 0 0 15px var(--glow-color); opacity: 1; }
-            50% { text-shadow: 0 0 10px var(--kuromi-pink), 0 0 20px var(--glow-color); opacity: 0.8; }
+        @keyframes glitch-anim {
+            0% { clip-path: inset(23% 0 57% 0); }
+            5% { clip-path: inset(54% 0 6% 0); }
+            10% { clip-path: inset(83% 0 13% 0); }
+            15% { clip-path: inset(36% 0 38% 0); }
+            20% { clip-path: inset(34% 0 53% 0); }
+            25% { clip-path: inset(45% 0 23% 0); }
+            30% { clip-path: inset(7% 0 89% 0); }
+            35% { clip-path: inset(88% 0 6% 0); }
+            40% { clip-path: inset(83% 0 1% 0); }
+            45% { clip-path: inset(29% 0 51% 0); }
+            50% { clip-path: inset(2% 0 84% 0); }
+            55% { clip-path: inset(67% 0 11% 0); }
+            60% { clip-path: inset(93% 0 5% 0); }
+            65% { clip-path: inset(40% 0 43% 0); }
+            70% { clip-path: inset(88% 0 3% 0); }
+            75% { clip-path: inset(49% 0 37% 0); }
+            80% { clip-path: inset(88% 0 10% 0); }
+            85% { clip-path: inset(4% 0 95% 0); }
+            90% { clip-path: inset(71% 0 10% 0); }
+            95% { clip-path: inset(95% 0 4% 0); }
+            100% { clip-path: inset(19% 0 69% 0); }
         }
 
-        @keyframes scanline {
+        @keyframes move-grid {
             0% { background-position: 0 0; }
-            100% { background-position: 0 100%; }
+            100% { background-position: 50px 50px; }
         }
 
         * {
@@ -46,14 +65,6 @@
         body {
             font-family: 'Share Tech Mono', monospace;
             background-color: var(--kuromi-dark);
-            background-image: 
-                radial-gradient(circle, var(--kuromi-purple), var(--kuromi-dark)),
-                repeating-linear-gradient(
-                    rgba(0,0,0,0.3) 0px, 
-                    rgba(0,0,0,0.3) 1px, 
-                    transparent 1px, 
-                    transparent 3px
-                );
             color: var(--text-color);
             padding: 140px 20px 50px 20px;
             min-height: 100vh;
@@ -61,7 +72,14 @@
             flex-direction: column;
             align-items: center;
             overflow-x: hidden;
-            animation: scanline 30s linear infinite;
+            
+            /* Fundo de grade holográfica */
+            background-image:
+                linear-gradient(var(--kuromi-purple) 1px, transparent 1px),
+                linear-gradient(90deg, var(--kuromi-purple) 1px, transparent 1px),
+                radial-gradient(circle at center, var(--kuromi-purple), var(--kuromi-dark));
+            background-size: 50px 50px, 50px 50px, 100% 100%;
+            animation: move-grid 10s linear infinite;
         }
 
         .top-bar {
@@ -72,155 +90,132 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            background-color: rgba(10, 0, 20, 0.7);
+            background-color: rgba(13, 2, 31, 0.8);
             padding: 15px 0;
             z-index: 1000;
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             border-bottom: 2px solid var(--kuromi-pink);
-            box-shadow: 0 0 25px var(--kuromi-pink);
+            box-shadow: 0 0 30px var(--kuromi-pink);
         }
 
-        .search-bar {
-            display: flex;
-            margin-bottom: 10px;
-        }
-
+        .search-bar { display: flex; margin-bottom: 10px; }
         .search-input {
-            font-family: 'Share Tech Mono', monospace;
-            padding: 10px;
-            font-size: 16px;
-            border: 2px solid var(--kuromi-pink);
-            border-right: none;
-            clip-path: polygon(0 0, 100% 0, 100% 100%, 8px 100%, 0 calc(100% - 8px));
-            width: 250px;
-            background-color: rgba(0, 0, 0, 0.5);
-            color: var(--text-color);
-            transition: all 0.3s ease;
+            font-family: 'Share Tech Mono', monospace; padding: 10px; font-size: 16px;
+            border: 2px solid var(--kuromi-pink); border-right: none;
+            width: 250px; background-color: rgba(0, 0, 0, 0.5);
+            color: var(--text-color); transition: all 0.3s ease;
         }
-
-        .search-input::placeholder {
-            color: rgba(237, 237, 237, 0.5);
-        }
-
-        .search-input:focus {
-            outline: none;
-            box-shadow: 0 0 15px var(--kuromi-pink);
-        }
-
+        .search-input::placeholder { color: rgba(237, 237, 237, 0.5); }
+        .search-input:focus { outline: none; box-shadow: 0 0 15px var(--kuromi-pink); }
         .search-button {
-            padding: 10px 20px;
-            font-size: 16px;
-            border: 2px solid var(--kuromi-pink);
-            clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 0);
-            cursor: pointer;
-            background-color: var(--kuromi-pink);
-            color: var(--kuromi-dark);
-            font-weight: bold;
-            transition: all 0.3s ease;
+            padding: 10px 20px; font-size: 16px; border: 2px solid var(--kuromi-pink);
+            cursor: pointer; background-color: var(--kuromi-pink);
+            color: var(--kuromi-dark); font-weight: bold; transition: all 0.3s ease;
         }
-
         .search-button:hover {
-            background-color: #fff;
-            color: var(--kuromi-pink);
-            box-shadow: 0 0 15px #fff;
+            background-color: #fff; color: var(--kuromi-pink); box-shadow: 0 0 15px #fff;
         }
 
         .title-container {
-            text-align: center;
-            color: white;
-            font-size: 2em;
-            margin-bottom: 30px;
-            letter-spacing: 3px;
-            animation: text-flicker 3s infinite;
+            position: relative; text-align: center; color: white; font-size: 2em;
+            margin-bottom: 40px; letter-spacing: 3px;
         }
-
-        .title-container .fas {
-            margin-right: 15px;
-            color: var(--kuromi-pink);
+        .title-container .fas { margin-right: 15px; color: var(--kuromi-pink); }
+        
+        /* Efeito glitch para o título */
+        .title-container::before, .title-container::after {
+            content: "Conhecimento É Poder...";
+            color: white; position: absolute; top: 0; left: 0; width: 100%;
+            background: var(--kuromi-dark); overflow: hidden;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .title-container::before {
+            left: 2px; text-shadow: -2px 0 var(--glow-color);
+            animation: glitch-anim 2.5s infinite linear alternate-reverse;
+        }
+        .title-container::after {
+            left: -2px; text-shadow: 2px 0 var(--kuromi-pink);
+            animation: glitch-anim 3s infinite linear alternate-reverse;
         }
 
         .container {
+            position: relative;
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
             gap: 15px;
-            padding: 10px;
+            padding: 30px;
             max-width: 1400px;
             width: 100%;
         }
 
-        a.button {
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            padding: 15px 20px;
-            font-size: 1em;
-            text-decoration: none;
-            color: var(--text-color);
-            background-color: rgba(0, 0, 0, 0.3);
-            border: 2px solid transparent; /* A borda será criada pelo pseudo-elemento */
-            transition: all 0.3s ease-in-out;
-            width: 100%;
-            max-width: 350px;
-            cursor: pointer;
-            clip-path: polygon(0 10px, 10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);
-            box-shadow: 0 0 5px var(--kuromi-pink);
-        }
-
-        /* Efeito de borda neon animada */
-        a.button::before {
+        /* Cantoneiras decorativas para o container */
+        .container::before, .container::after {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            border: 2px solid var(--kuromi-pink);
-            clip-path: polygon(0 10px, 10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);
+            width: 30px;
+            height: 30px;
+            border-color: var(--kuromi-pink);
+            border-style: solid;
+        }
+        .container::before {
+            top: 10px; left: 10px; border-width: 2px 0 0 2px;
+        }
+        .container::after {
+            bottom: 10px; right: 10px; border-width: 0 2px 2px 0;
+        }
+
+        a.button {
+            position: relative; display: flex; align-items: center; justify-content: flex-start;
+            padding: 15px 20px; font-size: 1em; text-decoration: none;
+            color: var(--text-color); background-color: rgba(13, 2, 31, 0.7);
+            border: 2px solid var(--kuromi-pink); transition: all 0.3s ease-in-out;
+            width: 100%; max-width: 350px; cursor: pointer;
+            box-shadow: inset 0 0 10px rgba(247, 37, 133, 0.5);
+        }
+
+        /* Efeito glitch para os botões */
+        a.button::after {
+            content: attr(data-text);
+            position: absolute; left: 2px; text-shadow: -1px 0 var(--glow-color);
+            top: 15px; color: var(--text-color);
+            background: rgba(13, 2, 31, 0.7); overflow: hidden;
+            clip-path: inset(50% 50% 50% 50%);
             transition: all 0.3s ease-in-out;
-            z-index: -1;
+            padding: 0 20px;
+            display: flex; align-items: center;
+            pointer-events: none;
         }
 
         a.button:hover {
-            background-color: var(--kuromi-pink);
-            color: var(--kuromi-dark);
-            transform: translateY(-5px) scale(1.02);
-            box-shadow: 0 0 15px var(--kuromi-pink), 0 0 25px var(--glow-color);
-        }
-
-        a.button:hover::before {
-            transform: scale(1.05);
-            filter: blur(3px);
-        }
-
-        a.button i {
-            margin-right: 15px;
-            width: 20px;
-            text-align: center;
+            background-color: var(--kuromi-pink); color: var(--kuromi-dark);
+            box-shadow: 0 0 20px var(--kuromi-pink), 0 0 30px var(--glow-color);
         }
         
-        .highlight {
-            background-color: var(--kuromi-pink);
+        a.button:hover::after {
+            animation: glitch-anim 1s infinite linear alternate-reverse;
+            text-shadow: -1px 0 var(--kuromi-dark);
             color: var(--kuromi-dark);
-            transform: scale(1.05) translateY(-5px);
+            background-color: var(--kuromi-pink);
+        }
+
+        a.button i { margin-right: 15px; width: 20px; text-align: center; }
+        
+        .highlight {
+            background-color: var(--kuromi-pink); color: var(--kuromi-dark);
+            transform: scale(1.05);
             box-shadow: 0 0 20px #fff, 0 0 30px var(--kuromi-pink);
         }
 
         .error-message {
-            color: var(--kuromi-pink);
-            font-size: 14px;
-            height: 20px;
+            color: var(--kuromi-pink); font-size: 14px; height: 20px;
             text-shadow: 0 0 5px var(--kuromi-pink);
         }
         
         .footer-credit {
-            margin-top: 40px;
-            color: var(--text-color);
-            opacity: 0.6;
-            font-size: 0.9em;
-            letter-spacing: 1px;
+            margin-top: 40px; color: var(--text-color); opacity: 0.6;
+            font-size: 0.9em; letter-spacing: 1px;
         }
     </style>
 </head>
@@ -241,30 +236,31 @@
     </div>
 
     <div class="container">
-        <a class="button" href="https://t.me/Brasil_Cursos2"><i class="fas fa-book"></i> Cursos VIP</a>
-        <a class="button" href="https://sebrae.com.br/sites/PortalSebrae/cursosonline"><i class="fas fa-graduation-cap"></i> Curso SEBRAE</a>
-        <a class="button" href="https://certificadocursosonline.com/"><i class="fas fa-certificate"></i> Certificado de Cursos Online</a>
-        <a class="button" href="https://catracalivre.com.br/educacao/20-sites-com-cursos-gratuitos-para-voce-turbinar-o-curriculo/"><i class="fas fa-globe"></i> 20 Sites de Curso</a>
-        <a class="button" href="https://t.me/livrosEpubPdfx"><i class="fas fa-book-open"></i> Livros</a>
-        <a class="button" href="https://www.baixelivros.com.br/"><i class="fas fa-bookmark"></i> Livros Site</a>
-        <a class="button" href="https://www.kobo.com/br/pt/p/livros-gratis"><i class="fas fa-file"></i> Ebook</a>
-        <a class="button" href="https://blog.mettzer.com/livros-gratis/"><i class="fas fa-book-reader"></i> 10 Sites de Livros</a>
-        <a class="button" href="https://pt.ifixit.com/"><i class="fas fa-tools"></i> Tutoriais</a>
-        <a class="button" href="https://elevenlabs.io"><i class="fas fa-microphone"></i> Elevenlab</a>
-        <a class="button" href="https://pt.khanacademy.org/"><i class="fas fa-graduation-cap"></i> Khan Academy</a>
-        <a class="button" href="https://exercism.org/"><i class="fas fa-laptop-code"></i> Programação</a>
-        <a class="button" href="https://www.estudegratis.com.br/#escolha"><i class="fas fa-book"></i> Estude Mais</a>
-        <a class="button" href="https://estude.org/"><i class="fas fa-graduation-cap"></i> Estude.org</a>
-        <a class="button" href="https://www.classcentral.com/"><i class="fas fa-chalkboard"></i> Central de Cursos</a>
-        <a class="button" href="https://news.microsoft.com/pt-br/capacitacao-gratuita-para-alavancar-sua-carreira/"><i class="fab fa-microsoft"></i> Cursos da Microsoft</a>
-        <a class="button" href="https://play.senai.br/videos"><i class="fas fa-play"></i> Play Senai</a>
-        <a class="button" href="https://m.youtube.com/channel/UCrWvhVmt0Qac3HgsjQK62FQ"><i class="fab fa-youtube"></i> Curso em Vídeo</a>
-        <a class="button" href="https://sabervirtual.ciee.org.br/"><i class="fas fa-graduation-cap"></i> Saber Virtual (CIEE)</a>
+        <a class="button" href="https://t.me/Brasil_Cursos2" data-text="Cursos VIP"><i class="fas fa-book"></i> Cursos VIP</a>
+        <a class="button" href="https://sebrae.com.br/sites/PortalSebrae/cursosonline" data-text="Curso SEBRAE"><i class="fas fa-graduation-cap"></i> Curso SEBRAE</a>
+        <a class="button" href="https://certificadocursosonline.com/" data-text="Certificado de Cursos Online"><i class="fas fa-certificate"></i> Certificado de Cursos Online</a>
+        <a class="button" href="https://catracalivre.com.br/educacao/20-sites-com-cursos-gratuitos-para-voce-turbinar-o-curriculo/" data-text="20 Sites de Curso"><i class="fas fa-globe"></i> 20 Sites de Curso</a>
+        <a class="button" href="https://t.me/livrosEpubPdfx" data-text="Livros"><i class="fas fa-book-open"></i> Livros</a>
+        <a class="button" href="https://www.baixelivros.com.br/" data-text="Livros Site"><i class="fas fa-bookmark"></i> Livros Site</a>
+        <a class="button" href="https://www.kobo.com/br/pt/p/livros-gratis" data-text="Ebook"><i class="fas fa-file"></i> Ebook</a>
+        <a class="button" href="https://blog.mettzer.com/livros-gratis/" data-text="10 Sites de Livros"><i class="fas fa-book-reader"></i> 10 Sites de Livros</a>
+        <a class="button" href="https://pt.ifixit.com/" data-text="Tutoriais"><i class="fas fa-tools"></i> Tutoriais</a>
+        <a class="button" href="https://elevenlabs.io" data-text="Elevenlab"><i class="fas fa-microphone"></i> Elevenlab</a>
+        <a class="button" href="https://pt.khanacademy.org/" data-text="Khan Academy"><i class="fas fa-graduation-cap"></i> Khan Academy</a>
+        <a class="button" href="https://exercism.org/" data-text="Programação"><i class="fas fa-laptop-code"></i> Programação</a>
+        <a class="button" href="https://www.estudegratis.com.br/#escolha" data-text="Estude Mais"><i class="fas fa-book"></i> Estude Mais</a>
+        <a class="button" href="https://estude.org/" data-text="Estude.org"><i class="fas fa-graduation-cap"></i> Estude.org</a>
+        <a class="button" href="https://www.classcentral.com/" data-text="Central de Cursos"><i class="fas fa-chalkboard"></i> Central de Cursos</a>
+        <a class="button" href="https://news.microsoft.com/pt-br/capacitacao-gratuita-para-alavancar-sua-carreira/" data-text="Cursos da Microsoft"><i class="fab fa-microsoft"></i> Cursos da Microsoft</a>
+        <a class="button" href="https://play.senai.br/videos" data-text="Play Senai"><i class="fas fa-play"></i> Play Senai</a>
+        <a class="button" href="https://m.youtube.com/channel/UCrWvhVmt0Qac3HgsjQK62FQ" data-text="Curso em Vídeo"><i class="fab fa-youtube"></i> Curso em Vídeo</a>
+        <a class="button" href="https://sabervirtual.ciee.org.br/" data-text="Saber Virtual (CIEE)"><i class="fas fa-graduation-cap"></i> Saber Virtual (CIEE)</a>
     </div>
 
     <p class="footer-credit"> Desenvolvido Por Redzin </p> 
 
     <script>
+        // O JavaScript permanece o mesmo, pois sua funcionalidade está perfeita.
         function searchButton() {
             const query = document.getElementById('search-input').value.toLowerCase().trim();
             const buttons = document.querySelectorAll('.button');
@@ -279,21 +275,20 @@
                     const buttonText = button.textContent.toLowerCase();
                     if (buttonText.includes(query)) {
                         button.classList.add('highlight');
-                        if (!found) { // Rola a view para o primeiro resultado encontrado
+                        if (!found) {
                             button.scrollIntoView({ behavior: 'smooth', block: 'center' });
                         }
                         found = true;
                     }
                 });
             } else {
-                found = true; // Se a busca estiver vazia, não mostra erro.
+                found = true;
             }
 
             const errorMessage = document.getElementById('error-message');
             errorMessage.textContent = found ? '' : 'Arquivo não encontrado.';
         }
 
-        // Adiciona evento para buscar com a tecla "Enter"
         document.getElementById('search-input').addEventListener('keyup', function(event) {
             if (event.key === 'Enter') {
                 searchButton();
@@ -306,4 +301,4 @@
         Seu navegador não suporta áudio HTML5.
     </audio>
 </body>                               
-    </html>
+                                                                                 </html>

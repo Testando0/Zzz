@@ -1,436 +1,320 @@
 <!DOCTYPE html>
-<html lang="pt-br">
-
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>☆ KUROMI SYSTEM ☆</title>
+    <title>KUROMI SYSTEM</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <link rel="icon" href="./icones/favicon-32x32.png" type="image/png" sizes="32x32">
-    <link rel="icon" href="./icones/favicon-16x16.png" type="image/png" sizes="16x16">
-    <link rel="icon" href="./icones/android-chrome-192x192.png" type="image/png" sizes="192x192">
-    <link rel="icon" href="./icones/android-chrome-512x512.png" type="image/png" sizes="512x512">
-    <link rel="apple-touch-icon" href="./icones/apple-touch-icon.png">
-    <link rel="manifest" href="./site.webmanifest">
 
 <style>
-/* -------------------------------------------------------------------------------------------------- */
-/* INÍCIO DAS MUDANÇAS PARA TRANSPARÊNCIA E FUNDO FOSCO */
-/* -------------------------------------------------------------------------------------------------- */
-
-/* Estilos para o corpo da página */
-body {
-    background-color: transparent; /* Garante que o corpo não tenha cor de fundo */
-}
-/* Estilos para o restante do site */
-.site {
-    font-family: "Monospace Text", monospace; /* Defina a fonte padrão para o restante do site */
-}
-    /* Adicionando a fonte Road Rage */
-        @font-face {
-            font-family: 'Road Rage';
-            src: url('./Road_Rage.otf') format('opentype');
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-/* Estilos para texto em negrito */
-.bold {
-    font-weight: bold;
-}
-    header {
-    display: flex;
-    align-items: center;
-    justify-content: center; /* Centraliza o vídeo no cabeçalho */
-    padding: 0; /* Remove o padding para evitar espaços extras */
-    background-color: transparent; /* Remove qualquer fundo atrás do vídeo */
-    overflow: hidden; /* Esconde qualquer parte do vídeo que exceda o cabeçalho */
-    height: 100px; /* Define a altura do cabeçalho */
-}
-
-.logo-video {
-    width: 80%; /* Faz o vídeo preencher a largura do cabeçalho */
-    height: 100%; /* Faz o vídeo preencher a altura do cabeçalho */
-    object-fit: cover; /* Cobre todo o espaço, cortando o vídeo se necessário */
-    border: 4px solid #ff0000; /* Borda azul claro */
-}
-
-header nav {
-    /* Estilos para outros elementos no cabeçalho, como navegação */
-}
-            /* Estilos para o vídeo de fundo */
-        #video-background {
-            position: fixed;
-            right: 0;
-            bottom: 0;
-            min-width: 100%;
-            min-height: 100%;
-            width: auto;
-            height: auto;
-            z-index: -100;
+        body {
+            overflow-x: hidden; 
+            height: 100%;
+            font-family: Arial, sans-serif;
+            background: url('https://zero-two.1.obrh.uno/uploads/images/file-1758840128965-732376373.gif') no-repeat center center fixed;
+            background-size: cover;
+            color: #fff;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
         }
-            h1 {
-            font-size: 36px;
-            margin-bottom: 20px;
-            font-family: 'Road Rage', cursive; /* Aplicando a fonte Road Rage */
-            color: #ff0000; /* Cor da letra verde claro */
-            border: 3px solid black; /* Borda preta */
-            display: inline-block;
-            text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000; /* Borda preta */
-            text-align: center; /* Centraliza o texto */
-    width: 100%; /* Define a largura máxima */
+       .particle {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            top: 0; 
+            background-image: url('https://zero-two.1.obrh.uno/uploads/images/file-1758841440161-773573303.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            animation: fall 10s ease-in-out infinite, rotate 5s linear infinite;
+        }
+        #particles {
+             position: fixed; 
+             top: 0;
+             left: 0;
+             width: 100vw;
+             height: 100vh;
+             pointer-events: none; 
+             z-index: -1;
         }
 
-    
+        @keyframes fall {
+             0% {
+             transform: translateY(-100px) rotate(0deg);
+             opacity: 1;
+             }
+             100% {
+             transform: translateY(100vh) rotate(360deg);
+             opacity: 0;
+             }
+        }
+
         
-        .weather-info {
-    /* ATUALIZADO: Fundo transparente (rgba) e Fundo Fosco (backdrop-filter) */
-    background-color: rgba(0, 0, 0, 0.4); /* Fundo preto 40% transparente */
-    backdrop-filter: blur(5px); /* Efeito fosco (blur) */
-    -webkit-backdrop-filter: blur(5px); /* Compatibilidade com navegadores WebKit (como Chrome, Safari) */
-    padding: 20px;
-    border-radius: 15px;
-    border: 2px solid #ff0000; /* Borda azul */
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-    max-width: 300px; /* Define a largura máxima */
-    margin: 0 auto; /* Centraliza a seção horizontalmente */
-    text-align: center; /* Centraliza o conteúdo dentro da caixa */
-}
-
-.weather-icon {
-    font-size: 80px;
-    margin-bottom: 20px;
-    animation: bounce 1s infinite;
-    color: #ff0000; /* Ícones em branco */
-}
-
-@keyframes bounce {
-    0%, 100% {
-        transform: translateY(0);
-    }
-    50% {
-        transform: translateY(-10px);
-    }
-}
-
-.details {
-    text-align: center; /* Garante que o texto dentro da .details esteja centralizado */
-    margin-top: 10px;
-}
-
-.details h2 {
-    font-size: 50px;
-    margin: 0;
-    color: #ff0000; /* Temperatura em branco */
-}
-
-.details p {
-    font-size: 18px;
-    margin: 5px 0;
-    color: #ff0000; /* Detalhes em branco */
-}
-
-#city-name {
-    font-size: 24px;
-    margin: 10px 0;
-    font-weight: bold;
-    color: #ff0000; /* Nome da cidade em branco */
-}
-
-#user-ip {
-    margin-top: 20px;
-    font-size: 16px;
-    font-weight: bold;
-    color: #ff0000; /* IP em branco */
-}
-
-#current-time {
-    color: #ff0000; /* Hora em azul claro */
-    font-size: 28px;
-    margin-top: 15px;
-    letter-spacing: 1.5px;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-}
-.active {
-    background-color: #ff0000 !important;
-    color: #000000 !important;
-    border: 2px solid #ff0000 !important;
-}
-    .day {
-    background-color: #000000; /* Preto para dias não ativos */
-    color: #ff0000; /* Branco para texto */
-    }
-    
-#calendar {
-    max-width: 350px; /* Define a largura máxima do calendário */
-    margin: 0 auto; /* Centraliza o calendário horizontalmente */
-    border: 4px solid #ff0000;
-    border-radius: 5px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    /* ATUALIZADO: Fundo transparente (rgba) e Fundo Fosco (backdrop-filter) */
-    background-color: rgba(0, 0, 0, 0.4); /* Fundo preto 40% transparente */
-    backdrop-filter: blur(5px); /* Efeito fosco (blur) */
-    -webkit-backdrop-filter: blur(5px); /* Compatibilidade com navegadores WebKit */
-    text-align: center; /* Centraliza o conteúdo dentro do calendário */
-}
-
-/* Alterando o background-color do thead th para transparente */
-thead th {
-    color: #ff0000;
-    background-color: transparent; 
-}
-.calendar-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px;
-    /* ATUALIZADO: Fundo transparente (rgba) e Fundo Fosco (backdrop-filter) */
-    background-color: rgba(255, 0, 0, 0.7); /* Fundo vermelho 70% transparente */
-    backdrop-filter: blur(5px); /* Mantém o efeito fosco */
-    -webkit-backdrop-filter: blur(5px);
-    color: #000000;
-    border-radius: 5px 5px 0 0;
-}
-
-.calendar-header button {
-    background: none;
-    border: none;
-    color: #000000;
-    font-size: 18px;
-    cursor: pointer;
-}
-
-.datepicker {
-    width: 100%;
-    padding: 10px;
-    /* ATUALIZADO: Fundo do calendário para transparente */
-    background-color: transparent;
-    border-radius: 0 0 5px 5px; /* Ajusta o arredondamento na parte inferior */
-}
-
-.datepicker table {
-    width: 100%;
-    margin: 0;
-    border-collapse: collapse;
-}
-.datepicker table tr th {
-    /* ATUALIZADO: Fundo dos cabeçalhos para transparente */
-    background-color: transparent; 
-    color: #ff0000; /* Cor do texto dos dias da semana */
-    font-size: 14px; /* Tamanho da fonte do texto */
-}
-.datepicker table tr th,
-.datepicker table tr td {
-    text-align: center;
-    padding: 0;
-    cursor: pointer;
-    border: 1px solid #333;
-    vertical-align: middle;
-    width: 14.28%; /* Distribui igualmente os dias da semana */
-    box-sizing: border-box;
-}
-
-.datepicker table tr td.day {
-    /* ATUALIZADO: Fundo dos dias para transparente */
-    background-color: transparent; 
-    color: #ff0000; /* Verde claro para o texto dos dias */
-    font-size: 18px;
-    height: 60px; /* Altura fixa */
-}
-
-.datepicker table tr td.day:hover {
-    background-color: #ff0000; /* Fundo azul ao passar o mouse */
-    color: #000000; /* Texto branco ao passar o mouse */
-}
-
-.datepicker table tr td.active {
-    background-color: #ff0000; /* Fundo azul para o dia ativo */
-    color: #000000; /* Texto branco para o dia ativo */
-    border: 2px solid #ff0000;
-}
-
-/* Estilos para os botões */
-.buttons {
-    margin-top: 20px;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: center;
-}
-        /* Estilos para os botões */
-        .button {
-            padding: 10px 15px;
-            margin: 5px;
-            font-size: 14px;
-            border: none;
-            border-radius: 15px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            outline: none;
-            text-decoration: none; /* Remover sublinhado dos links */
+        .top-bar {
+            width: 100%;
+            height: 60px;
+            background-color: rgba(30, 30, 30, 0.8);
             display: flex;
             align-items: center;
-            color: red; /* Alterando a cor do texto para verde */
-            /* ATUALIZADO: Fundo dos botões para transparente com fosco */
-            background-color: rgba(0, 0, 0, 0.4); 
-            backdrop-filter: blur(3px); 
-            -webkit-backdrop-filter: blur(3px);
-            border: 1px solid #ff0000; /* Adiciona uma borda para destacar */
-        }
-/* Removendo estilos de fundo desnecessários, pois já estão no .button geral */
-        .button i {
-            margin-right: 5px;
+            justify-content: space-between;
+            padding: 0 20px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 101;
         }
 
-        .contato, .apk, .jogos, .scripts, .grupos, .sites, .estudos, .meus {
-            background-color: transparent; /* Garante que o fundo seja o do .button */
-            color: #ff0000; /* Cor da letra */
+        .api-icon {
+            font-size: 28px;
+            color: #fff;
+            margin-right: 10px;
         }
-/* FIM DA REMOÇÃO */
 
-        /* Estilos para o menu lateral */
+        .menu-toggle {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 30px;
+            cursor: pointer;
+        }
+
+        .notification-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #fff;
+            font-size: 26px;
+        }
+
+        .notification-message {
+            display: none;
+            position: absolute;
+            top: 60px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            color: #fff;
+            z-index: 103;
+            font-size: 14px;
+        }
+
+        /* Sidebar */
         .sidebar {
-    height: 100%;
-    width: 0;
-    position: fixed;
-    top: 0;
-    left: 0;
-    /* ATUALIZADO: Fundo transparente (rgba) e Fundo Fosco (backdrop-filter) */
-    background-color: rgba(0, 0, 0, 0.6); /* Fundo preto 60% transparente */
-    backdrop-filter: blur(8px); /* Efeito fosco mais forte para o menu */
-    -webkit-backdrop-filter: blur(8px);
-    /* Manter a imagem de fundo original com opacidade, ou usar apenas o blur */
-    /* background-image: url('/fundos/4.jpg'); */
-    background-size: cover;
-    overflow-x: hidden;
-    transition: 0.5s;
-    padding-top: 60px;
-    z-index: 1000;
+            width: 250px;
+            height: calc(100vh - 60px);
+            background-color: rgba(43, 43, 43, 0.9);
+            position: fixed;
+            left: -250px;
+            top: 60px;
+            transition: left 0.3s ease-in-out;
+            z-index: 102;
+            overflow-y: auto;
+            padding-top: 10px;
         }
 
-        .sidebar a {
-    padding: 10px 15px;
-    text-decoration: none;
-    font-size: 25px;
-    color: white;
-    display: block;
-    transition: 0.3s;
-    /* Manter o fundo preto transparente para os links internos */
-    background-color: rgba(0, 0, 0, 0.5); /* Fundo preto transparente */
-    border: 2px solid #FF0000; /* Borda verde escuro */
-    border-radius: 10px; /* Borda arredondada */
-    margin: 5px 0; /* Margem entre os botões */
+        .sidebar.active {
+            left: 0;
         }
-
-        .sidebar a:hover {
-            color: #f1f1f1;
-        }
-
+        
+        /* New Sidebar Styles */
         .sidebar .close-btn {
             position: absolute;
             top: 0;
             right: 25px;
-            font-size: 30px;
+            font-size: 36px;
             margin-left: 50px;
+            color: #fff;
+            text-decoration: none;
         }
 
-        /* Estilos para a mensagem de boas-vindas */
-        .welcome-message {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            /* ATUALIZADO: Fundo transparente (rgba) e Fundo Fosco (backdrop-filter) */
-            background-color: rgba(0, 0, 0, 0.6); /* Fundo preto 60% transparente */
-            backdrop-filter: blur(6px); 
-            -webkit-backdrop-filter: blur(6px);
-            color: red; /* Texto verde */
-            padding: 20px;
-            border-radius: 10px;
-            z-index: 1000;
-            border: 2px solid red; /* Adicionar borda para destacar */
+        .sidebar a {
+            padding: 10px 15px;
+            text-decoration: none;
+            font-size: 18px;
+            color: #fff;
+            display: block;
+            transition: 0.3s;
+            /* ✨ ADICIONADO BORDA INFERIOR PARA SEPARAR OS ITENS */
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .welcome-message p {
-            margin: 0;
+        .sidebar a:hover {
+            color: #f1f1f1;
+            background-color: rgba(102, 102, 102, 0.8);
         }
-
-        .welcome-message .close-btn {
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    font-size: 20px;
-    /* Alterando a cor para verde */
-    color: red;
-        }
-
-        p {
-            text-align: center;
-            color: white;
-        }
-
-/* -------------------------------------------------------------------------------------------------- */
-/* FIM DAS MUDANÇAS */
-/* -------------------------------------------------------------------------------------------------- */
-    </style>
-</head>
-
-<body>
-
-    <img src="./fundos/1.jpg" alt="Imagem de fallback" style="position: fixed; z-index: -101; width: 100%; height: 100%; object-fit: cover;">
-    <video autoplay muted loop id="video-background">
-        <source src="./videos/fundo.mp4" type="video/mp4">
-        Seu navegador não suporta vídeos HTML5.
-    </video>
-   <header>
-    <video class="logo-video" autoplay loop muted>
-        <source src="./videos/logo.mp4" type="video/mp4">
-        Seu navegador não suporta o vídeo.
-    </video>
-    </header>
-    <button class="button" onclick="openSidebar()"><i class="fas fa-bars"></i> Menu</button>
-     <button class="button notification" onclick="openWelcomeMessage()"><i class="fas fa-bell"></i> Notificação</button>
-        <div id="calendar"></div>
-</div>
-  <div class="weather-info" id="weatherInfo">    
-    <div class="weather-icon" id="weatherIcon"></div>
-    <div class="details">
-    <h2 id="temperature"></h2>   
-    <p id="description"></p>
-    <div id="user-city"></div>
-    <p>Máxima: <span id="tempMax"></span>°C</p>
-    <p>Mínima: <span id="tempMin"></span>°C</p>
-    <p>Umidade: <span id="humidity"></span>%</p>
-    <p>Vento: <span id="wind"></span> km/h</p>
-    </div>
-    <div class="box">
-    <span id="server-speed">Velocidade: Carregando...</span>
-</div>
-    <div id="user-ip"></div>
-    <div id="current-time"></div>
- </div>
-  <div class="buttons">
-        <a href="vips"class="button meus"><i class="fas fa-coffee"></i> Super Usuários</a>
-        <a href="ia"class="button meus"><i class="fas fa-coffee"></i> Kuromi IA</a>
-        <a href="download"class="button meus"><i class="fas fa-coffee"></i> Downloads</a>
         
-    </div>
-    </div>
-     
-    <script>
-        function openSidebar() {
-            document.getElementById("sidebar").style.width = "250px";
+        /* Remove a borda do último item do menu */
+        .sidebar a:last-of-type {
+            border-bottom: none;
         }
 
-        function closeSidebar() {
-            document.getElementById("sidebar").style.width = "0";
+        .sidebar a.button.meus {
+            margin-top: 20px;
+            /* 🎨 COR ALTERADA PARA ROXO */
+            background-color: #6a0dad; 
+            color: #fff; /* Melhorando o contraste do texto */
+            text-align: center;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-    </script>
 
-    <div id="sidebar" class="sidebar">
-        <a href="javascript:void(0)" class="close-btn" onclick="closeSidebar()">&times;</a>
+        .sidebar a.button.meus i {
+            margin-right: 8px;
+        }
+
+
+        .menu {
+            list-style: none;
+            padding: 20px;
+        }
+
+        .menu-item {
+            margin-bottom: 10px;
+        }
+
+        .menu-item > a {
+            text-decoration: none;
+            color: #fff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-radius: 5px;
+            background: rgba(68, 68, 68, 0.8);
+            cursor: pointer;
+        }
+
+        .menu-item > a:hover {
+            background-color: rgba(102, 102, 102, 0.8);
+        }
+
+        .submenu {
+            list-style: none;
+            padding-left: 20px;
+            display: none;
+        }
+
+        .submenu li {
+            padding: 8px;
+        }
+
+        .submenu li a {
+            text-decoration: none;
+            color: #ddd;
+            display: block;
+        }
+
+        .submenu li a:hover {
+            color: #fff;
+        }
+
+        .dashboard-content {
+            flex: 1;
+            padding: 80px 20px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .dashboard-title {
+            width: 90%;
+            max-width: 800px;
+            text-align: left;
+            font-size: 18px; 
+            font-weight: bold;
+            color: #ccc; 
+            margin-bottom: 10px;
+        }
+
+        .dashboard-title span.dashboard-text {
+            color: #eee; 
+        }
+
+        .card {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            padding: 35px; 
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            width: 95%; 
+            max-width: 850px; 
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .card h2 {
+            font-size: 20px;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+
+        .card p {
+            font-size: 24px;
+            color: #ddd;
+        }
+
+        .card button {
+            margin-top: 15px;
+            padding: 10px;
+            border: none;
+            /* 🎨 COR ALTERADA PARA ROXO */
+            background-color: #6a0dad;
+            color: #fff; /* Melhorando o contraste do texto */
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .card button:hover {
+            /* Efeito hover consistente com o novo tema */
+            background-color: #7b2cbf;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 15px;
+            background: rgba(30, 30, 30, 0.8);
+            font-size: 14px;
+            color: white;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+        }
+</style>
+
+</head>
+<body>
+<div class="particles" id="particles"></div>
+    <div class="top-bar">
+        <div style="display: flex; align-items: center;">
+            <span class="material-icons api-icon">api</span>
+            <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+        </div>
+        <button class="notification-btn" onclick="toggleNotification()"> 
+            <span class="material-icons">notifications</span>
+        </button>
+        <div class="notification-message" id="notification-message">Diversos Serviços Disponíveis Para Você 😄</div>
+    </div>
+
+    <div class="sidebar" id="sidebar">
+        <a href="javascript:void(0)" class="close-btn" onclick="closeSidebar()">×</a>
         <a href="vips">Super Usuários</a>
         <a href="apk">Apps Mod</a>
         <a href="jogos">Jogos</a>
@@ -447,281 +331,95 @@ thead th {
         <a href="upload">Upload imagens</a>
         <a href="likesff">Likes FF</a>
         <a href="apis">Apis</a>
-        <a href="metodos"class="button meus"><i class="fas fa-coffee"></i> Métodos</a>
-    </div>
-
-    
-
-    <script>
-        function openSidebar() {
-            document.getElementById("sidebar").style.width = "250px";
-        }
-
-        function closeSidebar() {
-            document.getElementById("sidebar").style.width = "0";
-        }
-    </script>
-
-    <script>
-        // Função para abrir a mensagem de boas-vindas
-        function openWelcomeMessage() {
-            document.getElementById("welcome-message").style.display = "block";
-        }
-
-        // Função para fechar a mensagem de boas-vindas
-        function closeWelcomeMessage() {
-            document.getElementById("welcome-message").style.display = "none";
-        }
-    </script>
-
-    <div id="welcome-message" class="welcome-message">
-        <p>Seja Bem Vindo Usuário ^-^</p>
-        <button class="close-btn" onclick="closeWelcomeMessage()">&times;</button>
+        <a href=" " class="button meus"><i class="fas fa-coffee"></i> KUROMI</a>
     </div>
     
-    <script>
-        function openSidebar() {
-            document.getElementById("sidebar").style.width = "250px";
-        }
-
-        function closeSidebar() {
-            document.getElementById("sidebar").style.width = "0";
-        }
-    </script>
-
+    <div class="dashboard-content">
+    <div class="dashboard-title">KUROMI <span class="dashboard-text">SYSTEM</span></div>
     
-    <script>
-        function openSidebar() {
-            document.getElementById("sidebar").style.width = "250px";
-        }
+    <div class="card">
+        <h2>Relógio</h2>
+        <p id="clock"></p>
+        
+        <p id="greeting"></p>
+    </div>
+    
+    <div class="card">
+        <h2>KUROMI TV</h2>
+        <p>Serviço De Canais Para Você Assistir Em Sua TV.</p>
+        <button onclick="window.open('https://kuromi-tv.vercel.app', '_blank')">Acessar</button>
+    </div>
+    
+    <div class="card">
+        <h2>ROTAS</h2>
+        <p>50+ Rotas Disponíveis.</p>
+    </div>
+</div>
 
-        function closeSidebar() {
-            document.getElementById("sidebar").style.width = "0";
-        }
-    </script>
+<div class="footer">
+    Copyright © Redzin
+</div>
+
 <script>
-       const apiKey = '363737d239ce3f7864e06da58d206887'; // Substitua com sua chave da API do OpenWeatherMap
-   // Função para obter o IP do usuário e buscar informações do clima
-        // Função para obter o IP do usuário e buscar informações do clima
-function getWeatherInfo() {
-    fetch('https://api.ipify.org?format=json')
-        .then(response => response.json())
-        .then(data => {
-            const userIP = data.ip;
-            document.getElementById("user-ip").textContent = "Seu IP🌐: " + userIP;
 
-            fetch(`https://ipapi.co/${userIP}/json/`)
-                .then(response => response.json())
-                .then(data => {
-                    const userCity = data.city;
-                    if (userCity) {
-                        // Exibir o nome da cidade
-                        document.getElementById("user-city").textContent = "Sua cidade: " + userCity;
-                        fetchWeather(userCity);
-                    } else {
-                        console.error('Cidade não encontrada na resposta da API de IP.');
-                    }
-                })
-                .catch(error => {
-                    console.error('Erro ao obter a cidade do usuário:', error);
-                });
-        })
-        .catch(error => {
-            console.error('Erro ao obter informações do IP:', error);
-        });
+    
+    function createParticles() {
+    const particlesContainer = document.getElementById('particles');
+
+    for (let i = 0; i < 30; i++) { 
+        const particle = document.createElement('div');
+        particle.classList.add('particle');
+        
+        particle.style.left = `${Math.random() * 100}%`;
+
+        particle.style.animationDelay = `${Math.random() * 5}s`;
+
+        particle.style.animationDuration = `${5 + Math.random() * 5}s`;
+
+        particlesContainer.appendChild(particle);
+    }
 }
 
-        // Função para obter o clima da cidade
-        function fetchWeather(city) {
-            const apiUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric&lang=pt_br`;
+createParticles();
 
-            fetch(apiUrl)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.cod === 200) {
-                        displayWeather(data);
-                    } else {
-                        console.error("Cidade não encontrada! Verifique se a cidade está correta.");
-                    }
-                })
-                .catch(error => {
-                    console.error("Erro ao obter os dados: ", error);
-                });
+   
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('active');
+    }
+
+    function closeSidebar() {
+        document.getElementById('sidebar').classList.remove('active');
+    }
+
+   
+    function toggleNotification() {
+        const notification = document.getElementById('notification-message');
+        notification.style.display = notification.style.display === 'block' ? 'none' : 'block';
+    }
+
+  
+    function updateClock() {
+        const now = new Date();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        document.getElementById('clock').textContent = `${hours}:${minutes}:${seconds}`;
+        
+       
+        const greetingElement = document.getElementById('greeting');
+        if (hours >= 5 && hours < 12) {
+            greetingElement.textContent = "Bom dia!";
+        } else if (hours >= 12 && hours < 18) {
+            greetingElement.textContent = "Boa tarde!";
+        } else if (hours >= 18 && hours < 24) {
+            greetingElement.textContent = "Boa noite!";
+        } else {
+            greetingElement.textContent = "Boa madrugada!";
         }
-
-        // Função para exibir o clima na interface
-        function displayWeather(data) {
-            const temperature = data.main.temp;
-            const tempMin = data.main.temp_min;
-            const tempMax = data.main.temp_max;
-            const humidity = data.main.humidity;
-            const windSpeed = data.wind.speed;
-            const description = data.weather[0].description;
-            const weatherIcon = document.getElementById('weatherIcon');
-
-            document.getElementById('temperature').textContent = `${temperature.toFixed(1)}°C`;
-            document.getElementById('description').textContent = description;
-            document.getElementById('tempMin').textContent = tempMin.toFixed(1);
-            document.getElementById('tempMax').textContent = tempMax.toFixed(1);
-            document.getElementById('humidity').textContent = humidity;
-            document.getElementById('wind').textContent = windSpeed;
-
-            // Alterar ícone de acordo com o clima
-            switch (data.weather[0].main) {
-                case 'Clear':
-                    weatherIcon.innerHTML = '☀️'; // Sol
-                    break;
-                case 'Clouds':
-                    weatherIcon.innerHTML = '☁️'; // Nuvens
-                    break;
-                case 'Rain':
-                    weatherIcon.innerHTML = '🌧️'; // Chuva
-                    break;
-                case 'Thunderstorm':
-                    weatherIcon.innerHTML = '⛈️'; // Tempestade
-                    break;
-                case 'Snow':
-                    weatherIcon.innerHTML = '❄️'; // Neve
-                    break;
-                default:
-                    weatherIcon.innerHTML = '🌥️'; // Clima variável
-                    break;
-            }
-
-            document.getElementById('weatherInfo').style.display = 'block';
-        }    
-
-// Chama a função para obter as informações do clima quando a página é carregada
-window.onload = getWeatherInfo;
-
-
-         // Função para atualizar a hora
-        function updateCurrentTime() {
-            const now = new Date();
-            const hours = now.getHours().toString().padStart(2, '0');
-            const minutes = now.getMinutes().toString().padStart(2, '0');
-            const seconds = now.getSeconds().toString().padStart(2, '0');
-            const timeString = `${hours}:${minutes}:${seconds}`;
-            document.getElementById('current-time').textContent = `Hora Atual: ${timeString}`;
-        }
-
-        // Atualiza a hora a cada segundo
-        setInterval(updateCurrentTime, 1000);
-
-        // Inicializa o processo ao carregar a página
-        window.onload = getWeatherInfo;
+    }
+    setInterval(updateClock, 1000);
+    updateClock(); 
 </script>
-    
 
-    <script>
-        (function() {
-            const calendar = document.getElementById('calendar');
-
-            let today = new Date();
-            let currentMonth = today.getMonth();
-            let currentYear = today.getFullYear();
-
-            const months = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-            const days = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
-
-            function generateCalendar(month, year) {
-    const today = new Date(); // Atualiza a data atual toda vez que o calendário é gerado
-    const firstDay = new Date(year, month).getDay();
-    const daysInMonth = 32 - new Date(year, month, 32).getDate();
-
-    let tbl = '<div class="calendar-header">';
-    tbl += '<button onclick="prevMonth()">&lt;</button>';
-    tbl += '<span>' + months[month] + ' ' + year + '</span>';
-    tbl += '<button onclick="nextMonth()">&gt;</button>';
-    tbl += '</div>';
-
-    tbl += '<table class="datepicker">';
-    tbl += '<thead><tr>';
-    for (let day of days) {
-        tbl += '<th>' + day + '</th>';
-    }
-    tbl += '</tr></thead><tbody>';
-
-    let date = 1;
-    for (let i = 0; i < 6; i++) {
-        tbl += '<tr>';
-        for (let j = 0; j < 7; j++) {
-            if (i === 0 && j < firstDay) {
-                tbl += '<td></td>';
-            } else if (date > daysInMonth) {
-                break;
-            } else {
-                // Verifica se o dia é o dia atual
-                const isActive = date === today.getDate() && month === today.getMonth() && year === today.getFullYear() ? 'active' : '';
-                tbl += `<td class="day ${isActive}">${date}</td>`;
-                date++;
-            }
-        }
-        tbl += '</tr>';
-    }
-
-    tbl += '</tbody></table>';
-    calendar.innerHTML = tbl;
-}
-
-generateCalendar(currentMonth, currentYear);
-
-            window.prevMonth = function() {
-                currentMonth--;
-                if (currentMonth < 0) {
-                    currentMonth = 11;
-                    currentYear--;
-                }
-                generateCalendar(currentMonth, currentYear);
-            }
-
-            window.nextMonth = function() {
-                currentMonth++;
-                if (currentMonth > 11) {
-                    currentMonth = 0;
-                    currentYear++;
-                }
-                generateCalendar(currentMonth, currentYear);
-            }
-
-            generateCalendar(currentMonth, currentYear);
-        })();
-    </script>
-    
-    <script>
-        // Função para abrir a mensagem de boas-vindas
-        function openWelcomeMessage() {
-            document.getElementById("welcome-message").style.display = "block";
-        }
-
-        // Função para fechar a mensagem de boas-vindas
-        function closeWelcomeMessage() {
-            document.getElementById("welcome-message").style.display = "none";
-        }
-    </script>
-<script>
-    // Simula a velocidade do servidor
-    function getServerSpeed() {
-        const speed = (Math.random() * 100).toFixed(2); // Simula um valor de 0.00 a 100.00 Mbps
-        return `${speed} Mbps`;
-    }
-
-    // Atualiza a velocidade na página
-    function updateSpeed() {
-        document.getElementById('server-speed').textContent = `Velocidade: ${getServerSpeed()}`; // Atualiza a velocidade
-    }
-
-    // Chama a função para atualizar a velocidade a cada segundo
-    setInterval(updateSpeed, 1000); // Atualiza a cada 1000ms (1 segundo)
-</script>
-    <div id="welcome-message" class="welcome-message">
-        <p>Seja Bem Vindo A Kuromi System ^-^</p>
-        <button class="close-btn" onclick="closeWelcomeMessage()">&times;</button>
-    </div>
-    <p>From Redzin</p>
-    <audio autoplay loop>
-        <source src="./musicas/m.mp3" type="audio/mpeg">
-        Seu navegador não suporta áudio HTML5.
-    </audio>
-</body>   
-        </html>
+</body>
+</html>

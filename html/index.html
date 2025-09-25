@@ -4,25 +4,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>☆ Mundo da Kuromi ☆</title>
+    <title>☆ KUROMI SYSTEM ☆</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
     <link rel="icon" href="./icones/favicon-32x32.png" type="image/png" sizes="32x32">
     <link rel="apple-touch-icon" href="./icones/apple-touch-icon.png">
-    <link rel="manifest" href="./site.webmanifest">
 
 <style>
-    /* Estilos Globais e do Corpo */
+    /* Estilos Globais e Fundo */
     body {
         margin: 0;
         padding: 0;
         font-family: 'Nunito', sans-serif;
-        background-image: url('https://i.pinimg.com/originals/a7/59/3a/a7593a55a2a16f1947b7496662e49c74.jpg');
-        background-size: cover;
-        background-position: center;
-        background-attachment: fixed;
+        background-color: #1a1a2e;
         color: #fff;
         display: flex;
         justify-content: center;
@@ -31,21 +27,33 @@
         overflow: hidden;
     }
 
-    /* Estrutura Principal */
+    #video-background {
+        position: fixed;
+        right: 0;
+        bottom: 0;
+        min-width: 100%;
+        min-height: 100%;
+        width: auto;
+        height: auto;
+        z-index: -100;
+        object-fit: cover;
+    }
+
+    /* Contêiner Principal */
     .main-container {
         text-align: center;
-        background-color: rgba(26, 13, 38, 0.8);
-        padding: 30px;
+        background-color: rgba(26, 13, 38, 0.85);
+        padding: 30px 40px;
         border-radius: 25px;
         border: 3px solid #e040fb;
-        box-shadow: 0 0 25px rgba(224, 64, 251, 0.6);
-        max-width: 400px;
-        backdrop-filter: blur(5px);
+        box-shadow: 0 0 30px rgba(224, 64, 251, 0.5);
+        max-width: 450px;
+        backdrop-filter: blur(8px);
     }
 
     .kuromi-avatar {
-        width: 150px;
-        height: 150px;
+        width: 140px;
+        height: 140px;
         border-radius: 50%;
         border: 4px solid #f8bbd0;
         margin-bottom: 20px;
@@ -54,32 +62,33 @@
 
     h1 {
         font-family: 'Pacifico', cursive;
-        font-size: 2.5em;
+        font-size: 2.8em;
         color: #fce4ec;
-        text-shadow: 0 0 5px #e91e63, 0 0 10px #e91e63;
+        text-shadow: 0 0 8px #e91e63, 0 0 12px #e91e63;
         margin: 0;
     }
 
     .subtitle {
         font-size: 1.1em;
         color: #f8bbd0;
-        margin-top: 5px;
+        margin-top: 10px;
         margin-bottom: 25px;
     }
     
     #current-time {
         color: #e040fb;
-        font-size: 1.5em;
+        font-size: 1.8em;
         margin-bottom: 25px;
         font-weight: bold;
         text-shadow: 0 0 8px rgba(224, 64, 251, 0.7);
     }
 
-    /* Estilo dos Botões Principais */
+    /* Botões de Ação */
     .action-buttons {
         display: flex;
         justify-content: center;
         gap: 15px;
+        margin-bottom: 20px;
     }
 
     .button {
@@ -95,15 +104,28 @@
         display: flex;
         align-items: center;
         gap: 8px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        text-decoration: none;
     }
 
     .button:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 0 15px #e91e63;
+        transform: translateY(-4px);
+        box-shadow: 0 0 18px #e91e63;
+    }
+    
+    .button.secondary {
+        background-color: transparent;
+        border: 2px solid #e040fb;
+        color: #e040fb;
+    }
+    
+    .button.secondary:hover {
+        background-color: #e040fb;
+        color: #fff;
+        box-shadow: 0 0 18px #e040fb;
     }
 
-    /* Estilos para o Menu Lateral */
+    /* Menu Lateral (Sidebar) */
     .sidebar {
         height: 100%;
         width: 0;
@@ -111,7 +133,7 @@
         top: 0;
         left: 0;
         background-color: rgba(13, 7, 18, 0.95);
-        backdrop-filter: blur(8px);
+        backdrop-filter: blur(10px);
         overflow-x: hidden;
         transition: 0.5s;
         padding-top: 60px;
@@ -120,19 +142,20 @@
     }
 
     .sidebar a {
-        padding: 10px 15px;
+        padding: 12px 20px;
         text-decoration: none;
-        font-size: 1.2em;
+        font-size: 1.3em;
         color: #fce4ec;
         display: block;
         transition: 0.3s;
-        margin: 5px 15px;
-        border-radius: 10px;
+        margin: 8px 15px;
+        border-radius: 12px;
     }
 
     .sidebar a:hover {
         background-color: #e91e63;
         color: #1a0d26;
+        transform: translateX(5px);
     }
 
     .sidebar .close-btn {
@@ -141,8 +164,13 @@
         right: 25px;
         font-size: 36px;
     }
+    
+    .sidebar .close-btn:hover {
+        background-color: transparent;
+        transform: none;
+    }
 
-    /* Estilos para a mensagem de notificação */
+    /* Mensagem de Notificação (Popup) */
     .welcome-message {
         display: none;
         position: fixed;
@@ -151,51 +179,62 @@
         transform: translate(-50%, -50%);
         background-color: #2c1a3b;
         color: #fce4ec;
-        padding: 25px;
+        padding: 30px;
         border-radius: 15px;
         z-index: 1001;
         border: 2px solid #e040fb;
-        box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        box-shadow: 0 0 30px rgba(0,0,0,0.5);
     }
 
     .welcome-message p {
         margin: 0;
-        font-size: 1.2em;
+        font-size: 1.3em;
     }
 
     .welcome-message .close-btn {
         position: absolute;
         top: 10px;
-        right: 10px;
+        right: 15px;
         background: transparent;
         border: none;
         cursor: pointer;
-        font-size: 24px;
+        font-size: 28px;
         color: #fce4ec;
     }
     
     .footer-credit {
         position: absolute;
-        bottom: 10px;
+        bottom: 15px;
         width: 100%;
         text-align: center;
         color: #f8bbd0;
-        font-size: 0.9em;
+        font-size: 1em;
         text-shadow: 0 0 5px #000;
     }
+
 </style>
 </head>
 
 <body>
 
+    <video autoplay muted loop id="video-background">
+        <source src="./videos/fundo.mp4" type="video/mp4">
+        Seu navegador não suporta vídeos HTML5.
+    </video>
+   
     <div class="main-container">
-        <img src="https://i.pinimg.com/originals/c3/0d/2a/c30d2a71f763e05a76b67e00a2a46618.gif" alt="Kuromi" class="kuromi-avatar">
-        <h1>☆ Bem-vinda ao Mundo da Kuromi ☆</h1>
-        <p class="subtitle">Sua dose diária de anarquia e fofura!</p>
+        <img src="https://i.pinimg.com/originals/c3/0d/2a/c30d2a71f763e05a76b67e00a2a46618.gif" alt="Kuromi Avatar" class="kuromi-avatar">
+        <h1>Kuromi System</h1>
+        <p class="subtitle">Sua central de utilidades!</p>
         <div id="current-time"></div>
         <div class="action-buttons">
             <button class="button" onclick="openSidebar()"><i class="fas fa-bars"></i> Menu</button>
-            <button class="button" onclick="openWelcomeMessage()"><i class="fas fa-bell"></i> Notificação</button>
+            <button class="button secondary" onclick="openWelcomeMessage()"><i class="fas fa-bell"></i> Notificação</button>
+        </div>
+        <div class="action-buttons">
+            <a href="vips" class="button"><i class="fas fa-star"></i> Vips</a>
+            <a href="ia" class="button"><i class="fas fa-robot"></i> Kuromi IA</a>
+            <a href="assistente" class="button"><i class="fas fa-user-friends"></i> Assistente</a>
         </div>
     </div>
      
@@ -217,14 +256,13 @@
         <a href="assistente">Assistente</a>
         <a href="clima">Clima</a>
         <a href="spamzap">Spam WhatApp</a>
-        <a href="upload">Upload imagens</a>
+        <a href="upload">Upload Imagens</a>
         <a href="likesff">Likes FF</a>
-        <a href="apis">Apis</a>
-        <a href="metodos">Métodos</a>
+        <a href="apis">APIs</a>
     </div>
 
     <div id="welcome-message" class="welcome-message">
-        <p>Seja Bem Vinda(o), docinho! ^-^</p>
+        <p>Seja Bem Vindo(a) ao Kuromi System! ^-^</p>
         <button class="close-btn" onclick="closeWelcomeMessage()">&times;</button>
     </div>
     
@@ -238,14 +276,14 @@
     <script>
         // Funções para controlar o Menu Lateral
         function openSidebar() {
-            document.getElementById("sidebar").style.width = "250px";
+            document.getElementById("sidebar").style.width = "280px";
         }
 
         function closeSidebar() {
             document.getElementById("sidebar").style.width = "0";
         }
 
-        // Funções para controlar a Mensagem de Boas-Vindas
+        // Funções para controlar a Mensagem de Boas-vindas
         function openWelcomeMessage() {
             document.getElementById("welcome-message").style.display = "block";
         }
@@ -267,8 +305,8 @@
         // Atualiza a hora a cada segundo
         setInterval(updateCurrentTime, 1000);
 
-        // Chama a função uma vez ao carregar para não esperar 1 segundo para aparecer
-        updateCurrentTime();
+        // Chama a função uma vez ao carregar para exibir a hora imediatamente
+        document.addEventListener('DOMContentLoaded', updateCurrentTime);
     </script>
 </body>   
 </html>

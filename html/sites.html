@@ -4,28 +4,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sites Úteis</title>
-    <!-- Importando Font Awesome -->
+    <title>Sites Úteis - Estilo Kuromi</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-<!-- Adicionando referências para favicons de diferentes tamanhos e tipos -->
     <link rel="icon" href="./icones/favicon-32x32.png" type="image/png" sizes="32x32">
     <link rel="icon" href="./icones/favicon-16x16.png" type="image/png" sizes="16x16">
     <link rel="icon" href="./icones/android-chrome-192x192.png" type="image/png" sizes="192x192">
-    <link rel="icon" href="./icones/icones/android-chrome-512x512.png" type="image/png" sizes="512x512">
+    <link rel="icon" href="./icones/android-chrome-512x512.png" type="image/png" sizes="512x512">
     <link rel="apple-touch-icon" href="./icones/apple-touch-icon.png">
     <link rel="manifest" href="./site.webmanifest">
-     <style>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Orbitron', sans-serif;
             margin: 0;
             padding: 0;
-            background-image: url('./fundos/rosa.jpg');
-            background-color: #f0f0f0;
+            background-image: url('https://i.pinimg.com/originals/5c/0a/9a/5c0a9a1f7d463b2add813b2c61368285.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-color: #1a1a2e;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            min-height: 100vh; /* Usando min-height para garantir que a altura da tela seja sempre preenchida */
+            min-height: 100vh;
+            color: #e0e0e0;
         }
 
         .top-bar {
@@ -35,8 +38,9 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            background-color: rgba(0, 0, 0, 0.5); /* Barra semi-transparente */
-            padding: 10px 0;
+            background-color: rgba(13, 13, 23, 0.8);
+            padding: 15px 0;
+            border-bottom: 2px solid #9c27b0;
         }
 
         .search-bar {
@@ -45,96 +49,109 @@
         }
 
         .search-input {
-            padding: 10px;
+            padding: 12px;
             font-size: 16px;
-            border: 2px solid #ff0000; /* rosa */
-            border-radius: 5px 0 0 5px;
-            width: 200px;
-            background-color: #000000; /* Preto */
-            color: #ffffff; /* Texto branco para melhor visibilidade */
+            border: 2px solid #9c27b0;
+            border-radius: 25px 0 0 25px;
+            width: 250px;
+            background-color: #1a1a2e;
+            color: #e0e0e0;
+            outline: none;
         }
-         
 
         .search-button {
-            padding: 10px 20px;
+            padding: 12px 25px;
             font-size: 16px;
             border: none;
-            border-radius: 20px;
+            border-radius: 0 25px 25px 0;
             cursor: pointer;
-            background-color: #000000; /* Preto */
-            color: #ff0000; /* rosa */
-            transition: all 0.3s ease;
+            background-color: #9c27b0;
+            color: #ffffff;
+            transition: all 0.4s ease;
             display: flex;
             align-items: center;
         }
 
         .search-button:hover {
-            background-color: #333333; /* Preto mais claro ao passar o mouse */
+            background-color: #ab47bc;
         }
 
         .icon {
-            margin-right: 5px;
+            margin-right: 8px;
         }
 
         .highlight {
-            border: 2px solid #ff0000; /* Destacar com borda vermelha */
-            transform: scale(1.1); /* Zoom */
-            transition: transform 0.3s;
+            border: 3px solid #f06292;
+            transform: scale(1.15);
+            transition: transform 0.4s, box-shadow 0.4s;
+            box-shadow: 0 0 20px #f06292;
         }
 
         .error-message {
-            color: #ff0000; /* Cor da mensagem de erro */
+            color: #f06292;
             font-size: 14px;
             margin-top: 5px;
+            text-shadow: 0 0 5px #f06292;
         }
 
         .title-container {
-            color: white;
-            font-size: 32px; /* aumentando o tamanho do texto */
-            margin-top: 75px; /* Espaçamento entre o botão de pesquisa e o título */
+            font-size: 48px;
+            margin-top: 120px;
+            text-shadow: 0 0 10px #9c27b0, 0 0 20px #9c27b0, 0 0 30px #f06292;
         }
 
         .buttons {
-            display: flex; /* Os botões serão exibidos em linha */
-            flex-wrap: wrap; /* Se necessário, os botões serão envolvidos para a próxima linha */
-            justify-content: center; /* Os botões serão centralizados horizontalmente */
-            align-items: center; /* Os botões serão centralizados verticalmente */
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
             padding: 20px;
-            max-width: 1200px; /* Largura máxima para o contêiner dos botões */
+            max-width: 1200px;
         }
 
         .button {
-            padding: 10px 20px; /* Define o preenchimento interno do botão */
-            margin: 10px; /* Define a margem ao redor do botão */
-            font-size: 16px; /* Define o tamanho da fonte do texto do botão */
-            border: none; /* Remove a borda do botão */
-            border-radius: 20px; /* Adiciona cantos arredondados ao botão */
-            cursor: pointer; /* Define o cursor como ponteiro quando o mouse passa sobre o botão */
-            background-color: #ff0000; /* Define a cor de fundo do botão como rosa */
-            color: white; /* Define a cor do texto do botão como branco */
-            transition: all 0.3s ease; /* Adiciona uma transição suave para mudanças de estilo */
-            width: calc(33.33% - 20px); /* Ajusta a largura dos botões para que caibam três por linha */
-            box-sizing: border-box; /* Inclui padding e bordas na largura total do elemento */
+            padding: 15px 25px;
+            margin: 12px;
+            font-size: 16px;
+            border: 2px solid #9c27b0;
+            border-radius: 30px;
+            cursor: pointer;
+            background-color: rgba(26, 26, 46, 0.8);
+            color: #e0e0e0;
+            transition: all 0.4s ease;
+            width: calc(33.33% - 24px);
+            box-sizing: border-box;
+            text-shadow: 0 0 5px #e0e0e0;
         }
 
         .button:hover {
-            background-color: #ff0000; /* Rosa mais escuro ao passar o mouse */
+            background-color: #9c27b0;
+            color: #ffffff;
+            border-color: #f06292;
+            box-shadow: 0 0 15px #f06292;
         }
-     </style>
+         p {
+            margin-top: auto;
+            padding: 20px;
+            font-size: 14px;
+            color: #e0e0e0;
+            text-shadow: 0 0 5px #9c27b0;
+        }
+    </style>
 </head>
 
 <body>
-<div class="top-bar">
-    <div class="search-bar">
-        <input type="text" id="search-input" class="search-input" placeholder="Pesquisar...">
-        <button class="search-button" onclick="searchButton()">
-            <i class="fas fa-search icon"></i> Pesquisar
-        </button>
+    <div class="top-bar">
+        <div class="search-bar">
+            <input type="text" id="search-input" class="search-input" placeholder="Buscar...">
+            <button class="search-button" onclick="searchButton()">
+                <i class="fas fa-search icon"></i> Buscar
+            </button>
+        </div>
+        <div id="error-message" class="error-message"></div>
     </div>
-    <div id="error-message" class="error-message"></div>
-</div>
-        <div class="title-container">Sites Úteis</div>
-        <div class="buttons">
+    <div class="title-container">Sites Úteis</div>
+    <div class="buttons">
             <button class="button" onclick="window.location.href = 'https://pt1.savefrom.net/59/';"><i class="fas fa-download"></i> Baixar Vídeos</button>
             <button class="button" onclick="window.location.href = 'https://snapinsta.app/pt';"><i class="fas fa-download"></i> Dow Insta vid</button>
             <button class="button" onclick="window.location.href = 'https://instavideosave.net/audio';"><i class="fas fa-download"></i> Dow Insta aud</button>
@@ -318,7 +335,6 @@
         }
     </script>
     </div>
-    <!-- Música de fundo -->
     <audio autoplay loop>
         <source src="./musicas/rosa.mp3" type="audio/mpeg">
         Seu navegador não suporta áudio HTML5.

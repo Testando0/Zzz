@@ -4,10 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Estudar</title>
-    <!-- Inclua a biblioteca Font Awesome -->
+    <title>Kuromi's Databank</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <!-- Adicionando referências para favicons de diferentes tamanhos e tipos -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
     <link rel="icon" href="./icones/favicon-32x32.png" type="image/png" sizes="32x32">
     <link rel="icon" href="./icones/favicon-16x16.png" type="image/png" sizes="16x16">
     <link rel="icon" href="./icones/android-chrome-192x192.png" type="image/png" sizes="192x192">
@@ -15,65 +17,47 @@
     <link rel="apple-touch-icon" href="./icones/apple-touch-icon.png">
     <link rel="manifest" href="./site.webmanifest">
     <style>
-        body {
-            font-family: Arial, sans-serif;
+        /* --- KUROMI FUTURISTIC DATABANK THEME --- */
+        :root {
+            --kuromi-pink: #F72585;
+            --kuromi-purple: #4a0e63;
+            --kuromi-dark: #0d021f;
+            --text-color: #ededed;
+        }
+
+        * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            background-image: url('./fundos/roxo.jpg');
-            background-color: #f0f0f0;
-            display: grid;
-            place-items: center;
-            height: 100vh;
         }
 
-        html {
-            zoom: 1;
-        }
-
-        .container {
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background-color: var(--kuromi-dark);
+            background-image: radial-gradient(circle, var(--kuromi-purple), var(--kuromi-dark));
+            color: var(--text-color);
+            padding: 140px 20px 50px 20px;
+            min-height: 100vh;
             display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            padding: 20px;
-            }
-
-        .button {
-            display: inline-block;
-            padding: 10px 20px;
-            margin: 10px;
-            font-size: 16px;
-            border: none;
-            border-radius: 20px;
-            cursor: pointer;
-            background-color: #ff0000;
-            color: white;
-            transition: all 0.3s ease;
-            width: calc(33.33% - 20px);
-        
-        }
-
-        p {
-            text-align: center;
-            color: white;
-        }
-        .button:hover {
-            background-color: #800080;
-        }
-
-        .button i {
-            margin-right: 10px;
         }
 
         .top-bar {
-            position: absolute;
+            position: fixed;
             top: 0;
+            left: 0;
             width: 100%;
             display: flex;
             flex-direction: column;
             align-items: center;
-            background-color: rgba(0, 0, 0, 0.5); /* Barra semi-transparente */
-            padding: 10px 0;
+            background-color: rgba(10, 0, 20, 0.7);
+            padding: 15px 0;
+            z-index: 1000;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-bottom: 1px solid var(--kuromi-pink);
+            box-shadow: 0 0 15px var(--kuromi-pink);
         }
 
         .search-bar {
@@ -82,52 +66,120 @@
         }
 
         .search-input {
+            font-family: 'Share Tech Mono', monospace;
             padding: 10px;
             font-size: 16px;
-            border: 2px solid #ff0000; /* roxo */
+            border: 2px solid var(--kuromi-pink);
+            border-right: none;
             border-radius: 5px 0 0 5px;
-            width: 200px;
-            background-color: #000000; /* Preto */
-            color: #ffffff; /* Texto branco para melhor visibilidade */
+            width: 250px;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: var(--text-color);
+            transition: all 0.3s ease;
+        }
+
+        .search-input::placeholder {
+            color: rgba(237, 237, 237, 0.5);
+        }
+
+        .search-input:focus {
+            outline: none;
+            box-shadow: 0 0 10px var(--kuromi-pink);
         }
 
         .search-button {
             padding: 10px 20px;
             font-size: 16px;
-            border: none;
+            border: 2px solid var(--kuromi-pink);
             border-radius: 0 5px 5px 0;
             cursor: pointer;
-            background-color: #000000; /* Preto */
-            color: #ff0000; /* roxo */
+            background-color: var(--kuromi-pink);
+            color: var(--kuromi-dark);
+            font-weight: bold;
             transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
         }
 
         .search-button:hover {
-            background-color: #333333; /* Preto mais claro ao passar o mouse */
-        }
-
-        .icon {
-            margin-right: 5px;
-        }
-
-        .highlight {
-            border: 2px solid #ff0000; /* Destacar com borda vermelha */
-            transform: scale(1.1); /* Zoom */
-            transition: transform 0.3s;
-        }
-
-        .error-message {
-            color: #ff0000; /* Cor da mensagem de erro */
-            font-size: 14px;
-            margin-top: 5px;
+            background-color: #fff;
+            color: var(--kuromi-pink);
+            box-shadow: 0 0 15px #fff;
         }
 
         .title-container {
+            text-align: center;
             color: white;
-            font-size: 32px; /* aumentando o tamanho do texto */
-            margin-top: 70px;  /* Espaçamento entre o botão de pesquisa e o título */
+            font-size: 2em;
+            margin-bottom: 30px;
+            text-shadow: 0 0 8px var(--kuromi-pink), 0 0 15px #FF69B4;
+            letter-spacing: 2px;
+        }
+
+        .title-container .fas {
+            margin-right: 15px;
+            color: var(--kuromi-pink);
+        }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            padding: 10px;
+            max-width: 1400px;
+            width: 100%;
+        }
+
+        a.button {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start; /* Alinha texto e ícone à esquerda */
+            padding: 15px 20px;
+            font-size: 1em;
+            text-decoration: none;
+            border: 2px solid var(--kuromi-pink);
+            border-radius: 8px;
+            background-color: rgba(0, 0, 0, 0.3);
+            color: var(--text-color);
+            transition: all 0.2s ease-in-out;
+            width: 100%;
+            max-width: 350px; /* Largura máxima dos botões */
+            cursor: pointer;
+            box-shadow: 0 0 5px var(--kuromi-pink);
+        }
+
+        a.button:hover {
+            background-color: var(--kuromi-pink);
+            color: var(--kuromi-dark);
+            transform: translateY(-5px);
+            box-shadow: 0 0 15px var(--kuromi-pink), 0 0 25px #FF69B4;
+        }
+
+        a.button i {
+            margin-right: 15px;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .highlight {
+            border: 2px solid #fff;
+            background-color: var(--kuromi-pink);
+            color: var(--kuromi-dark);
+            transform: scale(1.05) translateY(-5px);
+            box-shadow: 0 0 20px #fff, 0 0 30px var(--kuromi-pink);
+        }
+
+        .error-message {
+            color: var(--kuromi-pink);
+            font-size: 14px;
+            height: 20px;
+            text-shadow: 0 0 5px var(--kuromi-pink);
+        }
+        
+        .footer-credit {
+            margin-top: 40px;
+            color: var(--text-color);
+            opacity: 0.6;
+            font-size: 0.9em;
         }
     </style>
 </head>
@@ -135,16 +187,18 @@
 <body>
     <div class="top-bar">
         <div class="search-bar">
-            <input type="text" id="search-input" class="search-input" placeholder="Pesquisar...">
+            <input type="text" id="search-input" class="search-input" placeholder="Pesquisar arquivo...">
             <button class="search-button" onclick="searchButton()">
-                <i class="fas fa-search icon"></i> Pesquisar
+                <i class="fas fa-search"></i>
             </button>
         </div>
         <div id="error-message" class="error-message"></div>
     </div>
+
     <div class="title-container">
-        <div class="title">Conhecimento É A Base De Tudo...</div> <!-- Título abaixo do botão de pesquisa -->
+        <i class="fas fa-skull"></i>Conhecimento É Poder...
     </div>
+
     <div class="container">
         <a class="button" href="https://t.me/Brasil_Cursos2"><i class="fas fa-book"></i> Cursos VIP</a>
         <a class="button" href="https://sebrae.com.br/sites/PortalSebrae/cursosonline"><i class="fas fa-graduation-cap"></i> Curso SEBRAE</a>
@@ -166,33 +220,49 @@
         <a class="button" href="https://m.youtube.com/channel/UCrWvhVmt0Qac3HgsjQK62FQ"><i class="fab fa-youtube"></i> Curso em Vídeo</a>
         <a class="button" href="https://sabervirtual.ciee.org.br/"><i class="fas fa-graduation-cap"></i> Saber Virtual (CIEE)</a>
     </div>
-    <p> Desenvolvido Por Redzin </p> 
+
+    <p class="footer-credit"> Desenvolvido Por Redzin </p> 
+
     <script>
         function searchButton() {
-            const query = document.getElementById('search-input').value.toLowerCase();
+            const query = document.getElementById('search-input').value.toLowerCase().trim();
             const buttons = document.querySelectorAll('.button');
             let found = false;
 
             buttons.forEach(button => {
                 button.classList.remove('highlight');
-                if (button.textContent.toLowerCase().includes(query)) {
-                    button.classList.add('highlight');
-                    button.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    found = true;
-                }
             });
 
-            const errorMessage = document.getElementById('error-message');
-            if (!found) {
-                errorMessage.textContent = 'Botão não encontrado.';
+            if (query) {
+                buttons.forEach(button => {
+                    const buttonText = button.textContent.toLowerCase();
+                    if (buttonText.includes(query)) {
+                        button.classList.add('highlight');
+                        if (!found) { // Rola a view para o primeiro resultado encontrado
+                            button.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                        found = true;
+                    }
+                });
             } else {
-                errorMessage.textContent = '';
+                found = true; // Se a busca estiver vazia, não mostra erro.
             }
+
+            const errorMessage = document.getElementById('error-message');
+            errorMessage.textContent = found ? '' : 'Arquivo não encontrado.';
         }
+
+        // Adiciona evento para buscar com a tecla "Enter"
+        document.getElementById('search-input').addEventListener('keyup', function(event) {
+            if (event.key === 'Enter') {
+                searchButton();
+            }
+        });
     </script>
+
     <audio autoplay loop>
         <source src="./musicas/roxo.mp3" type="audio/mpeg">
         Seu navegador não suporta áudio HTML5.
     </audio>
 </body>                               
-</html>
+                                                            </html>

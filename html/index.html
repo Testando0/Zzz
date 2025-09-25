@@ -6,298 +6,429 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>☆ KUROMI SYSTEM ☆</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <link rel="icon" href="./icones/favicon-32x32.png" type="image/png" sizes="32x32">
     <link rel="icon" href="./icones/favicon-16x16.png" type="image/png" sizes="16x16">
+    <link rel="icon" href="./icones/android-chrome-192x192.png" type="image/png" sizes="192x192">
+    <link rel="icon" href="./icones/android-chrome-512x512.png" type="image/png" sizes="512x512">
+    <link rel="apple-touch-icon" href="./icones/apple-touch-icon.png">
     <link rel="manifest" href="./site.webmanifest">
 
 <style>
-    /* Cores */
-    :root {
-        --primary-color: #FF0000; /* Vermelho Kuromi/Destaque */
-        --background-dark: rgba(18, 18, 18, 0.1); /* Fundo escuro muito transparente */
-        --text-light: #FFFFFF; /* Texto principal claro */
-        --text-secondary: #CCCCCC; /* Texto secundário ligeiramente mais claro */
-        --card-bg: rgba(0, 0, 0, 0.01); /* Fundo de cartões QUASE INVISÍVEL */
-        --border-color: rgba(255, 0, 0, 0.2); /* Borda sutil e muito transparente */
-    }
+/* -------------------------------------------------------------------------------------------------- */
+/* INÍCIO DAS MUDANÇAS PARA TRANSPARÊNCIA E FUNDO FOSCO */
+/* -------------------------------------------------------------------------------------------------- */
 
-    /* Reset Básico e Fontes */
-    * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-    }
+/* Estilos para o corpo da página */
+body {
+    background-color: transparent; /* Garante que o corpo não tenha cor de fundo */
+}
+/* Estilos para o restante do site */
+.site {
+    font-family: "Monospace Text", monospace; /* Defina a fonte padrão para o restante do site */
+}
+    /* Adicionando a fonte Road Rage */
+        @font-face {
+            font-family: 'Road Rage';
+            src: url('./Road_Rage.otf') format('opentype');
+        }
 
-    body {
-        font-family: 'Inter', sans-serif; /* Fonte moderna e limpa */
-        background-color: transparent; /* MUITO MAIS TRANSPARENTE: Deixa o fundo do body transparente */
-        color: var(--text-light);
-        line-height: 1.6;
-        min-height: 100vh;
-        overflow-x: hidden;
-    }
-
-    /* Vídeo de Fundo */
-    #video-background {
-        position: fixed;
-        right: 0;
-        bottom: 0;
-        min-width: 100%;
-        min-height: 100%;
-        width: auto;
-        height: auto;
-        z-index: -100;
-        object-fit: cover;
-        /* Adiciona um overlay escuro para melhorar a leitura */
-        filter: brightness(0.4); 
-    }
-
-    /* Container Principal */
-    .container {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 20px;
-        z-index: 1; /* Garante que o conteúdo fique acima do vídeo */
-        position: relative;
-        background-color: rgba(18, 18, 18, 0.1); /* Fundo transparente para a área de conteúdo */
-    }
-
-    /* Cabeçalho/Logo */
+/* Estilos para texto em negrito */
+.bold {
+    font-weight: bold;
+}
     header {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        padding: 30px 0 50px;
-    }
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Centraliza o vídeo no cabeçalho */
+    padding: 0; /* Remove o padding para evitar espaços extras */
+    background-color: transparent; /* Remove qualquer fundo atrás do vídeo */
+    overflow: hidden; /* Esconde qualquer parte do vídeo que exceda o cabeçalho */
+    height: 100px; /* Define a altura do cabeçalho */
+}
 
-    .logo-video {
-        width: 100%;
-        max-width: 300px; /* Limita o tamanho do logo */
-        height: auto;
-        border: none;
-        border-radius: 8px; /* Borda levemente arredondada */
-    }
+.logo-video {
+    width: 80%; /* Faz o vídeo preencher a largura do cabeçalho */
+    height: 100%; /* Faz o vídeo preencher a altura do cabeçalho */
+    object-fit: cover; /* Cobre todo o espaço, cortando o vídeo se necessário */
+    border: 4px solid #ff0000; /* Borda azul claro */
+}
 
-    /* Info Boxes (Clima, IP, etc.) */
-    .info-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 20px;
-        margin-bottom: 40px;
-    }
+header nav {
+    /* Estilos para outros elementos no cabeçalho, como navegação */
+}
+            /* Estilos para o vídeo de fundo */
+        #video-background {
+            position: fixed;
+            right: 0;
+            bottom: 0;
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            z-index: -100;
+        }
+            h1 {
+            font-size: 36px;
+            margin-bottom: 20px;
+            font-family: 'Road Rage', cursive; /* Aplicando a fonte Road Rage */
+            color: #ff0000; /* Cor da letra verde claro */
+            border: 3px solid black; /* Borda preta */
+            display: inline-block;
+            text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000; /* Borda preta */
+            text-align: center; /* Centraliza o texto */
+    width: 100%; /* Define a largura máxima */
+        }
 
-    .weather-info, #calendar {
-        background-color: var(--card-bg); /* MUITO MAIS TRANSPARENTE */
-        padding: 30px;
-        border-radius: 12px;
-        border: 1px solid var(--border-color); /* Borda mais transparente */
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); /* Aumenta a sombra para destaque visual */
-        text-align: center;
-        transition: transform 0.3s ease;
-        backdrop-filter: blur(2px); /* Efeito de vidro fosco (opcional) */
+    
+        
+        .weather-info {
+    /* ATUALIZADO: Fundo transparente (rgba) e Fundo Fosco (backdrop-filter) */
+    background-color: rgba(0, 0, 0, 0.4); /* Fundo preto 40% transparente */
+    backdrop-filter: blur(5px); /* Efeito fosco (blur) */
+    -webkit-backdrop-filter: blur(5px); /* Compatibilidade com navegadores WebKit (como Chrome, Safari) */
+    padding: 20px;
+    border-radius: 15px;
+    border: 2px solid #ff0000; /* Borda azul */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    max-width: 300px; /* Define a largura máxima */
+    margin: 0 auto; /* Centraliza a seção horizontalmente */
+    text-align: center; /* Centraliza o conteúdo dentro da caixa */
+}
+
+.weather-icon {
+    font-size: 80px;
+    margin-bottom: 20px;
+    animation: bounce 1s infinite;
+    color: #ff0000; /* Ícones em branco */
+}
+
+@keyframes bounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.details {
+    text-align: center; /* Garante que o texto dentro da .details esteja centralizado */
+    margin-top: 10px;
+}
+
+.details h2 {
+    font-size: 50px;
+    margin: 0;
+    color: #ff0000; /* Temperatura em branco */
+}
+
+.details p {
+    font-size: 18px;
+    margin: 5px 0;
+    color: #ff0000; /* Detalhes em branco */
+}
+
+#city-name {
+    font-size: 24px;
+    margin: 10px 0;
+    font-weight: bold;
+    color: #ff0000; /* Nome da cidade em branco */
+}
+
+#user-ip {
+    margin-top: 20px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #ff0000; /* IP em branco */
+}
+
+#current-time {
+    color: #ff0000; /* Hora em azul claro */
+    font-size: 28px;
+    margin-top: 15px;
+    letter-spacing: 1.5px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+.active {
+    background-color: #ff0000 !important;
+    color: #000000 !important;
+    border: 2px solid #ff0000 !important;
+}
+    .day {
+    background-color: #000000; /* Preto para dias não ativos */
+    color: #ff0000; /* Branco para texto */
     }
     
-    .weather-info:hover, #calendar:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 6px 15px rgba(255, 0, 0, 0.4); /* Sombra mais forte no hover */
-    }
+#calendar {
+    max-width: 350px; /* Define a largura máxima do calendário */
+    margin: 0 auto; /* Centraliza o calendário horizontalmente */
+    border: 4px solid #ff0000;
+    border-radius: 5px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    /* ATUALIZADO: Fundo transparente (rgba) e Fundo Fosco (backdrop-filter) */
+    background-color: rgba(0, 0, 0, 0.4); /* Fundo preto 40% transparente */
+    backdrop-filter: blur(5px); /* Efeito fosco (blur) */
+    -webkit-backdrop-filter: blur(5px); /* Compatibilidade com navegadores WebKit */
+    text-align: center; /* Centraliza o conteúdo dentro do calendário */
+}
 
-    .weather-icon {
-        font-size: 5rem;
-        margin-bottom: 10px;
-        color: var(--primary-color);
-    }
+/* Alterando o background-color do thead th para transparente */
+thead th {
+    color: #ff0000;
+    background-color: transparent; 
+}
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    /* ATUALIZADO: Fundo transparente (rgba) e Fundo Fosco (backdrop-filter) */
+    background-color: rgba(255, 0, 0, 0.7); /* Fundo vermelho 70% transparente */
+    backdrop-filter: blur(5px); /* Mantém o efeito fosco */
+    -webkit-backdrop-filter: blur(5px);
+    color: #000000;
+    border-radius: 5px 5px 0 0;
+}
 
-    .details h2 {
-        font-size: 3.5rem;
-        margin: 5px 0;
-        color: var(--primary-color);
-        font-weight: 800;
-        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5); /* Adiciona sombra ao texto para melhorar a leitura */
-    }
+.calendar-header button {
+    background: none;
+    border: none;
+    color: #000000;
+    font-size: 18px;
+    cursor: pointer;
+}
 
-    .details p, #user-city, #user-ip, #current-time, #server-speed {
-        font-size: 1rem;
-        margin: 5px 0;
-        color: var(--text-secondary);
-        font-weight: 600;
-    }
+.datepicker {
+    width: 100%;
+    padding: 10px;
+    /* ATUALIZADO: Fundo do calendário para transparente */
+    background-color: transparent;
+    border-radius: 0 0 5px 5px; /* Ajusta o arredondamento na parte inferior */
+}
 
-    /* Botões de Ação */
-    .buttons-section {
-        margin-top: 40px;
-        padding-top: 20px;
-        border-top: 1px solid var(--border-color);
-    }
-    
-    .buttons {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 15px; /* Espaço entre os botões */
-    }
+.datepicker table {
+    width: 100%;
+    margin: 0;
+    border-collapse: collapse;
+}
+.datepicker table tr th {
+    /* ATUALIZADO: Fundo dos cabeçalhos para transparente */
+    background-color: transparent; 
+    color: #ff0000; /* Cor do texto dos dias da semana */
+    font-size: 14px; /* Tamanho da fonte do texto */
+}
+.datepicker table tr th,
+.datepicker table tr td {
+    text-align: center;
+    padding: 0;
+    cursor: pointer;
+    border: 1px solid #333;
+    vertical-align: middle;
+    width: 14.28%; /* Distribui igualmente os dias da semana */
+    box-sizing: border-box;
+}
 
-    .button {
-        background-color: var(--card-bg); /* MUITO MAIS TRANSPARENTE */
-        color: var(--text-light);
-        padding: 12px 25px;
-        font-size: 1.1rem;
-        border: 2px solid var(--primary-color);
-        border-radius: 8px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        text-decoration: none;
-        display: flex;
-        align-items: center;
-        font-weight: 600;
-        backdrop-filter: blur(1px); /* Efeito de vidro fosco (opcional) */
-    }
+.datepicker table tr td.day {
+    /* ATUALIZADO: Fundo dos dias para transparente */
+    background-color: transparent; 
+    color: #ff0000; /* Verde claro para o texto dos dias */
+    font-size: 18px;
+    height: 60px; /* Altura fixa */
+}
 
-    .button i {
-        margin-right: 10px;
-        color: var(--primary-color); /* Ícone em vermelho */
-    }
+.datepicker table tr td.day:hover {
+    background-color: #ff0000; /* Fundo azul ao passar o mouse */
+    color: #000000; /* Texto branco ao passar o mouse */
+}
 
-    .button:hover {
-        background-color: var(--primary-color);
-        color: var(--background-dark);
-        transform: translateY(-3px) scale(1.02);
-        box-shadow: 0 5px 15px rgba(255, 0, 0, 0.5); /* Sombra mais forte no hover */
-    }
+.datepicker table tr td.active {
+    background-color: #ff0000; /* Fundo azul para o dia ativo */
+    color: #000000; /* Texto branco para o dia ativo */
+    border: 2px solid #ff0000;
+}
 
-    /* Menu Lateral (Sidebar) */
-    .sidebar {
-        background-image: none !important;
-        background-color: rgba(18, 18, 18, 0.7); /* MAIS TRANSPARENTE: Fundo escuro com mais transparência */
-        border-right: 3px solid var(--primary-color);
-        backdrop-filter: blur(5px); /* Efeito de vidro fosco forte */
-    }
+/* Estilos para os botões */
+.buttons {
+    margin-top: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+}
+        /* Estilos para os botões */
+        .button {
+            padding: 10px 15px;
+            margin: 5px;
+            font-size: 14px;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            outline: none;
+            text-decoration: none; /* Remover sublinhado dos links */
+            display: flex;
+            align-items: center;
+            color: red; /* Alterando a cor do texto para verde */
+            /* ATUALIZADO: Fundo dos botões para transparente com fosco */
+            background-color: rgba(0, 0, 0, 0.4); 
+            backdrop-filter: blur(3px); 
+            -webkit-backdrop-filter: blur(3px);
+            border: 1px solid #ff0000; /* Adiciona uma borda para destacar */
+        }
+/* Removendo estilos de fundo desnecessários, pois já estão no .button geral */
+        .button i {
+            margin-right: 5px;
+        }
 
-    .sidebar a {
-        font-size: 18px;
-        color: var(--text-light);
-        background-color: transparent;
-        border: none;
-        border-bottom: 1px solid rgba(255, 0, 0, 0.1); /* Borda mais transparente */
-        margin: 0;
-        padding: 15px 20px;
-    }
+        .contato, .apk, .jogos, .scripts, .grupos, .sites, .estudos, .meus {
+            background-color: transparent; /* Garante que o fundo seja o do .button */
+            color: #ff0000; /* Cor da letra */
+        }
+/* FIM DA REMOÇÃO */
 
-    .sidebar a:hover {
-        color: var(--primary-color);
-        background-color: rgba(255, 0, 0, 0.05); /* Fundo de hover mais transparente */
-    }
+        /* Estilos para o menu lateral */
+        .sidebar {
+    height: 100%;
+    width: 0;
+    position: fixed;
+    top: 0;
+    left: 0;
+    /* ATUALIZADO: Fundo transparente (rgba) e Fundo Fosco (backdrop-filter) */
+    background-color: rgba(0, 0, 0, 0.6); /* Fundo preto 60% transparente */
+    backdrop-filter: blur(8px); /* Efeito fosco mais forte para o menu */
+    -webkit-backdrop-filter: blur(8px);
+    /* Manter a imagem de fundo original com opacidade, ou usar apenas o blur */
+    /* background-image: url('/fundos/4.jpg'); */
+    background-size: cover;
+    overflow-x: hidden;
+    transition: 0.5s;
+    padding-top: 60px;
+    z-index: 1000;
+        }
 
-    /* Mensagem de Boas-Vindas */
-    .welcome-message {
-        background-color: rgba(18, 18, 18, 0.6); /* MAIS TRANSPARENTE: Fundo da mensagem com transparência */
-        border: 2px solid var(--primary-color);
-        box-shadow: 0 0 20px rgba(255, 0, 0, 0.7);
-        border-radius: 15px;
-        color: var(--text-light);
-        padding: 40px;
-        backdrop-filter: blur(3px); /* Efeito de vidro fosco */
-    }
-    
-    .welcome-message p {
-        font-size: 1.2rem;
-        color: var(--primary-color);
-        font-weight: 600;
-        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
-    }
-    
-    .welcome-message .close-btn {
-        color: var(--primary-color);
-    }
+        .sidebar a {
+    padding: 10px 15px;
+    text-decoration: none;
+    font-size: 25px;
+    color: white;
+    display: block;
+    transition: 0.3s;
+    /* Manter o fundo preto transparente para os links internos */
+    background-color: rgba(0, 0, 0, 0.5); /* Fundo preto transparente */
+    border: 2px solid #FF0000; /* Borda verde escuro */
+    border-radius: 10px; /* Borda arredondada */
+    margin: 5px 0; /* Margem entre os botões */
+        }
 
-    /* Rodapé */
-    .footer {
-        text-align: center;
-        padding: 30px 0 10px;
-        font-size: 0.9rem;
-        color: var(--text-secondary);
-        margin-top: 50px;
-        background-color: rgba(0, 0, 0, 0.1); /* Fundo muito sutil */
-        border-top: 1px solid rgba(255, 0, 0, 0.1);
-    }
+        .sidebar a:hover {
+            color: #f1f1f1;
+        }
 
-    /* Estilos do Calendário */
-    .datepicker table tr td {
-        border: 1px solid rgba(255, 0, 0, 0.1) !important; /* Borda mais transparente */
-    }
+        .sidebar .close-btn {
+            position: absolute;
+            top: 0;
+            right: 25px;
+            font-size: 30px;
+            margin-left: 50px;
+        }
 
-    .datepicker table tr td.day:hover {
-        background-color: rgba(255, 0, 0, 0.1) !important; /* Hover mais transparente */
-        color: var(--primary-color) !important;
-    }
+        /* Estilos para a mensagem de boas-vindas */
+        .welcome-message {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            /* ATUALIZADO: Fundo transparente (rgba) e Fundo Fosco (backdrop-filter) */
+            background-color: rgba(0, 0, 0, 0.6); /* Fundo preto 60% transparente */
+            backdrop-filter: blur(6px); 
+            -webkit-backdrop-filter: blur(6px);
+            color: red; /* Texto verde */
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 1000;
+            border: 2px solid red; /* Adicionar borda para destacar */
+        }
 
-    /* Esconder o áudio, mantendo a funcionalidade */
-    audio {
-        display: none;
-    }
+        .welcome-message p {
+            margin: 0;
+        }
 
-</style>
+        .welcome-message .close-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 20px;
+    /* Alterando a cor para verde */
+    color: red;
+        }
+
+        p {
+            text-align: center;
+            color: white;
+        }
+
+/* -------------------------------------------------------------------------------------------------- */
+/* FIM DAS MUDANÇAS */
+/* -------------------------------------------------------------------------------------------------- */
+    </style>
 </head>
 
 <body>
 
-    <img src="./fundos/1.jpg" alt="Imagem de fallback" style="position: fixed; z-index: -101; width: 100%; height: 100%; object-fit: cover; filter: brightness(0.4);">
+    <img src="./fundos/1.jpg" alt="Imagem de fallback" style="position: fixed; z-index: -101; width: 100%; height: 100%; object-fit: cover;">
     <video autoplay muted loop id="video-background">
         <source src="./videos/fundo.mp4" type="video/mp4">
         Seu navegador não suporta vídeos HTML5.
     </video>
-
-    <div class="container">
-        <header>
-            <video class="logo-video" autoplay loop muted>
-                <source src="./videos/logo.mp4" type="video/mp4">
-                Seu navegador não suporta o vídeo.
-            </video>
-        </header>
+   <header>
+    <video class="logo-video" autoplay loop muted>
+        <source src="./videos/logo.mp4" type="video/mp4">
+        Seu navegador não suporta o vídeo.
+    </video>
+    </header>
+    <button class="button" onclick="openSidebar()"><i class="fas fa-bars"></i> Menu</button>
+     <button class="button notification" onclick="openWelcomeMessage()"><i class="fas fa-bell"></i> Notificação</button>
+        <div id="calendar"></div>
+</div>
+  <div class="weather-info" id="weatherInfo">    
+    <div class="weather-icon" id="weatherIcon"></div>
+    <div class="details">
+    <h2 id="temperature"></h2>   
+    <p id="description"></p>
+    <div id="user-city"></div>
+    <p>Máxima: <span id="tempMax"></span>°C</p>
+    <p>Mínima: <span id="tempMin"></span>°C</p>
+    <p>Umidade: <span id="humidity"></span>%</p>
+    <p>Vento: <span id="wind"></span> km/h</p>
+    </div>
+    <div class="box">
+    <span id="server-speed">Velocidade: Carregando...</span>
+</div>
+    <div id="user-ip"></div>
+    <div id="current-time"></div>
+ </div>
+  <div class="buttons">
+        <a href="vips"class="button meus"><i class="fas fa-coffee"></i> Super Usuários</a>
+        <a href="ia"class="button meus"><i class="fas fa-coffee"></i> Kuromi IA</a>
+        <a href="assistente"class="button meus"><i class="fas fa-coffee"></i> Assistente</a>
         
-        <div class="buttons" style="margin-bottom: 30px;">
-            <button class="button" onclick="openSidebar()"><i class="fas fa-bars"></i> Menu</button>
-            <button class="button notification" onclick="openWelcomeMessage()"><i class="fas fa-bell"></i> Notificação</button>
-        </div>
-
-        <div class="info-grid">
-             <div class="weather-info" id="weatherInfo">    
-                <div class="weather-icon" id="weatherIcon"></div>
-                <div class="details">
-                    <h2 id="temperature"></h2>   
-                    <p id="description"></p>
-                    <div id="user-city"></div>
-                    <p>Máxima: <span id="tempMax"></span>°C / Mínima: <span id="tempMin"></span>°C</p>
-                    <p>Umidade: <span id="humidity"></span>% | Vento: <span id="wind"></span> km/h</p>
-                </div>
-                <div style="margin-top: 15px; border-top: 1px dashed var(--border-color); padding-top: 15px;">
-                    <p id="server-speed">Velocidade: Carregando...</p>
-                    <p id="user-ip"></p>
-                    <p id="current-time"></p>
-                </div>
-            </div>
-             <div id="calendar"></div>
-        </div>
-
-        <div class="buttons-section">
-            <div class="buttons">
-                <a href="vips"class="button"><i class="fas fa-crown"></i> Super Usuários</a>
-                <a href="ia"class="button"><i class="fas fa-robot"></i> Kuromi IA</a>
-                <a href="assistente"class="button"><i class="fas fa-headset"></i> Assistente</a>
-                <a href="apk"class="button"><i class="fas fa-mobile-alt"></i> Apps Mod</a>
-                <a href="jogos"class="button"><i class="fas fa-gamepad"></i> Jogos & Games</a>
-                <a href="sites"class="button"><i class="fas fa-globe"></i> Sites Úteis</a>
-            </div>
-        </div>
-        
-        <div class="footer">
-            <p>From Redzin | © Kuromi System</p>
-        </div>
+    </div>
     </div>
      
+    <script>
+        function openSidebar() {
+            document.getElementById("sidebar").style.width = "250px";
+        }
+
+        function closeSidebar() {
+            document.getElementById("sidebar").style.width = "0";
+        }
+    </script>
+
     <div id="sidebar" class="sidebar">
         <a href="javascript:void(0)" class="close-btn" onclick="closeSidebar()">&times;</a>
         <a href="vips">Super Usuários</a>
@@ -322,85 +453,88 @@
         <a href="metodos"class="button meus"><i class="fas fa-coffee"></i> Métodos</a>
     </div>
 
-    <div id="welcome-message" class="welcome-message">
-        <p>Seja Bem Vindo A Kuromi System ^-^</p>
-        <button class="close-btn" onclick="closeWelcomeMessage()">&times;</button>
-    </div>
-
-    <audio autoplay loop>
-        <source src="./musicas/m.mp3" type="audio/mpeg">
-        Seu navegador não suporta áudio HTML5.
-    </audio>
     
+
     <script>
-        // Funções JS (Mantenha as suas originais para funcionalidade)
         function openSidebar() {
             document.getElementById("sidebar").style.width = "250px";
         }
+
         function closeSidebar() {
             document.getElementById("sidebar").style.width = "0";
         }
+    </script>
+
+    <script>
+        // Função para abrir a mensagem de boas-vindas
         function openWelcomeMessage() {
             document.getElementById("welcome-message").style.display = "block";
         }
+
+        // Função para fechar a mensagem de boas-vindas
         function closeWelcomeMessage() {
             document.getElementById("welcome-message").style.display = "none";
         }
-        
-        // Simulação de velocidade (mantida)
-        function getServerSpeed() {
-            const speed = (Math.random() * 100).toFixed(2);
-            return `${speed} Mbps`;
-        }
-        function updateSpeed() {
-            document.getElementById('server-speed').textContent = `Velocidade: ${getServerSpeed()}`;
-        }
-        setInterval(updateSpeed, 1000);
+    </script>
 
-        // Update Time (mantida)
-        function updateCurrentTime() {
-            const now = new Date();
-            const hours = now.getHours().toString().padStart(2, '0');
-            const minutes = now.getMinutes().toString().padStart(2, '0');
-            const seconds = now.getSeconds().toString().padStart(2, '0');
-            const timeString = `${hours}:${minutes}:${seconds}`;
-            document.getElementById('current-time').textContent = `Hora Atual: ${timeString}`;
+    <div id="welcome-message" class="welcome-message">
+        <p>Seja Bem Vindo Usuário ^-^</p>
+        <button class="close-btn" onclick="closeWelcomeMessage()">&times;</button>
+    </div>
+    
+    <script>
+        function openSidebar() {
+            document.getElementById("sidebar").style.width = "250px";
         }
-        setInterval(updateCurrentTime, 1000);
-        updateCurrentTime(); // Chama uma vez para inicializar
-        
-        // Placeholder para as funções de clima e calendário.
-        // As funções de clima e calendário foram mantidas inalteradas.
-        
-        const apiKey = '363737d239ce3f7864e06da58d206887'; // Sua chave
-        
-        function getWeatherInfo() {
-            fetch('https://api.ipify.org?format=json')
+
+        function closeSidebar() {
+            document.getElementById("sidebar").style.width = "0";
+        }
+    </script>
+
+    
+    <script>
+        function openSidebar() {
+            document.getElementById("sidebar").style.width = "250px";
+        }
+
+        function closeSidebar() {
+            document.getElementById("sidebar").style.width = "0";
+        }
+    </script>
+<script>
+       const apiKey = '363737d239ce3f7864e06da58d206887'; // Substitua com sua chave da API do OpenWeatherMap
+   // Função para obter o IP do usuário e buscar informações do clima
+        // Função para obter o IP do usuário e buscar informações do clima
+function getWeatherInfo() {
+    fetch('https://api.ipify.org?format=json')
+        .then(response => response.json())
+        .then(data => {
+            const userIP = data.ip;
+            document.getElementById("user-ip").textContent = "Seu IP🌐: " + userIP;
+
+            fetch(`https://ipapi.co/${userIP}/json/`)
                 .then(response => response.json())
                 .then(data => {
-                    const userIP = data.ip;
-                    document.getElementById("user-ip").textContent = "Seu IP🌐: " + userIP;
-
-                    fetch(`https://ipapi.co/${userIP}/json/`)
-                        .then(response => response.json())
-                        .then(data => {
-                            const userCity = data.city;
-                            if (userCity) {
-                                document.getElementById("user-city").textContent = "Sua cidade: " + userCity;
-                                fetchWeather(userCity);
-                            } else {
-                                console.error('Cidade não encontrada na resposta da API de IP.');
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Erro ao obter a cidade do usuário:', error);
-                        });
+                    const userCity = data.city;
+                    if (userCity) {
+                        // Exibir o nome da cidade
+                        document.getElementById("user-city").textContent = "Sua cidade: " + userCity;
+                        fetchWeather(userCity);
+                    } else {
+                        console.error('Cidade não encontrada na resposta da API de IP.');
+                    }
                 })
                 .catch(error => {
-                    console.error('Erro ao obter informações do IP:', error);
+                    console.error('Erro ao obter a cidade do usuário:', error);
                 });
-        }
+        })
+        .catch(error => {
+            console.error('Erro ao obter informações do IP:', error);
+        });
+}
 
+        // Função para obter o clima da cidade
         function fetchWeather(city) {
             const apiUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric&lang=pt_br`;
 
@@ -418,6 +552,7 @@
                 });
         }
 
+        // Função para exibir o clima na interface
         function displayWeather(data) {
             const temperature = data.main.temp;
             const tempMin = data.main.temp_min;
@@ -434,35 +569,54 @@
             document.getElementById('humidity').textContent = humidity;
             document.getElementById('wind').textContent = windSpeed;
 
+            // Alterar ícone de acordo com o clima
             switch (data.weather[0].main) {
                 case 'Clear':
-                    weatherIcon.innerHTML = '☀️';
+                    weatherIcon.innerHTML = '☀️'; // Sol
                     break;
                 case 'Clouds':
-                    weatherIcon.innerHTML = '☁️';
+                    weatherIcon.innerHTML = '☁️'; // Nuvens
                     break;
                 case 'Rain':
-                    weatherIcon.innerHTML = '🌧️';
+                    weatherIcon.innerHTML = '🌧️'; // Chuva
                     break;
                 case 'Thunderstorm':
-                    weatherIcon.innerHTML = '⛈️';
+                    weatherIcon.innerHTML = '⛈️'; // Tempestade
                     break;
                 case 'Snow':
-                    weatherIcon.innerHTML = '❄️';
+                    weatherIcon.innerHTML = '❄️'; // Neve
                     break;
                 default:
-                    weatherIcon.innerHTML = '🌥️';
+                    weatherIcon.innerHTML = '🌥️'; // Clima variável
                     break;
             }
 
             document.getElementById('weatherInfo').style.display = 'block';
         }    
 
-        // Chama a função para obter as informações do clima quando a página é carregada
-        getWeatherInfo();
+// Chama a função para obter as informações do clima quando a página é carregada
+window.onload = getWeatherInfo;
 
 
-        // Calendário (mantido)
+         // Função para atualizar a hora
+        function updateCurrentTime() {
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const seconds = now.getSeconds().toString().padStart(2, '0');
+            const timeString = `${hours}:${minutes}:${seconds}`;
+            document.getElementById('current-time').textContent = `Hora Atual: ${timeString}`;
+        }
+
+        // Atualiza a hora a cada segundo
+        setInterval(updateCurrentTime, 1000);
+
+        // Inicializa o processo ao carregar a página
+        window.onload = getWeatherInfo;
+</script>
+    
+
+    <script>
         (function() {
             const calendar = document.getElementById('calendar');
 
@@ -474,43 +628,46 @@
             const days = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
             function generateCalendar(month, year) {
-                const today = new Date();
-                const firstDay = new Date(year, month).getDay();
-                const daysInMonth = 32 - new Date(year, month, 32).getDate();
+    const today = new Date(); // Atualiza a data atual toda vez que o calendário é gerado
+    const firstDay = new Date(year, month).getDay();
+    const daysInMonth = 32 - new Date(year, month, 32).getDate();
 
-                let tbl = '<div class="calendar-header">';
-                tbl += '<button onclick="prevMonth()">&lt;</button>';
-                tbl += '<span>' + months[month] + ' ' + year + '</span>';
-                tbl += '<button onclick="nextMonth()">&gt;</button>';
-                tbl += '</div>';
+    let tbl = '<div class="calendar-header">';
+    tbl += '<button onclick="prevMonth()">&lt;</button>';
+    tbl += '<span>' + months[month] + ' ' + year + '</span>';
+    tbl += '<button onclick="nextMonth()">&gt;</button>';
+    tbl += '</div>';
 
-                tbl += '<table class="datepicker">';
-                tbl += '<thead><tr>';
-                for (let day of days) {
-                    tbl += '<th>' + day + '</th>';
-                }
-                tbl += '</tr></thead><tbody>';
+    tbl += '<table class="datepicker">';
+    tbl += '<thead><tr>';
+    for (let day of days) {
+        tbl += '<th>' + day + '</th>';
+    }
+    tbl += '</tr></thead><tbody>';
 
-                let date = 1;
-                for (let i = 0; i < 6; i++) {
-                    tbl += '<tr>';
-                    for (let j = 0; j < 7; j++) {
-                        if (i === 0 && j < firstDay) {
-                            tbl += '<td></td>';
-                        } else if (date > daysInMonth) {
-                            break;
-                        } else {
-                            const isActive = date === today.getDate() && month === today.getMonth() && year === today.getFullYear() ? 'active' : '';
-                            tbl += `<td class="day ${isActive}">${date}</td>`;
-                            date++;
-                        }
-                    }
-                    tbl += '</tr>';
-                }
-
-                tbl += '</tbody></table>';
-                calendar.innerHTML = tbl;
+    let date = 1;
+    for (let i = 0; i < 6; i++) {
+        tbl += '<tr>';
+        for (let j = 0; j < 7; j++) {
+            if (i === 0 && j < firstDay) {
+                tbl += '<td></td>';
+            } else if (date > daysInMonth) {
+                break;
+            } else {
+                // Verifica se o dia é o dia atual
+                const isActive = date === today.getDate() && month === today.getMonth() && year === today.getFullYear() ? 'active' : '';
+                tbl += `<td class="day ${isActive}">${date}</td>`;
+                date++;
             }
+        }
+        tbl += '</tr>';
+    }
+
+    tbl += '</tbody></table>';
+    calendar.innerHTML = tbl;
+}
+
+generateCalendar(currentMonth, currentYear);
 
             window.prevMonth = function() {
                 currentMonth--;
@@ -533,5 +690,41 @@
             generateCalendar(currentMonth, currentYear);
         })();
     </script>
+    
+    <script>
+        // Função para abrir a mensagem de boas-vindas
+        function openWelcomeMessage() {
+            document.getElementById("welcome-message").style.display = "block";
+        }
+
+        // Função para fechar a mensagem de boas-vindas
+        function closeWelcomeMessage() {
+            document.getElementById("welcome-message").style.display = "none";
+        }
+    </script>
+<script>
+    // Simula a velocidade do servidor
+    function getServerSpeed() {
+        const speed = (Math.random() * 100).toFixed(2); // Simula um valor de 0.00 a 100.00 Mbps
+        return `${speed} Mbps`;
+    }
+
+    // Atualiza a velocidade na página
+    function updateSpeed() {
+        document.getElementById('server-speed').textContent = `Velocidade: ${getServerSpeed()}`; // Atualiza a velocidade
+    }
+
+    // Chama a função para atualizar a velocidade a cada segundo
+    setInterval(updateSpeed, 1000); // Atualiza a cada 1000ms (1 segundo)
+</script>
+    <div id="welcome-message" class="welcome-message">
+        <p>Seja Bem Vindo A Kuromi System ^-^</p>
+        <button class="close-btn" onclick="closeWelcomeMessage()">&times;</button>
+    </div>
+    <p>From Redzin</p>
+    <audio autoplay loop>
+        <source src="./musicas/m.mp3" type="audio/mpeg">
+        Seu navegador não suporta áudio HTML5.
+    </audio>
 </body>   
-                    </html>
+        </html>

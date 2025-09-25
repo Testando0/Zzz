@@ -3,10 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GAMES</title>
-    <!-- Inclua a biblioteca Font Awesome -->
+    <title>GAMES // KUROMI EDITION</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <!-- Adicionando referências para favicons de diferentes tamanhos e tipos -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    
     <link rel="icon" href="./icones/favicon-32x32.png" type="image/png" sizes="32x32">
     <link rel="icon" href="./icones/favicon-16x16.png" type="image/png" sizes="16x16">
     <link rel="icon" href="./icones/android-chrome-192x192.png" type="image/png" sizes="192x192">
@@ -14,67 +16,134 @@
     <link rel="apple-touch-icon" href="./icones/apple-touch-icon.png">
     <link rel="manifest" href="./site.webmanifest">
     <style>
+        /* --- Variáveis de Cor do Tema Kuromi Futurista --- */
+        :root {
+            --kuromi-pink: #ff00ff; /* Rosa Neon */
+            --kuromi-purple: #9d00ff; /* Roxo Neon */
+            --dark-bg: #0a0211; /* Fundo bem escuro */
+            --text-color: #f0e6ff; /* Texto lavanda claro */
+        }
+
+        /* --- Estilos Gerais --- */
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Share Tech Mono', monospace; /* Fonte futurista */
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
-            background-image: url('games.jpg');
             text-align: center;
+            color: var(--text-color);
+            
+            /* Você pode substituir o gradiente por uma imagem de fundo aqui!
+              Ex: background-image: url('URL_DA_SUA_IMAGEM_KUROMI.jpg'); 
+            */
+            background-color: var(--dark-bg);
+            background-image: linear-gradient(135deg, var(--dark-bg) 0%, #1a082a 100%);
+            background-size: cover;
+            background-attachment: fixed;
+            overflow-x: hidden; /* Evita scroll horizontal */
         }
+
+        /* --- Títulos com Efeito Neon --- */
+        h1, h2, h3 {
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin: 0;
+        }
+
         h1 {
-            color: red;
-            margin: 0 0 10px 0; /* Ajuste para elevar o título */
+            font-size: 4.5rem;
+            color: #fff;
+            margin-bottom: 5px;
+            text-shadow:
+                0 0 7px var(--kuromi-pink),
+                0 0 10px var(--kuromi-pink),
+                0 0 21px var(--kuromi-pink),
+                0 0 42px var(--kuromi-purple),
+                0 0 82px var(--kuromi-purple);
         }
+
         h2 {
-            color: red;
-            margin-bottom: 20px;
+            font-size: 2rem;
+            color: var(--text-color);
+            margin-bottom: 30px;
         }
+
+        h3 {
+            font-size: 1.2rem;
+            color: var(--kuromi-pink);
+            margin-top: 30px;
+            text-shadow: 0 0 5px var(--kuromi-pink);
+        }
+
+        /* --- Lista de Botões --- */
         .button-list {
             list-style-type: none;
             padding: 0;
+            width: 100%;
+            max-width: 400px;
         }
+
         .button-list li {
-            margin: 10px 0;
+            margin: 15px 0;
         }
+
         .button-list a {
-            display: inline-block;
-            padding: 15px 30px; /* Aumenta a largura dos botões */
-            background-color: rgba(0, 0, 0, 0.5); /* Fundo transparente preto */
-            color: red;
+            display: block; /* Ocupa a largura toda da li */
+            padding: 15px 20px;
+            background-color: rgba(0, 0, 0, 0.2);
+            color: var(--kuromi-pink);
             text-decoration: none;
-            border: 2px solid red; /* Borda roxa */
-            border-radius: 5px;
+            border: 2px solid var(--kuromi-pink);
+            border-radius: 8px; /* Cantos mais modernos */
             font-weight: bold;
-            transition: background-color 0.3s, color 0.3s;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 10px rgba(255, 0, 255, 0.4);
         }
+
         .button-list a:hover {
-            background-color: rgba(0, 0, 0, 0.7); /* Escurece o fundo ao passar o mouse */
-            color: #fff; /* Texto branco ao passar o mouse */
+            background-color: var(--kuromi-pink);
+            color: var(--dark-bg);
+            box-shadow: 0 0 20px var(--kuromi-pink), 0 0 30px var(--kuromi-pink);
+            transform: translateY(-5px) scale(1.03); /* Efeito de "levantar" */
+        }
+        
+        /* --- Responsividade --- */
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 3rem;
+            }
+            h2 {
+                font-size: 1.5rem;
+            }
+            .button-list {
+                max-width: 90%;
+            }
         }
     </style>
 </head>
 <body>
     <h1>KUROMI</h1>
     <h2>GAMES🎮</h2>
+    
     <ul class="button-list">
-        <li><a href="./cliquerapido.html">Clique Rápido🖱️</a></li>
-        <li><a href="./cobrinha.html">Jogo Da Cobrinha🐍</a></li>
-        <li><a href="./forca.html">Jogo Da Forca📖</a></li>
-        <li><a href="./jogodamemoria.html">Jogo Da Memoria🔎</a></li>
-        <li><a href="./jogodavelha.html">Jogo Da Velha✖️⭕</a></li>
-        <li><a href="./labirinto.html">Jogo Do Labirinto🥷</a></li>
-        <li><a href="./quiz.html">Jogo De Quiz📜</a></li>
-        
-        
+        <li><a href="./cliquerapido.html">Clique Rápido 🖱️</a></li>
+        <li><a href="./cobrinha.html">Jogo Da Cobrinha 🐍</a></li>
+        <li><a href="./forca.html">Jogo Da Forca 📖</a></li>
+        <li><a href="./jogodamemoria.html">Jogo Da Memória 🔎</a></li>
+        <li><a href="./jogodavelha.html">Jogo Da Velha ✖️⭕</a></li>
+        <li><a href="./labirinto.html">Jogo Do Labirinto 🥷</a></li>
+        <li><a href="./quiz.html">Jogo De Quiz 📜</a></li>
     </ul>
+
     <h3>Divirtam-se 🥰</h3>
+
     <audio autoplay loop>
-    <source src="games.mp3" type="audio/mpeg">
-    Seu navegador não suporta áudio HTML5.
-</audio>
+        <source src="games.mp3" type="audio/mpeg">
+        Seu navegador não suporta áudio HTML5.
+    </audio>
 </body>
-  </html>
+    </html>

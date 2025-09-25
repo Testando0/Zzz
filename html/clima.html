@@ -3,10 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clima Atual</title>
-    <!-- Inclua a biblioteca Font Awesome -->
+    <title>Kuromi Weather Terminal</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <!-- Adicionando referências para favicons de diferentes tamanhos e tipos -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    
     <link rel="icon" href="./icones/favicon-32x32.png" type="image/png" sizes="32x32">
     <link rel="icon" href="./icones/favicon-16x16.png" type="image/png" sizes="16x16">
     <link rel="icon" href="./icones/android-chrome-192x192.png" type="image/png" sizes="192x192">
@@ -14,54 +16,111 @@
     <link rel="apple-touch-icon" href="./icones/apple-touch-icon.png">
     <link rel="manifest" href="./site.webmanifest">
     <style>
+        /* --- KUROMI FUTURISTIC THEME --- */
+
+        :root {
+            --kuromi-pink: #F72585; /* Rosa Neon */
+            --kuromi-purple: #4a0e63;
+            --kuromi-dark: #0d021f;
+            --text-color: #ededed;
+        }
+
         body {
-            font-family: 'Arial', sans-serif;
-            background: linear-gradient(to right, #00c6ff, #0072ff);
-            color: #fff;
+            font-family: 'Share Tech Mono', monospace;
+            background: radial-gradient(circle, var(--kuromi-purple), var(--kuromi-dark));
+            color: var(--text-color);
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
+            overflow: hidden;
         }
 
         .container {
+            width: 90%;
+            max-width: 400px;
             text-align: center;
-            background-color: rgba(255, 255, 255, 0.1);
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            background-color: rgba(10, 0, 20, 0.6);
+            padding: 30px;
+            border-radius: 15px;
+            border: 1px solid var(--kuromi-pink);
+            box-shadow: 0 0 15px var(--kuromi-pink), 0 0 25px var(--kuromi-pink) inset;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px); /* Suporte para Safari */
         }
 
-        input {
-            padding: 10px;
-            width: 70%;
-            border-radius: 5px;
-            border: none;
+        h1 {
+            font-size: 2em;
+            color: var(--kuromi-pink);
+            text-shadow: 0 0 5px var(--kuromi-pink), 0 0 10px #FF69B4;
+            letter-spacing: 2px;
+            margin-bottom: 25px;
+        }
+        
+        h1 .fas.fa-skull {
+            margin-right: 10px;
+        }
+
+        .search-box {
+            display: flex;
+            justify-content: space-between;
             margin-bottom: 20px;
+            gap: 10px;
+        }
+
+        input[type="text"] {
+            font-family: 'Share Tech Mono', monospace;
+            padding: 12px;
+            width: 100%;
+            border-radius: 5px;
+            border: 1px solid var(--kuromi-purple);
+            background-color: rgba(0, 0, 0, 0.3);
+            color: var(--text-color);
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]::placeholder {
+            color: rgba(237, 237, 237, 0.5);
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--kuromi-pink);
+            box-shadow: 0 0 10px var(--kuromi-pink);
         }
 
         button {
-            padding: 10px 20px;
-            background-color: #0072ff;
+            font-family: 'Share Tech Mono', monospace;
+            padding: 12px 20px;
+            background-color: var(--kuromi-pink);
             border: none;
             border-radius: 5px;
-            color: #fff;
+            color: var(--kuromi-dark);
+            font-weight: bold;
+            font-size: 1em;
             cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
         }
 
         button:hover {
-            background-color: #005bb5;
+            background-color: #fff;
+            box-shadow: 0 0 15px #fff;
+            color: var(--kuromi-pink);
         }
 
         .weather-info {
-            margin-top: 20px;
+            margin-top: 30px;
             display: none;
         }
 
         .weather-icon {
             font-size: 100px;
             margin-bottom: 20px;
+            color: var(--kuromi-pink);
+            text-shadow: 0 0 15px var(--kuromi-pink), 0 0 25px #FF69B4;
         }
 
         .details {
@@ -69,43 +128,58 @@
         }
 
         .details h2 {
-            font-size: 48px;
+            font-size: 52px;
             margin: 0;
+            color: #fff;
+            text-shadow: 0 0 8px rgba(255, 255, 255, 0.7);
         }
 
         .details p {
-            font-size: 20px;
-            margin: 5px 0;
+            font-size: 18px;
+            margin: 8px 0;
+            text-transform: capitalize;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Clima Atual</h1>
-        <input type="text" id="city" placeholder="Digite A Cidade">
-        <button id="getWeatherBtn">Obter Clima</button>
+        <h1><i class="fas fa-skull"></i>Kuromi Clima</h1>
+        <div class="search-box">
+            <input type="text" id="city" placeholder="Digite a cidade...">
+            <button id="getWeatherBtn">Buscar</button>
+        </div>
 
         <div class="weather-info" id="weatherInfo">
             <div class="weather-icon" id="weatherIcon"></div>
             <div class="details">
                 <h2 id="temperature"></h2>
                 <p id="description"></p>
-                <p>Máxima: <span id="tempMax"></span>°C</p>
-                <p>Mínima: <span id="tempMin"></span>°C</p>
+                <p>Máxima: <span id="tempMax"></span></p>
+                <p>Mínima: <span id="tempMin"></span></p>
                 <p>Umidade: <span id="humidity"></span>%</p>
                 <p>Vento: <span id="wind"></span> km/h</p>
             </div>
         </div>
     </div>
     <script>
-        const apiKey = '363737d239ce3f7864e06da58d206887'; // Substitua com sua chave da API
+        const apiKey = '363737d239ce3f7864e06da58d206887'; // Sua chave da API continua a mesma
 
-        document.getElementById('getWeatherBtn').addEventListener('click', function() {
-            const city = document.getElementById('city').value;
+        const cityInput = document.getElementById('city');
+        const getWeatherBtn = document.getElementById('getWeatherBtn');
+
+        getWeatherBtn.addEventListener('click', function() {
+            const city = cityInput.value;
             if (city) {
                 getWeather(city);
             } else {
                 alert("Por favor, digite o nome de uma cidade!");
+            }
+        });
+        
+        // Permite buscar pressionando a tecla Enter
+        cityInput.addEventListener('keyup', function(event) {
+            if (event.key === "Enter") {
+                getWeatherBtn.click();
             }
         });
 
@@ -118,11 +192,12 @@
                     if (data.cod === 200) {
                         displayWeather(data);
                     } else {
-                        alert("Cidade não encontrada!");
+                        alert("Cidade não encontrada! Tente novamente.");
                     }
                 })
                 .catch(error => {
                     console.error("Erro ao obter os dados: ", error);
+                    alert("Ocorreu um erro na comunicação com o servidor.");
                 });
         }
 
@@ -137,35 +212,45 @@
 
             document.getElementById('temperature').textContent = `${temperature.toFixed(1)}°C`;
             document.getElementById('description').textContent = description;
-            document.getElementById('tempMin').textContent = tempMin.toFixed(1);
-            document.getElementById('tempMax').textContent = tempMax.toFixed(1);
+            document.getElementById('tempMin').textContent = `${tempMin.toFixed(1)}°C`;
+            document.getElementById('tempMax').textContent = `${tempMax.toFixed(1)}°C`;
             document.getElementById('humidity').textContent = humidity;
             document.getElementById('wind').textContent = windSpeed;
 
-            // Alterar ícone de acordo com o clima
+            // Alterar ícone de acordo com o clima usando Font Awesome
+            let iconClass = '';
             switch (data.weather[0].main) {
                 case 'Clear':
-                    weatherIcon.innerHTML = '☀️'; // Sol
+                    iconClass = 'fas fa-sun';
                     break;
                 case 'Clouds':
-                    weatherIcon.innerHTML = '☁️'; // Nuvens
+                    iconClass = 'fas fa-cloud';
                     break;
                 case 'Rain':
-                    weatherIcon.innerHTML = '🌧️'; // Chuva
+                    iconClass = 'fas fa-cloud-showers-heavy';
+                    break;
+                case 'Drizzle':
+                    iconClass = 'fas fa-cloud-rain';
                     break;
                 case 'Thunderstorm':
-                    weatherIcon.innerHTML = '⛈️'; // Tempestade
+                    iconClass = 'fas fa-bolt';
                     break;
                 case 'Snow':
-                    weatherIcon.innerHTML = '❄️'; // Neve
+                    iconClass = 'fas fa-snowflake';
+                    break;
+                case 'Mist':
+                case 'Fog':
+                case 'Haze':
+                    iconClass = 'fas fa-smog';
                     break;
                 default:
-                    weatherIcon.innerHTML = '🌥️'; // Clima variável
+                    iconClass = 'fas fa-question-circle';
                     break;
             }
+            weatherIcon.innerHTML = `<i class="${iconClass}"></i>`;
 
             document.getElementById('weatherInfo').style.display = 'block';
         }
     </script>
 </body>
-</html>
+                                                          </html>

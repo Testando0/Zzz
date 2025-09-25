@@ -4,89 +4,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>☆ KUROMI SYSTEM ☆</title>
+    <title>† KUROMI'S SYSTEM †</title>
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <link rel="icon" href="./icones/favicon-32x32.png" type="image/png" sizes="32x32">
-    <link rel="icon" href="./icones/favicon-16x16.png" type="image/png" sizes="16x16">
-    <link rel="icon" href="./icones/android-chrome-192x192.png" type="image/png" sizes="192x192">
-    <link rel="icon" href="./icones/android-chrome-512x512.png" type="image/png" sizes="512x512">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+    
+    <link rel="icon" href="./icones/favicon-32x32.png" type="image/png">
     <link rel="apple-touch-icon" href="./icones/apple-touch-icon.png">
     <link rel="manifest" href="./site.webmanifest">
 
     <style>
-        /* Estilos globais e fontes */
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Press+Start+2P&display=swap');
-
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: 'Orbitron', sans-serif;
-            color: #E0E0E0; /* Cinza claro futurista */
-            background-color: #1a001a; /* Roxo escuro */
-            overflow-x: hidden;
-            position: relative;
+        /* PALETA DE CORES E FONTES DA KUROMI 💖 */
+        :root {
+            --bg-dark-purple: #1a001a;
+            --kuromi-pink: #FF00FF;
+            --kuromi-soft-pink: #FFC0CB;
+            --text-light: #E0E0E0;
+            --text-ghost-white: #F8F8FF;
+            --kuromi-gradient: linear-gradient(45deg, #8A2BE2, #FF00FF);
+            --font-pixel: 'Press Start 2P', cursive;
+            --font-tech: 'Orbitron', sans-serif;
         }
 
-        /* Video de fundo com overlay Kuromi */
+        /* ESTILOS GLOBAIS E RESET 🧹 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font-tech);
+            color: var(--text-light);
+            background-color: var(--bg-dark-purple);
+            overflow-x: hidden;
+            position: relative;
+            /* Cursor personalizado! Troque pelo link da sua imagem de cursor! */
+            cursor: url('https://cur.cursors-4u.net/anime/ani-12/ani1140.cur'), auto;
+        }
+        
+        /* FUNDO ANIMADO E MÁGICO ✨ */
+        .video-fallback,
         #video-background {
             position: fixed;
             right: 0;
             bottom: 0;
             min-width: 100%;
             min-height: 100%;
-            width: auto;
-            height: auto;
             z-index: -100;
-            filter: brightness(0.7) grayscale(0.2); /* Escurece e adiciona um toque futurista */
+            object-fit: cover;
+            filter: brightness(0.6);
         }
 
         .background-overlay {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(70, 0, 70, 0.4); /* Overlay roxo escuro transparente */
-            background-image: url('https://i.imgur.com/your-kuromi-bg-pattern.png'); /* Exemplo: Padrão fofo da Kuromi (substitua pelo seu) */
-            background-size: 150px;
-            opacity: 0.3;
+            inset: 0; /* atalho para top, right, bottom, left = 0 */
+            background-color: rgba(70, 0, 70, 0.4);
             z-index: -99;
-            animation: bg-scroll 60s linear infinite; /* Animação de scroll suave */
         }
-
-        @keyframes bg-scroll {
-            from { background-position: 0 0; }
-            to { background-position: 100% 100%; }
-        }
-
-        /* Header */
+        
+        /* CABEÇALHO 😈 */
         header {
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
             padding: 20px 0;
             background-color: rgba(0, 0, 0, 0.6);
-            border-bottom: 2px solid #FF00FF; /* Roxo vibrante */
-            box-shadow: 0 4px 15px rgba(255, 0, 255, 0.4); /* Sombra neon */
-            position: relative;
-            z-index: 1;
+            border-bottom: 2px solid var(--kuromi-pink);
+            box-shadow: 0 4px 15px rgba(255, 0, 255, 0.4);
         }
 
         .logo-container {
-            position: relative;
             width: 250px;
             height: 80px;
-            overflow: hidden;
-            margin-bottom: 10px;
             border-radius: 15px;
-            box-shadow: 0 0 15px #FF00FF;
+            overflow: hidden;
+            box-shadow: 0 0 15px var(--kuromi-pink);
             animation: pulse 2s infinite alternate;
-        }
-
-        @keyframes pulse {
-            from { box-shadow: 0 0 15px #FF00FF; }
-            to { box-shadow: 0 0 25px #FF00FF, 0 0 35px #FF00FF; }
         }
 
         .logo-video {
@@ -96,44 +96,45 @@
         }
 
         h1 {
-            font-family: 'Press Start 2P', cursive;
-            font-size: 2.5em;
-            color: #FF00FF; /* Roxo vibrante */
-            text-shadow: 0 0 10px #FF00FF, 0 0 20px #FF00FF; /* Efeito neon */
-            margin: 10px 0 20px;
+            font-family: var(--font-pixel);
+            font-size: clamp(1.5rem, 5vw, 2.2rem); /* Tamanho de fonte responsivo */
+            color: var(--kuromi-pink);
+            text-shadow: 0 0 10px var(--kuromi-pink), 0 0 20px var(--kuromi-pink);
+            margin-top: 20px;
             text-align: center;
+            padding: 0 10px;
         }
 
-        /* Seção fofa da Kuromi */
+        /* CONTEÚDO PRINCIPAL 💀 */
+        main {
+            padding: 20px;
+        }
+
+        .quick-actions {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
         .kuromi-section {
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
             padding: 40px 20px;
-            margin: 30px auto;
+            margin: 0 auto 30px;
             max-width: 900px;
             background-color: rgba(0, 0, 0, 0.7);
             border-radius: 20px;
-            border: 2px solid #FF00FF;
+            border: 2px solid var(--kuromi-pink);
             box-shadow: 0 0 20px rgba(255, 0, 255, 0.6);
             text-align: center;
-            position: relative;
-            z-index: 1;
-            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
 
-        .kuromi-section::before {
-            content: '';
-            position: absolute;
-            top: -20px;
-            left: -20px;
-            right: -20px;
-            bottom: -20px;
-            background: linear-gradient(45deg, #FF00FF, #8A2BE2, #FF00FF);
-            z-index: -1;
-            filter: blur(20px);
-            opacity: 0.4;
+        .kuromi-section:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 30px rgba(255, 0, 255, 0.8);
         }
 
         .kuromi-icon {
@@ -141,62 +142,88 @@
             height: 120px;
             margin-bottom: 20px;
             animation: float 4s ease-in-out infinite;
-        }
-
-        @keyframes float {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-20px); }
-            100% { transform: translateY(0px); }
+            filter: drop-shadow(0 0 10px var(--kuromi-pink));
         }
 
         .kuromi-section h2 {
-            font-family: 'Orbitron', sans-serif;
             font-size: 2.2em;
-            color: #FFC0CB; /* Rosa bebê */
+            color: var(--kuromi-soft-pink);
             margin-bottom: 15px;
             text-shadow: 0 0 8px rgba(255, 192, 203, 0.7);
         }
 
         .kuromi-section p {
-            font-family: 'Orbitron', sans-serif;
             font-size: 1.1em;
             line-height: 1.6;
-            color: #F8F8FF; /* Branco fantasma */
-            margin-bottom: 25px;
+            color: var(--text-ghost-white);
             max-width: 600px;
         }
 
-        /* Botões */
+        /* BARRA DE "REBELDIA" ⚡ */
+        .speed-bar-container {
+            max-width: 400px;
+            margin: 20px auto;
+            background-color: rgba(0, 0, 0, 0.8);
+            border: 1px solid var(--kuromi-pink);
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 0 15px rgba(255, 0, 255, 0.6);
+            text-align: center;
+        }
+
+        .speed-bar-container p {
+            margin: 0 0 10px;
+            font-size: 1.1em;
+            color: var(--kuromi-soft-pink);
+            text-shadow: 0 0 5px var(--kuromi-pink);
+        }
+        
+        .speed-bar {
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+            padding: 3px;
+        }
+        
+        .speed-bar-fill {
+            height: 15px;
+            background: var(--kuromi-gradient);
+            border-radius: 5px;
+            width: 0%; /* JS vai cuidar disso! */
+            transition: width 0.5s ease-out;
+            box-shadow: 0 0 8px rgba(255, 0, 255, 0.7);
+        }
+
+        /* BOTÕES 🔘 */
         .buttons-container {
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
             gap: 15px;
             margin-top: 30px;
-            position: relative;
-            z-index: 1;
         }
 
         .button {
             padding: 12px 25px;
             font-size: 1.1em;
-            font-family: 'Orbitron', sans-serif;
             border: none;
             border-radius: 30px;
             cursor: pointer;
             transition: all 0.4s ease;
-            outline: none;
             text-decoration: none;
-            display: flex;
+            display: inline-flex;
             align-items: center;
-            justify-content: center;
-            color: #FFFFFF;
-            background: linear-gradient(45deg, #8A2BE2, #FF00FF); /* Gradiente roxo/rosa */
+            color: white;
+            background: var(--kuromi-gradient);
             box-shadow: 0 0 10px rgba(255, 0, 255, 0.6);
             position: relative;
             overflow: hidden;
         }
 
+        .button:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 0 15px rgba(255, 0, 255, 0.8), 0 0 25px rgba(255, 0, 255, 0.5);
+        }
+        
         .button::before {
             content: '';
             position: absolute;
@@ -213,67 +240,66 @@
             left: 100%;
         }
 
-        .button:hover {
-            transform: translateY(-5px) scale(1.03);
-            box-shadow: 0 0 15px rgba(255, 0, 255, 0.8), 0 0 25px rgba(255, 0, 255, 0.5);
-        }
-
         .button i {
             margin-right: 10px;
             font-size: 1.2em;
         }
 
-        /* Sidebar */
+        /* MENU SECRETO (SIDEBAR) 🤫 */
         .sidebar {
             height: 100%;
             width: 0;
             position: fixed;
             top: 0;
             left: 0;
-            background-image: url('./fundos/4.jpg'); /* Mantenho a imagem original, mas você pode mudar para algo Kuromi */
+            background-image: url('./fundos/4.jpg');
             background-size: cover;
-            background-position: center;
             overflow-x: hidden;
-            transition: 0.5s;
-            padding-top: 60px;
+            transition: width 0.5s ease;
+            padding-top: 80px; /* Mais espaço no topo */
             z-index: 1000;
-            box-shadow: 5px 0 20px rgba(0, 0, 0, 0.8);
         }
 
         .sidebar a {
             padding: 15px 25px;
             text-decoration: none;
             font-size: 1.4em;
-            font-family: 'Orbitron', sans-serif;
-            color: #FFC0CB; /* Rosa bebê */
+            color: var(--kuromi-soft-pink);
             display: block;
             transition: 0.3s;
-            background-color: rgba(0, 0, 0, 0.6);
-            border-left: 5px solid #FF00FF; /* Borda lateral vibrante */
-            margin: 8px 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            border-left: 5px solid var(--kuromi-pink);
+            margin: 8px 15px;
+            border-radius: 0 10px 10px 0;
         }
 
         .sidebar a:hover {
-            color: #FFFFFF;
+            color: white;
             background-color: rgba(255, 0, 255, 0.3);
-            border-left: 5px solid #FFFFFF;
+            border-left-color: white;
+            transform: translateX(10px);
         }
 
-        .sidebar .close-btn {
+        /* BOTÃO DE FECHAR (Genérico) ❌ */
+        .close-btn {
             position: absolute;
-            top: 15px;
+            top: 20px;
             right: 25px;
             font-size: 2.5em;
-            color: #FFC0CB;
+            color: var(--kuromi-soft-pink);
             background: none;
             border: none;
             cursor: pointer;
+            line-height: 1;
+            transition: transform 0.3s ease, color 0.3s ease;
         }
-        .sidebar .close-btn:hover {
-            color: #FFFFFF;
+        
+        .close-btn:hover {
+            color: white;
+            transform: rotate(180deg);
         }
-
-        /* Welcome Message */
+        
+        /* MENSAGEM DE BOAS-VINDAS 💌 */
         .welcome-message {
             display: none;
             position: fixed;
@@ -281,15 +307,58 @@
             left: 50%;
             transform: translate(-50%, -50%);
             background-color: rgba(0, 0, 0, 0.9);
-            color: #FFC0CB;
-            padding: 30px;
+            color: var(--kuromi-soft-pink);
+            padding: 30px 40px;
             border-radius: 15px;
             z-index: 1001;
             box-shadow: 0 0 25px rgba(255, 0, 255, 0.8);
-            border: 2px solid #FF00FF;
+            border: 2px solid var(--kuromi-pink);
             text-align: center;
-            font-family: 'Orbitron', sans-serif;
             animation: fadeIn 0.5s ease-out;
+        }
+        
+        .welcome-message p {
+            margin: 0;
+            font-size: 1.3em;
+            text-shadow: 0 0 5px var(--kuromi-pink);
+        }
+        
+        .welcome-message .close-btn {
+            top: 10px;
+            right: 15px;
+            font-size: 1.8em;
+        }
+
+        /* RODAPÉ E PERSONAGEM 🎸 */
+        footer {
+            text-align: center;
+            padding: 20px;
+            margin-top: 50px;
+            background-color: rgba(0, 0, 0, 0.6);
+            border-top: 1px solid var(--kuromi-pink);
+            color: var(--kuromi-soft-pink);
+        }
+
+        .kuromi-char {
+            position: fixed;
+            bottom: -150px;
+            left: 5%;
+            width: 150px;
+            animation: slideUpAndWave 12s ease-in-out infinite;
+            z-index: 500;
+            filter: drop-shadow(0 0 10px rgba(255, 0, 255, 0.7));
+            pointer-events: none;
+        }
+
+        /* ANIMAÇÕES DIVERTIDAS 💥 */
+        @keyframes pulse {
+            from { box-shadow: 0 0 15px var(--kuromi-pink); }
+            to { box-shadow: 0 0 25px var(--kuromi-pink), 0 0 35px var(--kuromi-pink); }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
         }
 
         @keyframes fadeIn {
@@ -297,215 +366,145 @@
             to { opacity: 1; transform: translate(-50%, -50%); }
         }
 
-        .welcome-message p {
-            margin: 0 0 15px;
-            font-size: 1.3em;
-            text-shadow: 0 0 5px #FF00FF;
-        }
-
-        .welcome-message .close-btn {
-            position: absolute;
-            top: 10px;
-            right: 15px;
-            background: transparent;
-            border: none;
-            cursor: pointer;
-            font-size: 1.8em;
-            color: #FFC0CB;
-            transition: color 0.3s ease;
-        }
-        .welcome-message .close-btn:hover {
-            color: #FFFFFF;
-        }
-
-        /* Footer */
-        footer {
-            text-align: center;
-            padding: 20px;
-            margin-top: 50px;
-            background-color: rgba(0, 0, 0, 0.6);
-            border-top: 1px solid #FF00FF;
-            color: #FFC0CB;
-            font-size: 0.9em;
-            font-family: 'Orbitron', sans-serif;
-            position: relative;
-            z-index: 1;
-        }
-
-        /* Animação para Kuromi fofa */
-        .kuromi-char {
-            position: fixed;
-            bottom: -50px; /* Começa fora da tela */
-            left: 5%;
-            width: 150px;
-            animation: slideUpAndWave 10s ease-in-out infinite;
-            z-index: -50;
-            filter: drop-shadow(0 0 10px rgba(255, 0, 255, 0.7));
-        }
-
         @keyframes slideUpAndWave {
-            0% { bottom: -50px; left: 5%; transform: translateX(0) rotate(0deg); }
-            20% { bottom: 20px; left: 10%; transform: translateX(0) rotate(5deg); }
-            40% { bottom: 10px; left: 15%; transform: translateX(20px) rotate(-5deg); }
-            60% { bottom: 25px; left: 20%; transform: translateX(-10px) rotate(3deg); }
-            80% { bottom: 15px; left: 10%; transform: translateX(0) rotate(-2deg); }
-            100% { bottom: -50px; left: 5%; transform: translateX(0) rotate(0deg); }
+            0%, 100% { bottom: -150px; transform: rotate(0deg); }
+            20% { bottom: 10px; transform: rotate(5deg); }
+            40% { bottom: 0px; transform: rotate(-5deg); }
+            60% { bottom: 15px; transform: rotate(3deg); }
+            80% { bottom: 5px; transform: rotate(-2deg); }
         }
-
-        /* Estilo da barra de velocidade (novo elemento) */
-        .speed-bar-container {
-            width: 80%;
-            max-width: 400px;
-            margin: 20px auto;
-            background-color: rgba(0, 0, 0, 0.8);
-            border: 1px solid #FF00FF;
-            border-radius: 10px;
-            padding: 15px;
-            box-shadow: 0 0 15px rgba(255, 0, 255, 0.6);
-            text-align: center;
-            position: relative;
-            z-index: 1;
-        }
-
-        .speed-bar-container p {
-            margin: 0;
-            font-size: 1.1em;
-            color: #FFC0CB;
-            text-shadow: 0 0 5px #FF00FF;
-            margin-bottom: 10px;
-        }
-
-        .speed-bar-fill {
-            height: 15px;
-            background: linear-gradient(to right, #8A2BE2, #FF00FF);
-            border-radius: 8px;
-            width: 0%; /* Será preenchido por JS */
-            transition: width 0.5s ease-out;
-            box-shadow: 0 0 8px rgba(255, 0, 255, 0.7);
-        }
-
     </style>
 </head>
 
 <body>
-
-    <img src="./fundos/1.jpg" alt="Imagem de fallback" style="position: fixed; z-index: -101; width: 100%; height: 100%; object-fit: cover; filter: brightness(0.7) grayscale(0.2);">
+    <img src="./fundos/1.jpg" alt="Kuromi background fallback" class="video-fallback">
     <video autoplay muted loop id="video-background">
         <source src="./videos/fundo.mp4" type="video/mp4">
-        Seu navegador não suporta vídeos HTML5.
+        Seu navegador não é descolado o suficiente para vídeos.
     </video>
-    <div class="background-overlay"></div> <header>
+    <div class="background-overlay"></div>
+
+    <header>
         <div class="logo-container">
             <video class="logo-video" autoplay loop muted>
                 <source src="./videos/logo.mp4" type="video/mp4">
-                Seu navegador não suporta o vídeo.
             </video>
         </div>
-        <h1>☆ KUROMI SYSTEM ☆</h1>
+        <h1>† KUROMI'S SYSTEM †</h1>
     </header>
 
-    <button class="button" onclick="openSidebar()"><i class="fas fa-bars"></i> Menu Secreto</button>
-    <button class="button notification" onclick="openWelcomeMessage()"><i class="fas fa-bell"></i> Notificação</button>
-
-    <div class="kuromi-section">
-        <img src="https://i.imgur.com/your-kuromi-icon.png" alt="Kuromi Icon" class="kuromi-icon"> <h2>Bem-vindo ao meu cantinho cibernético!</h2>
-        <p>Aqui, a fofura encontra o futuro! Explore um universo de possibilidades, jogos, ferramentas e muito mais, tudo sob o olhar travesso da Kuromi. Prepare-se para uma aventura digital!</p>
+    <main>
+        <div class="quick-actions">
+            <button id="open-sidebar-btn" class="button"><i class="fas fa-bars"></i> Menu Secreto</button>
+            <button id="open-welcome-btn" class="button"><i class="fas fa-bell"></i> Notificação</button>
         </div>
 
-    <div class="speed-bar-container">
-        <p><i class="fas fa-tachometer-alt"></i> Velocidade da Conexão: <span id="server-speed-text">Carregando...</span></p>
-        <div class="speed-bar-fill" id="speed-bar-fill"></div>
-    </div>
+        <section class="kuromi-section">
+            <img src="https://i.imgur.com/your-kuromi-icon.png" alt="Ícone da Kuromi" class="kuromi-icon">
+            <h2>Bem-vinde ao meu cantinho!</h2>
+            <p>Achou que era só fofura? Aqui o sistema é punk! Explore minhas ferramentas, jogos e segredos... se tiver coragem. Hehe!</p>
+        </section>
 
-    <div class="buttons-container">
-        <a href="vips" class="button"><i class="fas fa-crown"></i> Super Usuários</a>
-        <a href="ia" class="button"><i class="fas fa-robot"></i> Kuromi IA</a>
-        <a href="consultas" class="button"><i class="fas fa-search"></i> Consultas Mágicas</a>
-        <a href="apk" class="button"><i class="fas fa-mobile-alt"></i> Apps Mod Fofos</a>
-        <a href="jogos" class="button"><i class="fas fa-gamepad"></i> Jogos Divertidos</a>
-        <a href="ferramentas" class="button"><i class="fas fa-tools"></i> Ferramentas Úteis</a>
-        <a href="cinema" class="button"><i class="fas fa-film"></i> Filmes & Séries</a>
-        <a href="sites" class="button"><i class="fas fa-link"></i> Sites Secretos</a>
-        <a href="estudos" class="button"><i class="fas fa-book-open"></i> Cantinho do Estudo</a>
-        <a href="download" class="button"><i class="fas fa-download"></i> Baixe Fofuras</a>
-        <a href="upload" class="button"><i class="fas fa-upload"></i> Upload de Imagens</a>
-        <a href="likesff" class="button"><i class="fas fa-heart"></i> Likes FF (Sei lá o que é, mas Kuromi aprova!)</a>
-        <a href="apis" class="button"><i class="fas fa-code"></i> APIs Mágicas</a>
-        <a href="metodos" class="button"><i class="fas fa-lightbulb"></i> Métodos Kuromi</a>
-    </div>
+        <div class="speed-bar-container">
+            <p><i class="fas fa-bolt"></i> Nível de Rebeldia: <span id="speed-text">Calculando...</span></p>
+            <div class="speed-bar">
+                <div id="speed-bar-fill" class="speed-bar-fill"></div>
+            </div>
+        </div>
+        
+        <nav class="buttons-container">
+            <a href="vips" class="button"><i class="fas fa-crown"></i> Super Usuários</a>
+            <a href="ia" class="button"><i class="fas fa-robot"></i> Kuromi IA</a>
+            <a href="consultas" class="button"><i class="fas fa-search"></i> Consultas Mágicas</a>
+            <a href="apk" class="button"><i class="fas fa-mobile-alt"></i> Apps Mod Fofos</a>
+            <a href="jogos" class="button"><i class="fas fa-gamepad"></i> Jogos Divertidos</a>
+            <a href="ferramentas" class="button"><i class="fas fa-tools"></i> Ferramentas Úteis</a>
+            <a href="cinema" class="button"><i class="fas fa-film"></i> Filmes & Séries</a>
+            <a href="sites" class="button"><i class="fas fa-link"></i> Sites Secretos</a>
+            <a href="estudos" class="button"><i class="fas fa-book-open"></i> Cantinho do Estudo</a>
+            <a href="download" class="button"><i class="fas fa-download"></i> Baixe Fofuras</a>
+            <a href="upload" class="button"><i class="fas fa-upload"></i> Upload de Imagens</a>
+            <a href="apis" class="button"><i class="fas fa-code"></i> APIs Mágicas</a>
+        </nav>
+    </main>
 
-    <div id="sidebar" class="sidebar">
-        <a href="javascript:void(0)" class="close-btn" onclick="closeSidebar()">&times;</a>
+    <aside id="sidebar" class="sidebar">
+        <button id="close-sidebar-btn" class="close-btn" aria-label="Fechar menu">&times;</button>
         <a href="vips">Super Usuários</a>
         <a href="apk">Apps Mod</a>
         <a href="jogos">Jogos</a>
-        <a href="games">Games</a>
         <a href="ferramentas">Ferramentas</a>
         <a href="cinema">Filmes/Séries</a>
-        <a href="sites">Sites Úteis</a>
-        <a href="estudos">Estudos</a>
-        <a href="metodos">Métodos</a>
         <a href="consultas">Consultas</a>
-        <a href="download">Downloads</a>
         <a href="ia">Kuromi IA</a>
-        <a href="clima">Clima (Desativado na Home)</a>
-        <a href="upload">Upload imagens</a>
-        <a href="likesff">Likes FF</a>
-        <a href="apis">Apis</a>
-    </div>
+    </aside>
 
     <div id="welcome-message" class="welcome-message">
-        <p>Seja Bem Vindo A Kuromi System ^-^</p>
-        <button class="close-btn" onclick="closeWelcomeMessage()">&times;</button>
+        <button id="close-welcome-btn" class="close-btn" aria-label="Fechar notificação">&times;</button>
+        <p>E aí! Bem-vinde ao meu sistema! ^-^</p>
     </div>
 
-    <img src="https://i.imgur.com/your-animated-kuromi.gif" alt="Kuromi Animated" class="kuromi-char"> <footer>
-        <p>Desenvolvido com <i class="fas fa-heart" style="color: #FF00FF;"></i> por Redzin para a Kuromi System</p>
+    <img src="https://i.imgur.com/your-animated-kuromi.gif" alt="Kuromi animada" class="kuromi-char">
+    
+    <footer>
+        <p>Feito com ódio e glitter <i class="fas fa-heart" style="color: var(--kuromi-pink)"></i> por Redzin para o Kuromi System</p>
     </footer>
 
     <audio autoplay loop>
         <source src="./musicas/m.mp3" type="audio/mpeg">
-        Seu navegador não suporta áudio HTML5.
     </audio>
 
     <script>
-        // Função para abrir e fechar o menu lateral
-        function openSidebar() {
-            document.getElementById("sidebar").style.width = "280px"; // Largura maior para futurista
-        }
+        // Espera a página carregar pra não dar erro! ૮ ´• ˕ •` ა
+        document.addEventListener('DOMContentLoaded', () => {
 
-        function closeSidebar() {
-            document.getElementById("sidebar").style.width = "0";
-        }
+            // --- SELEÇÃO DOS ELEMENTOS ---
+            // Pegando os elementos do HTML pra gente poder brincar com eles
+            const sidebar = document.getElementById('sidebar');
+            const openSidebarBtn = document.getElementById('open-sidebar-btn');
+            const closeSidebarBtn = document.getElementById('close-sidebar-btn');
 
-        // Função para abrir e fechar a mensagem de boas-vindas
-        function openWelcomeMessage() {
-            document.getElementById("welcome-message").style.display = "block";
-        }
+            const welcomeMessage = document.getElementById('welcome-message');
+            const openWelcomeBtn = document.getElementById('open-welcome-btn');
+            const closeWelcomeBtn = document.getElementById('close-welcome-btn');
 
-        function closeWelcomeMessage() {
-            document.getElementById("welcome-message").style.display = "none";
-        }
+            const speedText = document.getElementById('speed-text');
+            const speedFill = document.getElementById('speed-bar-fill');
 
-        // Simula a velocidade do servidor e atualiza a barra de progresso
-        function updateSpeed() {
-            const minSpeed = 50; // Velocidade mínima em Mbps
-            const maxSpeed = 300; // Velocidade máxima em Mbps
-            const speed = (Math.random() * (maxSpeed - minSpeed) + minSpeed).toFixed(2); // Simula um valor de velocidade
-            document.getElementById('server-speed-text').textContent = `${speed} Mbps`;
+            // --- FUNÇÕES ---
+            // Funções do menu secreto (sidebar)
+            const openSidebar = () => { sidebar.style.width = "280px"; };
+            const closeSidebar = () => { sidebar.style.width = "0"; };
 
-            // Atualiza a barra de preenchimento
-            const fillPercentage = (speed / maxSpeed) * 100;
-            document.getElementById('speed-bar-fill').style.width = `${fillPercentage}%`;
-        }
+            // Funções da mensagem de boas-vindas
+            const openWelcomeMessage = () => { welcomeMessage.style.display = "block"; };
+            const closeWelcomeMessage = () => { welcomeMessage.style.display = "none"; };
 
-        // Chama a função para atualizar a velocidade a cada segundo
-        setInterval(updateSpeed, 1500); // Atualiza a cada 1.5 segundos
+            // Função da barra de "rebeldia"
+            const updateSpeed = () => {
+                const minSpeed = 50;
+                const maxSpeed = 300;
+                const speed = Math.floor(Math.random() * (maxSpeed - minSpeed + 1)) + minSpeed;
+                
+                speedText.textContent = `${speed} KUROMIS!`;
+                speedFill.style.width = `${(speed / maxSpeed) * 100}%`;
+            };
 
-        // Inicializa a velocidade ao carregar a página
-        window.onload = function() {
+            // --- EVENT LISTENERS ---
+            // Adicionando os "escutadores" de eventos. Basicamente, "quando clicar aqui, faça isso"
+            openSidebarBtn.addEventListener('click', openSidebar);
+            closeSidebarBtn.addEventListener('click', closeSidebar);
+            
+            openWelcomeBtn.addEventListener('click', openWelcomeMessage);
+            closeWelcomeBtn.addEventListener('click', closeWelcomeMessage);
+
+            // --- INICIALIZAÇÃO ---
+            // Inicia a barra de rebeldia e a atualiza a cada 2 segundos
             updateSpeed();
-        };
+            setInterval(updateSpeed, 2000);
+
+            console.log("Kuromi System carregado! Hehe... 😈");
+        });
     </script>
 </body>
     </html>

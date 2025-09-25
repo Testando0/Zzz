@@ -4,8 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jogos</title>
-    <!-- Adicionando referências para favicons de diferentes tamanhos e tipos -->
+    <title>Jogos - Kuromi Edition</title>
     <link rel="icon" href="./icones/favicon-32x32.png" type="image/png" sizes="32x32">
     <link rel="icon" href="./icones/favicon-16x16.png" type="image/png" sizes="16x16">
     <link rel="icon" href="./icones/android-chrome-192x192.png" type="image/png" sizes="192x192">
@@ -13,14 +12,28 @@
     <link rel="apple-touch-icon" href="./icones/apple-touch-icon.png">
     <link rel="manifest" href="./site.webmanifest">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            /* Cores Kuromi Futuro */
+            --kuromi-dark: #1a001a; /* Roxo muito escuro / quase preto */
+            --kuromi-pink: #ff00ff; /* Rosa choque neon */
+            --kuromi-purple: #8a2be2; /* Roxo vibrante */
+            --kuromi-light: #ffffff; /* Branco puro */
+            --kuromi-accent: #00ffff; /* Ciano neon para detalhes */
+        }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Orbitron', sans-serif; /* Fonte futurista */
             margin: 0;
             padding: 0;
-            background-image: url('./fundos/vermelho.jpg');
-            background-color: #f2f2f2;
+            background-color: var(--kuromi-dark);
+            background-image: url('https://w.wallhaven.cc/full/m9/wallhaven-m9oyrl.jpg'); /* Exemplo de BG futurista */
+            background-size: cover;
+            background-attachment: fixed;
+            background-position: center;
             text-align: center;
+            color: var(--kuromi-light); /* Cor do texto padrão */
         }
 
         .container {
@@ -29,114 +42,190 @@
             justify-content: center;
             align-items: center;
             padding: 20px;
+            gap: 15px; /* Espaçamento entre os botões */
+            margin-top: 20px;
         }
 
         .button {
-            padding: 10px 20px;
-            margin: 10px;
-            font-size: 16px;
-            border: 2px solid #ff0000;
-            border-radius: 20px;
-            background-color: #ff0000;
-            color: white;
+            padding: 12px 25px;
+            font-size: 18px;
+            font-weight: 700;
+            border: 2px solid var(--kuromi-pink);
+            border-radius: 8px; /* Bordas levemente arredondadas */
+            background-color: rgba(0, 0, 0, 0.7); /* Fundo semi-transparente */
+            color: var(--kuromi-pink);
             text-decoration: none;
-            transition: background-color 0.3s, color 0.3s;
+            transition: all 0.3s ease-in-out;
+            box-shadow: 0 0 10px rgba(255, 0, 255, 0.5); /* Sombra neon rosa */
+            text-transform: uppercase;
         }
 
         .button:hover {
-            background-color: #ffffff;
-            color: #ff0000;
+            background-color: var(--kuromi-pink);
+            color: var(--kuromi-dark);
+            border-color: var(--kuromi-light);
+            box-shadow: 0 0 20px var(--kuromi-pink), 0 0 30px var(--kuromi-purple); /* Efeito neon mais forte */
+            transform: translateY(-3px) scale(1.02);
         }
+
         .top-bar {
-    position: absolute;
-    top: 0;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    background-color: rgba(0, 0, 0, 0.5); /* Barra semi-transparente */
-    padding: 10px 0;
-}
-
-.search-bar {
-    display: flex;
-    margin-bottom: 10px;
-}
-
-.search-input {
-    padding: 10px;
-    font-size: 16px;
-    border: 2px solid #ff0000; /* Vermelho */
-    border-radius: 5px 0 0 5px;
-    width: 200px;
-    background-color: #000000; /* Preto */
-    color: #ffffff; /* Texto branco para melhor visibilidade */
-}
-
-.search-button {
-    padding: 10px 20px;
-    font-size: 16px;
-    border: none;
-    border-radius: 0 5px 5px 0;
-    cursor: pointer;
-    background-color: #000000; /*preto*/
-    color: #ff0000; /* Vermelho */
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-}
-
-.search-button:hover {
-    background-color: #333333; /* Preto mais claro ao passar o mouse */
-}
-
-.icon {
-    margin-right: 5px;
-}
-
-.highlight {
-    border: 2px solid #000000; /* Destacar com borda branca */
-    transform: scale(1.1); /* Zoom */
-    transition: transform 0.3s;
-}
-
-.error-message {
-    color: #ff0000; /* Cor da mensagem de erro */
-    font-size: 14px;
-    margin-top: 5px;
-}
-        .title-container {
-            color: white;
-            font-size: 32px; /* aumentando o tamanho do texto */
-            
-            margin-top: 70px;  /* Espaçamento entre o botão de pesquisa e o título */
+            position: sticky; /* Sticky para ficar no topo ao rolar */
+            top: 0;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: rgba(26, 0, 26, 0.9); /* Barra semi-transparente escura */
+            padding: 15px 0;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            z-index: 1000; /* Garante que fique acima de outros elementos */
         }
+
+        .search-bar {
+            display: flex;
+            margin-bottom: 15px;
+            box-shadow: 0 0 10px var(--kuromi-purple); /* Sombra roxa no search bar */
+            border-radius: 5px;
+            overflow: hidden; /* Para as bordas ficarem certas */
+        }
+
+        .search-input {
+            padding: 12px;
+            font-size: 16px;
+            border: none; /* Remover borda padrão */
+            background-color: var(--kuromi-dark);
+            color: var(--kuromi-light);
+            width: 250px;
+            outline: none; /* Remove o contorno ao focar */
+            border-right: 1px solid var(--kuromi-purple);
+        }
+
+        .search-input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .search-button {
+            padding: 12px 25px;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            background-color: var(--kuromi-purple);
+            color: var(--kuromi-light);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px; /* Espaçamento entre ícone e texto */
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .search-button:hover {
+            background-color: var(--kuromi-pink);
+            color: var(--kuromi-dark);
+            box-shadow: 0 0 15px var(--kuromi-pink);
+        }
+
+        .icon {
+            margin-right: 0; /* Ajuste para o gap */
+        }
+
+        .highlight {
+            border: 3px solid var(--kuromi-accent); /* Destacar com ciano neon */
+            transform: scale(1.05); /* Zoom sutil */
+            box-shadow: 0 0 25px var(--kuromi-accent); /* Brilho neon intenso */
+            transition: transform 0.3s, border 0.3s, box-shadow 0.3s;
+        }
+
+        .error-message {
+            color: var(--kuromi-pink); /* Cor da mensagem de erro rosa neon */
+            font-size: 15px;
+            margin-top: 8px;
+            font-weight: 700;
+            text-shadow: 0 0 5px var(--kuromi-pink);
+        }
+
+        .title-container {
+            color: var(--kuromi-light);
+            font-size: 3.5em; /* Aumentando o tamanho do texto para mais impacto */
+            font-weight: 700;
+            letter-spacing: 3px; /* Espaçamento entre letras */
+            margin-bottom: 20px;
+            text-shadow: 0 0 15px var(--kuromi-pink), 0 0 25px var(--kuromi-purple); /* Efeito neon no título */
+            padding: 10px 20px;
+            background-color: rgba(0, 0, 0, 0.4);
+            border-radius: 10px;
+        }
+        
+        /* Estilo para o texto "Desenvolvido Por Redzin" */
+        p {
+            margin-top: 30px;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.9em;
+            letter-spacing: 1px;
+        }
+
+        /* Responsividade básica */
+        @media (max-width: 768px) {
+            .title-container {
+                font-size: 2.5em;
+            }
+            .search-input {
+                width: 180px;
+            }
+            .button {
+                padding: 10px 20px;
+                font-size: 16px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .title-container {
+                font-size: 1.8em;
+            }
+            .search-bar {
+                flex-direction: column;
+                width: 90%;
+            }
+            .search-input {
+                width: 100%;
+                border-radius: 5px 5px 0 0;
+                border-right: none;
+                border-bottom: 1px solid var(--kuromi-purple);
+            }
+            .search-button {
+                width: 100%;
+                border-radius: 0 0 5px 5px;
+            }
+        }
+
     </style>
 </head>
 
 <body>
     <div class="top-bar">
-    <div class="search-bar">
-        <input type="text" id="search-input" class="search-input" placeholder="Pesquisar...">
-        <button class="search-button" onclick="searchButton()">
-            <i class="fas fa-search icon"></i> Pesquisar
-        </button>
-    <div id="error-message" class="error-message"></div>
+        <div class="search-bar">
+            <input type="text" id="search-input" class="search-input" placeholder="Pesquisar jogos...">
+            <button class="search-button" onclick="searchButton()">
+                <i class="fas fa-search icon"></i> Pesquisar
+            </button>
+        </div>
+        <div id="error-message" class="error-message"></div>
+        <div class="title-container">JOGOS</div>
     </div>
-    <div class="title-container">Jogos</div>
+    
     <div class="container">
         <a href="https://youtu.be/TgOM8bbazc4" class="button" target="_blank">Jogos para PSP</a>
         <a href="https://youtube.com/@CanaldoLZ" class="button" target="_blank">Jogos de Futebol PSP</a>
         <a href="https://www.mediafire.com/file/97ktu722hv3y4r3/FIFA_stret_2022_PPSSPP_%2528_LINK_GILA_GAME_%2529.rar/file" class="button" target="_blank">FIFA Street</a>
-        <a href="https://www.mediafire.com/file/l686ej750wvyc1i/FIFA+STREET+2024+BY+RAHIMDROID+(Link+Canal+do+LZ).rar/file" class="button" target="_blank">futebol de rua 2024</a>
-        <a href="https://www.mediafire.com/file/q4m3ftp8vwx4qiq/NOVO+BOMBA+PATCH+JULHO+2024+PPSSPP.rar/file" class="button" target="_blank">Bomba Patch iso</a>
-        <a href="https://mymaxbombapsp.com/" class="button" target="_blank" >bomba patch</a>
+        <a href="https://www.mediafire.com/file/l686ej750wvyc1i/FIFA+STREET+2024+BY+RAHIMDROID+(Link+Canal+do+LZ).rar/file" class="button" target="_blank">Futebol de Rua 2024</a>
+        <a href="https://www.mediafire.com/file/q4m3ftp8vwx4qiq/NOVO+BOMBA+PATCH+JULHO+2024+PPSSPP.rar/file" class="button" target="_blank">Bomba Patch ISO</a>
+        <a href="https://mymaxbombapsp.com/" class="button" target="_blank" >Bomba Patch</a>
         <a href="https://www.mediafire.com/file/nwdv6oy57u88qz1/SAVE+TEXTURES+MYMAX+(Link+canal+do+LZ).rar/file" class="button" target="_blank">Save + Text BP</a>
         <a href="https://www.mediafire.com/file/egsgfhe0wzrgrb7/eFootball+%E2%84%A2+2024+Game+C.+PS2.rar/file" class="button" target="_blank">PES 2024</a>
         <a href="https://www.mediafire.com/file/eljsr7eqmj1zg7f/Texturas+eFootball+2024+New+Update+V3.0+++Savedata+by+ZFuteGamer.rar/file" class="button" target="_blank">Save + Text PES</a>
-        <a href="https://www.mediafire.com/file/lv3dd4fw2js76bw/EA+SPORTS+FC+24+ATUALIZADO+(Link+do+Canal+do+LZ).rar/file" class="button" target="_blank">FEA FC 24</a>
+        <a href="https://www.mediafire.com/file/lv3dd4fw2js76bw/EA+SPORTS+FC+24+ATUALIZADO+(Link+do+Canal+do+LZ).rar/file" class="button" target="_blank">EA FC 24</a>
         <a href="https://youtu.be/J_HR90uvL0I?feature=shared" class="button" target="_blank">FIFA 16 Mod 2024</a>
-        <a href="https://drive.usercontent.google.com/download?id=1d301c89i6UvRPlKPjiiz97kXVHAeEMA7&export=download&authuser=0" class="button" target="_blank">Resident 4</a>
+        <a href="https://drive.usercontent.google.com/download?id=1d301c89i6UvRPlKPjiiz97kXVHAeEMA7&export=download&authuser=0" class="button" target="_blank">Resident Evil 4</a>
         <a href="https://www.mediafire.com/file/hwwydr5i8d94mck/Midnight_Club_3_-_DUB_Edition.iso/file" class="button" target="_blank">Midnight Club</a>
         <a href="https://mega.nz/folder/OoEiUbgC#Xn1HSgyfQ4sgnRn46pkp5A" class="button" target="_blank">Save Midnight</a>
         <a href="https://www.mediafire.com/download/vkqtlfe1uys13yh" class="button" target="_blank">Briga de Rua</a>
@@ -145,21 +234,21 @@
         <a href="https://www.mediafire.com/file/g3oca7gmk992w1d/SaveData_By_Kyo_Modder.zip/file" class="button" target="_blank">Save DBS</a>
         <a href="https://www.mediafire.com/file/mcgh0tffqdb0p2l/Mortal_Kombat_Unchained_%2528By_Alisson_C._Barreto-ACB10_Blog%2529.7z/file" class="button" target="_blank">Mortal Kombat</a>
         <a href="https://mega.nz/#!4B9kFShS!RGeefpoMMt2LswTPPFD7Y8UeU_ZXdyBf8KIJTvZQhL8" class="button" target="_blank">Txt + Save MK</a>
-        <a href="https://drive.usercontent.google.com/download?id=1uNYZpnPWVsYSUne-9E7Dj7EHFG5jAhuY&export=download&authuser=0" class="button" target="_blank">MK 11 (confia)</a>
+        <a href="https://drive.usercontent.google.com/download?id=1uNYZpnPWVsYSUne-9E7Dj7EHFG5jAhuY&export=download&authuser=0" class="button" target="_blank">MK 11 (Confia)</a>
         <a href="https://drive.usercontent.google.com/download?id=12uUOnzQ4p-nzCKa2UYnt6tCBnBGz7YR3&export=download" class="button" target="_blank">MK 11 V2</a>
-        <a href="https://www.mediafire.com/file/j80ok8kwheizbds/GTASA-v2.00%28APK%2BOBB%29Android11%2C12.zip/file?dkey=4pkw0b6x90k&r=1440" class="button" target="_blank">GTA San</a>
+        <a href="https://www.mediafire.com/file/j80ok8kwheizbds/GTASA-v2.00%28APK%2BOBB%29Android11%2C12.zip/file?dkey=4pkw0b6x90k&r=1440" class="button" target="_blank">GTA San Andreas</a>
         <a href="https://www.mediafire.com/download/5stgwju6casqxs4" class="button" target="_blank">Save GTA</a>
         <a href="https://www.mediafire.com/download/faqsvqd2rn2qncr" class="button" target="_blank">Códigos GTA</a>
         <a href="https://www.mediafire.com/file/w2yoe8vi8y21f78/BullyPT-BR_BafejoJogos.zip/file?dkey=1ytblik6ct4&r=490" class="button" target="_blank">Bully 60 FPS</a>
-        <a href="https://www.mediafire.com/file/scacgow7sor6rg8/PSPG0WGHSTDUBPTBR.rar/file" class="button" target="_blank">God of War psp</a>
-        <a href="https://drive.google.com/file/d/1xXJB_1BQ-s2j5KpuQODVjg9UzTnHUmgM/view" class="button" target="_blank">god of war 1 dublado</a>
-        <a href="https://www.mediafire.com/file/wj75490ej2culwh/God_of_War_-_Ghost_of_Sparta_Vers%25C3%25A3o_Brasileira_CUTCENES_100%2525.iso/file" class="button" taget="_blank">god of war 2 dublado psp</a>
+        <a href="https://www.mediafire.com/file/scacgow7sor6rg8/PSPG0WGHSTDUBPTBR.rar/file" class="button" target="_blank">God of War PSP</a>
+        <a href="https://drive.google.com/file/d/1xXJB_1BQ-s2j5KpuQODVjg9UzTnHUmgM/view" class="button" target="_blank">God of War 1 Dublado</a>
+        <a href="https://www.mediafire.com/file/wj75490ej2culwh/God_of_War_-_Ghost_of_Sparta_Vers%25C3%25A3o_Brasileira_CUTCENES_100%2525.iso/file" class="button" taget="_blank">God of War 2 Dublado PSP</a>
         <a href="https://naruto-games-ultimate-ninja-shippuden-storm-4.softonic.com.br/android" class="button" target="_blank">Naruto Shippuden 4</a>
-        <a href="https://canaldolz.blogspot.com/2024/06/mod-naruto-ultimate-ninja-storm-4-ppsspp.html?m=1" class="button" target="_blank">naruto storm 4</a>
-        <a href="https://drive.usercontent.google.com/download?id=1OFe2xS_Z7D6pLOQUaoDHoQvz3_sAptEp&export=download" class="button" target="_blank">need for speed</a>
-        <a href="https://www.mediafire.com/file/7gqon6ojc2bglnh/TEXTURES.rar/file" class="button" target="_blank">textura NFS</a>
-        <a href="https://drive.usercontent.google.com/download?id=1_6U8bQFsqRRXl8GjCAlapYEzHDKjH0HU&export=download" class="button" target="_blank"> Black v2</a>
-        <a href="https://www.mediafire.com/file/t0pb3xabcqtagx7/Dragon+Ball+Z+Budokai+Tenkaichi+4+(MOD+PSP)+THIAGO+DROID.7z/file?dkey=almzzjwmy3c&r=70" class="button" target="_blank">Db Budokai Tenkaichi 4</a>
+        <a href="https://canaldolz.blogspot.com/2024/06/mod-naruto-ultimate-ninja-storm-4-ppsspp.html?m=1" class="button" target="_blank">Naruto Storm 4</a>
+        <a href="https://drive.usercontent.google.com/download?id=1OFe2xS_Z7D6pLOQUaoDHoQvz3_sAptEp&export=download" class="button" target="_blank">Need for Speed</a>
+        <a href="https://www.mediafire.com/file/7gqon6ojc2bglnh/TEXTURES.rar/file" class="button" target="_blank">Textura NFS</a>
+        <a href="https://drive.usercontent.google.com/download?id=1_6U8bQFsqRRXl8GjCAlapYEzHDKjH0HU&export=download" class="button" target="_blank">Black V2</a>
+        <a href="https://www.mediafire.com/file/t0pb3xabcqtagx7/Dragon+Ball+Z+Budokai+Tenkaichi+4+(MOD+PSP)+THIAGO+DROID.7z/file?dkey=almzzjwmy3c&r=70" class="button" target="_blank">DB Budokai Tenkaichi 4</a>
         <a href="https://liteapks.com/traffic-racer-pro.html" class="button" target="_blank">Jogo de Carro Off</a>
         <a href="https://an1.com/1583-traffic-racer-mod.html" class="button" target="_blank">Jogo de Carro 2</a>
         <a href="https://modyolo.com/traffic-rider.html" class="button" target="_blank">Jogo de Moto FF</a>
@@ -172,7 +261,7 @@
         <a href="https://poki.com/br" class="button" target="_blank">Poki</a>
         <a href="https://www.minijogos.com.br/poki" class="button" target="_blank">Mini Jogos</a>
         <a href="https://www.friv.com/?play-com-br" class="button" target="_blank">Friv</a>
-        <a href="https://www.emulatorgames.net/tags/" class="button" target="_blank">baixe jogos psp</a>
+        <a href="https://www.emulatorgames.net/tags/" class="button" target="_blank">Baixe Jogos PSP</a>
         <a href="https://t.me/jogosparapc" class="button" target="_blank">Jogos para PC</a>
         <a href="https://www.microsoft.com/pt-br/store/top-free/games/pc" class="button" target="_blank">Microsoft Free PC</a>
         <a href="https://br.uptodown.com/windows/games" class="button" target="_blank">Uptodown</a>
@@ -180,41 +269,36 @@
         <a href="https://cdromance.org/psp/" class="button" target="_blank">PSP 2</a>
         <a href="https://www.romspedia.com/roms/playstation-portable" class="button" target="_blank">PSP 3</a>
         <a href="https://beacons.ai/coisasdeandroid" class="button" target="_blank">PSP 4</a>
-        <a href="http://play.google.com/store/apps/details?id=total.games" class="button" target="_blank">total jogos</a>
-        <a href="https://www.mediafire.com/file/msusljamzb0c2j5/NARUTO_STORM_M0BILE_BY_VM_GAMEDROID.zip/file?dkey=msusljamzb0c2j5" class="button" target="_blank">naruto storm mobile</a>
-        <a href="https://beacons.ai/peteam" class="button" target="_blank">pe team jogos</a>
-        <a href="https://beacons.ai/futebol.ue" class="button" target="_blank">futebolmob jogos</a>
-        <a href="https://beacons.ai/coisasdeandroid" class="button" target="_blank">coisas de android</a>
+        <a href="http://play.google.com/store/apps/details?id=total.games" class="button" target="_blank">Total Jogos</a>
+        <a href="https://www.mediafire.com/file/msusljamzb0c2j5/NARUTO_STORM_M0BILE_BY_VM_GAMEDROID.zip/file?dkey=msusljamzb0c2j5" class="button" target="_blank">Naruto Storm Mobile</a>
+        <a href="https://beacons.ai/peteam" class="button" target="_blank">PE Team Jogos</a>
+        <a href="https://beacons.ai/futebol.ue" class="button" target="_blank">Futebolmob Jogos</a>
+        <a href="https://beacons.ai/coisasdeandroid" class="button" target="_blank">Coisas de Android</a>
     </div>
     <p>Desenvolvido Por Redzin</p>
     <script>
         function searchButton() {
-    const query = document.getElementById('search-input').value.toLowerCase();
-    const buttons = document.querySelectorAll('.button');
-    let found = false;
+            const query = document.getElementById('search-input').value.toLowerCase();
+            const buttons = document.querySelectorAll('.button');
+            let found = false;
 
-    buttons.forEach(button => {
-        button.classList.remove('highlight');
-        if (button.textContent.toLowerCase().includes(query)) {
-            button.classList.add('highlight');
-            button.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            found = true;
-        }
-    });
+            buttons.forEach(button => {
+                button.classList.remove('highlight');
+                if (button.textContent.toLowerCase().includes(query)) {
+                    button.classList.add('highlight');
+                    button.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    found = true;
+                }
+            });
 
-    const errorMessage = document.getElementById('error-message');
-    if (!found) {
-        errorMessage.textContent = 'Botão não encontrado.';
-    } else {
-        errorMessage.textContent = '';
-    }
+            const errorMessage = document.getElementById('error-message');
+            if (!found) {
+                errorMessage.textContent = 'Jogo não encontrado. Tente outra pesquisa!';
+            } else {
+                errorMessage.textContent = '';
+            }
         }
     </script>
-    <!-- Música de fundo -->
-    <audio autoplay loop>
-        <source src="./musicas/vermelho.mp3" type="audio/mpeg">
-        Seu navegador não suporta áudio HTML5.
-    </audio>
 </body>
 
-</html>
+            </html>

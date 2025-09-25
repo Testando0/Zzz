@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Apps - Kuromi Edition</title>
+    <title>Apps - Kuromi Cyberpunk Edition</title>
     <link rel="icon" href="./icones/favicon-32x32.png" type="image/png" sizes="32x32">
     <link rel="icon" href="./icones/favicon-16x16.png" type="image/png" sizes="16x16">
     <link rel="icon" href="./icones/android-chrome-192x192.png" type="image/png" sizes="192x192">
@@ -12,28 +12,32 @@
     <link rel="apple-touch-icon" href="./icones/apple-touch-icon.png">
     <link rel="manifest" href="./site.webmanifest">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Electrolize&family=Orbitron:wght@700&display=swap" rel="stylesheet">
     <style>
         :root {
-            /* Cores Kuromi Futuro */
-            --kuromi-dark: #1a001a; /* Roxo muito escuro / quase preto */
-            --kuromi-pink: #ff00ff; /* Rosa choque neon */
-            --kuromi-purple: #8a2be2; /* Roxo vibrante */
-            --kuromi-light: #ffffff; /* Branco puro */
-            --kuromi-accent: #00ffff; /* Ciano neon para detalhes */
+            /* Cores Kuromi Futuro (diferente) */
+            --kuromi-dark-bg: #0d001a; /* Fundo roxo muito escuro */
+            --kuromi-dark-element: rgba(20, 0, 30, 0.9); /* Elementos mais escuros com transparência */
+            --kuromi-neon-pink: #FF00FF; /* Rosa choque neon */
+            --kuromi-electric-purple: #8A2BE2; /* Roxo elétrico vibrante */
+            --kuromi-cyber-blue: #00FFFF; /* Ciano/azul elétrico para destaque */
+            --kuromi-text-light: #E0FFFF; /* Texto principal claro */
+            --kuromi-text-muted: rgba(224, 255, 255, 0.7); /* Texto secundário */
         }
 
         body {
-            font-family: 'Orbitron', sans-serif; /* Fonte futurista */
+            font-family: 'Electrolize', sans-serif; /* Nova fonte principal */
             margin: 0;
             padding: 0;
-            background-color: var(--kuromi-dark);
-            background-image: url('https://w.wallhaven.cc/full/m9/wallhaven-m9oyrl.jpg'); /* Exemplo de BG futurista */
+            background-color: var(--kuromi-dark-bg);
+            /* Nova imagem de fundo futurista (substitua por uma imagem Kuromi Cyberpunk) */
+            background-image: url('https://images.unsplash.com/photo-1596280436906-8d1976a40a6b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1920&q=80');
             background-size: cover;
             background-attachment: fixed;
             background-position: center;
             text-align: center;
-            color: var(--kuromi-light); /* Cor do texto padrão */
+            color: var(--kuromi-text-light); /* Cor do texto padrão */
+            overflow-x: hidden; /* Evitar scroll horizontal */
         }
 
         .container {
@@ -42,159 +46,240 @@
             justify-content: center;
             align-items: center;
             padding: 20px;
-            gap: 15px; /* Espaçamento entre os botões */
-            margin-top: 20px;
+            gap: 20px; /* Aumenta o espaçamento entre os botões */
+            margin-top: 40px;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .button {
-            padding: 12px 25px;
-            font-size: 18px;
+            padding: 15px 30px; /* Maior preenchimento */
+            font-size: 1.1em; /* Fonte ligeiramente maior */
             font-weight: 700;
-            border: 2px solid var(--kuromi-pink);
-            border-radius: 8px; /* Bordas levemente arredondadas */
-            background-color: rgba(0, 0, 0, 0.7); /* Fundo semi-transparente */
-            color: var(--kuromi-pink);
+            border: 2px solid var(--kuromi-electric-purple); /* Borda roxa elétrica */
+            border-radius: 4px; /* Bordas mais angulares */
+            background-color: var(--kuromi-dark-element); /* Fundo escuro semi-transparente */
+            color: var(--kuromi-neon-pink); /* Texto rosa neon */
             text-decoration: none;
             transition: all 0.3s ease-in-out;
-            box-shadow: 0 0 10px rgba(255, 0, 255, 0.5); /* Sombra neon rosa */
+            box-shadow: 0 0 15px rgba(138, 43, 226, 0.6), /* Sombra roxa */
+                        0 0 5px rgba(255, 0, 255, 0.4); /* Sombra rosa */
             text-transform: uppercase;
+            letter-spacing: 1px;
+            backdrop-filter: blur(5px); /* Efeito de vidro fosco */
+            -webkit-backdrop-filter: blur(5px);
+            position: relative;
+            overflow: hidden; /* Para o efeito de brilho interno */
+        }
+
+        .button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: 0.7s;
+        }
+
+        .button:hover::before {
+            left: 100%;
         }
 
         .button:hover {
-            background-color: var(--kuromi-pink);
-            color: var(--kuromi-dark);
-            border-color: var(--kuromi-light);
-            box-shadow: 0 0 20px var(--kuromi-pink), 0 0 30px var(--kuromi-purple); /* Efeito neon mais forte */
-            transform: translateY(-3px) scale(1.02);
+            background-color: var(--kuromi-neon-pink);
+            color: var(--kuromi-dark-bg);
+            border-color: var(--kuromi-cyber-blue);
+            box-shadow: 0 0 25px var(--kuromi-neon-pink), 
+                        0 0 40px var(--kuromi-electric-purple),
+                        0 0 60px var(--kuromi-cyber-blue); /* Efeito neon mais forte e azul */
+            transform: translateY(-5px) scale(1.03); /* Movimento e zoom mais pronunciados */
         }
 
         .top-bar {
-            position: sticky; /* Sticky para ficar no topo ao rolar */
+            position: sticky;
             top: 0;
             width: 100%;
             display: flex;
             flex-direction: column;
             align-items: center;
-            background-color: rgba(26, 0, 26, 0.9); /* Barra semi-transparente escura */
-            padding: 15px 0;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
-            z-index: 1000; /* Garante que fique acima de outros elementos */
+            background-color: rgba(13, 0, 26, 0.95); /* Fundo mais escuro e opaco */
+            padding: 20px 0; /* Maior preenchimento */
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            backdrop-filter: blur(8px); /* Efeito de vidro fosco mais intenso */
+            -webkit-backdrop-filter: blur(8px);
         }
 
         .search-bar {
             display: flex;
-            margin-bottom: 15px;
-            box-shadow: 0 0 10px var(--kuromi-purple); /* Sombra roxa no search bar */
-            border-radius: 5px;
-            overflow: hidden; /* Para as bordas ficarem certas */
+            margin-bottom: 20px;
+            box-shadow: 0 0 15px var(--kuromi-electric-purple); /* Sombra roxa no search bar */
+            border-radius: 6px; /* Levemente arredondado */
+            overflow: hidden;
+            border: 1px solid var(--kuromi-electric-purple); /* Borda para o search bar */
         }
 
         .search-input {
-            padding: 12px;
-            font-size: 16px;
-            border: none; /* Remover borda padrão */
-            background-color: var(--kuromi-dark);
-            color: var(--kuromi-light);
-            width: 250px;
-            outline: none; /* Remove o contorno ao focar */
-            border-right: 1px solid var(--kuromi-purple);
+            padding: 15px; /* Maior preenchimento */
+            font-size: 17px;
+            border: none;
+            background-color: var(--kuromi-dark-bg);
+            color: var(--kuromi-text-light);
+            width: 280px; /* Largura maior */
+            outline: none;
+            border-right: 1px solid var(--kuromi-electric-purple);
         }
 
         .search-input::placeholder {
-            color: rgba(255, 255, 255, 0.7);
+            color: var(--kuromi-text-muted);
         }
 
         .search-button {
-            padding: 12px 25px;
-            font-size: 16px;
+            padding: 15px 30px; /* Maior preenchimento */
+            font-size: 17px;
             border: none;
             cursor: pointer;
-            background-color: var(--kuromi-purple);
-            color: var(--kuromi-light);
+            background-color: var(--kuromi-electric-purple);
+            color: var(--kuromi-text-light);
             transition: all 0.3s ease;
             display: flex;
             align-items: center;
-            gap: 8px; /* Espaçamento entre ícone e texto */
+            gap: 10px; /* Espaçamento maior entre ícone e texto */
             text-transform: uppercase;
             font-weight: 700;
+            letter-spacing: 1px;
         }
 
         .search-button:hover {
-            background-color: var(--kuromi-pink);
-            color: var(--kuromi-dark);
-            box-shadow: 0 0 15px var(--kuromi-pink);
+            background-color: var(--kuromi-cyber-blue); /* Hover azul elétrico */
+            color: var(--kuromi-dark-bg);
+            box-shadow: 0 0 20px var(--kuromi-cyber-blue);
+            transform: scale(1.05); /* Leve zoom no hover */
         }
 
         .icon {
-            margin-right: 0; /* Ajuste para o gap */
+            margin-right: 0;
         }
 
         .highlight {
-            border: 3px solid var(--kuromi-accent); /* Destacar com ciano neon */
-            transform: scale(1.05); /* Zoom sutil */
-            box-shadow: 0 0 25px var(--kuromi-accent); /* Brilho neon intenso */
+            border: 3px solid var(--kuromi-cyber-blue); /* Destaque com ciano/azul elétrico */
+            transform: scale(1.07); /* Zoom mais visível */
+            box-shadow: 0 0 30px var(--kuromi-cyber-blue), 0 0 45px var(--kuromi-neon-pink); /* Brilho neon intenso azul e rosa */
             transition: transform 0.3s, border 0.3s, box-shadow 0.3s;
         }
 
         .error-message {
-            color: var(--kuromi-pink); /* Cor da mensagem de erro rosa neon */
-            font-size: 15px;
-            margin-top: 8px;
+            color: var(--kuromi-neon-pink); /* Cor da mensagem de erro rosa neon */
+            font-size: 1.1em;
+            margin-top: 10px;
             font-weight: 700;
-            text-shadow: 0 0 5px var(--kuromi-pink);
+            text-shadow: 0 0 8px var(--kuromi-neon-pink);
         }
 
         .title-container {
-            color: var(--kuromi-light);
-            font-size: 3.5em; /* Aumentando o tamanho do texto para mais impacto */
+            font-family: 'Orbitron', sans-serif; /* Usar Orbitron para o título */
+            color: var(--kuromi-text-light);
+            font-size: 4.2em; /* Título ainda maior */
             font-weight: 700;
-            letter-spacing: 3px; /* Espaçamento entre letras */
-            margin-bottom: 20px;
-            text-shadow: 0 0 15px var(--kuromi-pink), 0 0 25px var(--kuromi-purple); /* Efeito neon no título */
-            padding: 10px 20px;
-            background-color: rgba(0, 0, 0, 0.4);
-            border-radius: 10px;
+            letter-spacing: 5px; /* Espaçamento entre letras maior */
+            margin-bottom: 25px;
+            text-shadow: 0 0 20px var(--kuromi-neon-pink), 
+                         0 0 35px var(--kuromi-electric-purple),
+                         0 0 50px var(--kuromi-cyber-blue); /* Efeito neon mais complexo no título */
+            padding: 15px 30px;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 12px;
+            border: 1px solid var(--kuromi-cyber-blue); /* Borda ciano para o título */
+            box-shadow: 0 0 10px var(--kuromi-cyber-blue);
+            animation: pulse-glow 2s infinite alternate; /* Animação de brilho sutil */
+        }
+
+        @keyframes pulse-glow {
+            from {
+                text-shadow: 0 0 15px var(--kuromi-neon-pink), 
+                             0 0 25px var(--kuromi-electric-purple),
+                             0 0 40px var(--kuromi-cyber-blue);
+            }
+            to {
+                text-shadow: 0 0 20px var(--kuromi-neon-pink), 
+                             0 0 35px var(--kuromi-electric-purple),
+                             0 0 50px var(--kuromi-cyber-blue),
+                             0 0 60px rgba(0, 204, 255, 0.5);
+            }
         }
         
         /* Estilo para o texto "Desenvolvido Por Redzin" */
         p {
-            margin-top: 30px;
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 0.9em;
-            letter-spacing: 1px;
+            margin-top: 50px; /* Maior espaçamento */
+            color: var(--kuromi-text-muted);
+            font-size: 1em;
+            letter-spacing: 1.5px;
+            text-shadow: 0 0 5px rgba(0, 255, 255, 0.3); /* Sombra sutil de ciano */
         }
 
-        /* Responsividade básica */
-        @media (max-width: 768px) {
+        /* Responsividade */
+        @media (max-width: 900px) {
             .title-container {
-                font-size: 2.5em;
+                font-size: 3em;
+                letter-spacing: 3px;
             }
             .search-input {
-                width: 180px;
+                width: 220px;
             }
             .button {
-                padding: 10px 20px;
-                font-size: 16px;
+                padding: 12px 25px;
+                font-size: 1em;
             }
         }
 
-        @media (max-width: 480px) {
+        @media (max-width: 600px) {
             .title-container {
-                font-size: 1.8em;
+                font-size: 2.2em;
+                letter-spacing: 2px;
+                padding: 10px 20px;
             }
             .search-bar {
                 flex-direction: column;
-                width: 90%;
+                width: 95%;
             }
             .search-input {
-                width: 100%;
-                border-radius: 5px 5px 0 0;
+                width: calc(100% - 30px); /* Ajusta a largura para o padding */
+                border-radius: 6px 6px 0 0;
                 border-right: none;
-                border-bottom: 1px solid var(--kuromi-purple);
+                border-bottom: 1px solid var(--kuromi-electric-purple);
+                padding: 12px;
             }
             .search-button {
                 width: 100%;
-                border-radius: 0 0 5px 5px;
+                border-radius: 0 0 6px 6px;
+                padding: 12px 20px;
+            }
+            .container {
+                gap: 10px;
+            }
+            .button {
+                padding: 10px 18px;
+                font-size: 0.9em;
+            }
+            p {
+                margin-top: 30px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .title-container {
+                font-size: 1.6em;
+                letter-spacing: 1px;
+            }
+            .search-input {
+                width: calc(100% - 20px);
+                padding: 10px;
+            }
+            .search-button {
+                padding: 10px 15px;
             }
         }
     </style>
@@ -287,4 +372,4 @@
     </script>
 </body>
 
-        </html>
+    </html>

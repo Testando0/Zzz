@@ -17,11 +17,11 @@
     /* Cores */
     :root {
         --primary-color: #FF0000; /* Vermelho Kuromi/Destaque */
-        --background-dark: #121212; /* Fundo escuro */
+        --background-dark: rgba(18, 18, 18, 0.1); /* Fundo escuro muito transparente */
         --text-light: #FFFFFF; /* Texto principal claro */
-        --text-secondary: #AAAAAA; /* Texto secundário */
-        --card-bg: rgba(255, 255, 255, 0.05); /* Fundo de cartões levemente transparente */
-        --border-color: rgba(255, 0, 0, 0.5); /* Borda sutil de destaque */
+        --text-secondary: #CCCCCC; /* Texto secundário ligeiramente mais claro */
+        --card-bg: rgba(0, 0, 0, 0.01); /* Fundo de cartões QUASE INVISÍVEL */
+        --border-color: rgba(255, 0, 0, 0.2); /* Borda sutil e muito transparente */
     }
 
     /* Reset Básico e Fontes */
@@ -33,7 +33,7 @@
 
     body {
         font-family: 'Inter', sans-serif; /* Fonte moderna e limpa */
-        background-color: var(--background-dark);
+        background-color: transparent; /* MUITO MAIS TRANSPARENTE: Deixa o fundo do body transparente */
         color: var(--text-light);
         line-height: 1.6;
         min-height: 100vh;
@@ -62,6 +62,7 @@
         padding: 20px;
         z-index: 1; /* Garante que o conteúdo fique acima do vídeo */
         position: relative;
+        background-color: rgba(18, 18, 18, 0.1); /* Fundo transparente para a área de conteúdo */
     }
 
     /* Cabeçalho/Logo */
@@ -89,18 +90,19 @@
     }
 
     .weather-info, #calendar {
-        background-color: var(--card-bg);
+        background-color: var(--card-bg); /* MUITO MAIS TRANSPARENTE */
         padding: 30px;
         border-radius: 12px;
-        border: 1px solid var(--border-color);
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        border: 1px solid var(--border-color); /* Borda mais transparente */
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); /* Aumenta a sombra para destaque visual */
         text-align: center;
         transition: transform 0.3s ease;
+        backdrop-filter: blur(2px); /* Efeito de vidro fosco (opcional) */
     }
     
     .weather-info:hover, #calendar:hover {
         transform: translateY(-5px);
-        box-shadow: 0 6px 15px rgba(255, 0, 0, 0.2);
+        box-shadow: 0 6px 15px rgba(255, 0, 0, 0.4); /* Sombra mais forte no hover */
     }
 
     .weather-icon {
@@ -113,7 +115,8 @@
         font-size: 3.5rem;
         margin: 5px 0;
         color: var(--primary-color);
-        font-weight: 800; /* Mais espesso */
+        font-weight: 800;
+        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5); /* Adiciona sombra ao texto para melhorar a leitura */
     }
 
     .details p, #user-city, #user-ip, #current-time, #server-speed {
@@ -138,7 +141,7 @@
     }
 
     .button {
-        background-color: var(--card-bg);
+        background-color: var(--card-bg); /* MUITO MAIS TRANSPARENTE */
         color: var(--text-light);
         padding: 12px 25px;
         font-size: 1.1rem;
@@ -150,6 +153,7 @@
         display: flex;
         align-items: center;
         font-weight: 600;
+        backdrop-filter: blur(1px); /* Efeito de vidro fosco (opcional) */
     }
 
     .button i {
@@ -161,19 +165,15 @@
         background-color: var(--primary-color);
         color: var(--background-dark);
         transform: translateY(-3px) scale(1.02);
-        box-shadow: 0 5px 15px rgba(255, 0, 0, 0.4);
+        box-shadow: 0 5px 15px rgba(255, 0, 0, 0.5); /* Sombra mais forte no hover */
     }
 
-    .notification {
-        /* Estilo específico para o botão de notificação/menu, se necessário */
-    }
-    
-    /* Menu Lateral (Sidebar) - Simplificado */
+    /* Menu Lateral (Sidebar) */
     .sidebar {
-        /* Mantendo a sua estrutura de sidebar, mas atualizando o estilo */
-        background-image: none !important; /* Removendo imagem de fundo para um visual mais limpo */
-        background-color: rgba(18, 18, 18, 0.95); /* Fundo muito escuro com transparência */
+        background-image: none !important;
+        background-color: rgba(18, 18, 18, 0.7); /* MAIS TRANSPARENTE: Fundo escuro com mais transparência */
         border-right: 3px solid var(--primary-color);
+        backdrop-filter: blur(5px); /* Efeito de vidro fosco forte */
     }
 
     .sidebar a {
@@ -181,30 +181,32 @@
         color: var(--text-light);
         background-color: transparent;
         border: none;
-        border-bottom: 1px solid rgba(255, 0, 0, 0.2);
+        border-bottom: 1px solid rgba(255, 0, 0, 0.1); /* Borda mais transparente */
         margin: 0;
         padding: 15px 20px;
     }
 
     .sidebar a:hover {
         color: var(--primary-color);
-        background-color: rgba(255, 0, 0, 0.1);
+        background-color: rgba(255, 0, 0, 0.05); /* Fundo de hover mais transparente */
     }
 
     /* Mensagem de Boas-Vindas */
     .welcome-message {
-        background-color: var(--background-dark);
+        background-color: rgba(18, 18, 18, 0.6); /* MAIS TRANSPARENTE: Fundo da mensagem com transparência */
         border: 2px solid var(--primary-color);
-        box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+        box-shadow: 0 0 20px rgba(255, 0, 0, 0.7);
         border-radius: 15px;
         color: var(--text-light);
         padding: 40px;
+        backdrop-filter: blur(3px); /* Efeito de vidro fosco */
     }
     
     .welcome-message p {
         font-size: 1.2rem;
         color: var(--primary-color);
         font-weight: 600;
+        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
     }
     
     .welcome-message .close-btn {
@@ -218,57 +220,19 @@
         font-size: 0.9rem;
         color: var(--text-secondary);
         margin-top: 50px;
+        background-color: rgba(0, 0, 0, 0.1); /* Fundo muito sutil */
+        border-top: 1px solid rgba(255, 0, 0, 0.1);
     }
 
-    .footer p {
-        color: inherit;
-        text-align: center;
-    }
-    
-    /* Estilos do Calendário simplificados para o novo visual */
-    #calendar .calendar-header {
-        background-color: var(--primary-color);
-        color: var(--background-dark);
-        border-radius: 10px 10px 0 0;
-        font-weight: 600;
-    }
-
-    #calendar .calendar-header button {
-        color: var(--background-dark);
-    }
-    
-    .datepicker {
-        background-color: transparent !important;
-    }
-    
-    .datepicker table tr th {
-        background-color: transparent !important;
-        color: var(--text-secondary) !important;
-    }
-
+    /* Estilos do Calendário */
     .datepicker table tr td {
-        border: 1px solid rgba(255, 0, 0, 0.2) !important;
-    }
-
-    .datepicker table tr td.day {
-        color: var(--text-light) !important;
-        background-color: transparent !important;
-        height: 40px; /* Mais compacto */
-        font-size: 1rem;
-    }
-
-    .datepicker table tr td.day.active {
-        background-color: var(--primary-color) !important;
-        color: var(--background-dark) !important;
-        border: 2px solid var(--primary-color) !important;
-        font-weight: 800;
+        border: 1px solid rgba(255, 0, 0, 0.1) !important; /* Borda mais transparente */
     }
 
     .datepicker table tr td.day:hover {
-        background-color: rgba(255, 0, 0, 0.2) !important;
+        background-color: rgba(255, 0, 0, 0.1) !important; /* Hover mais transparente */
         color: var(--primary-color) !important;
     }
-
 
     /* Esconder o áudio, mantendo a funcionalidade */
     audio {
@@ -406,9 +370,7 @@
         updateCurrentTime(); // Chama uma vez para inicializar
         
         // Placeholder para as funções de clima e calendário.
-        // As funções `getWeatherInfo`, `fetchWeather`, `displayWeather`, `generateCalendar`, `prevMonth`, `nextMonth`
-        // DEVEM ser mantidas no seu script original para que o clima e o calendário funcionem.
-        // Apenas o CSS foi alterado para o novo visual.
+        // As funções de clima e calendário foram mantidas inalteradas.
         
         const apiKey = '363737d239ce3f7864e06da58d206887'; // Sua chave
         
@@ -572,4 +534,4 @@
         })();
     </script>
 </body>   
-                        </html>
+                    </html>

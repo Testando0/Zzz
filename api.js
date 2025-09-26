@@ -7747,7 +7747,7 @@ router.get('/ai-simsimi', async (req, res) => {
     const { data } = await axios.get(apiUrl);
 
     if (data && data.result) {
-      res.json({ resposta: data.resposta });
+      res.json({ resposta: apiUrl.resposta });
     } else {
       res.status(500).json({ erro: 'Resposta inválida da API' });
     }

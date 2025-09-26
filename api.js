@@ -4967,12 +4967,12 @@ router.get('/chatgpt', async (req, res) => {
 });
 
 
-router.get('/lady', async (req, res) => {
+router.get('/kuromi', async (req, res) => {
   const texto = req.query.texto;
 
   if (!texto) {
     return res.status(400).json({
-      erro: 'Parâmetro texto não fornecido. Use /lady?texto=Sua pergunta'
+      erro: 'Parâmetro texto não fornecido. Use /kuromi?texto=Sua pergunta'
     });
   }
 
@@ -4987,7 +4987,7 @@ router.get('/lady', async (req, res) => {
   }
 });
 
-router.get('/lady2', async (req, res) => {
+router.get('/kuromi2', async (req, res) => {
   const { texto } = req.query;
 
   if (!texto) {
@@ -7743,11 +7743,11 @@ router.get('/ai-simsimi', async (req, res) => {
   }
 
   try {
-    const apiUrl = `https://api.bronxyshost.com.br/api-bronxys/simsimi?apikey=KEY-TEMPORARIA-TELEGRAM-ALEATORY&pergunta=${encodeURIComponent(query)}`;
+    const apiUrl = `https://api.bronxyshost.com.br/api-bronxys/simsimi?apikey=KEY-TEMPORARIA-TELEGRAM-ALEATORY&pergunta=${query}`;
     const { data } = await axios.get(apiUrl);
 
     if (data && data.result) {
-      res.json({ resposta: apiUrl.resposta });
+      res.json({ resposta: data.resposta });
     } else {
       res.status(500).json({ erro: 'Resposta inválida da API' });
     }

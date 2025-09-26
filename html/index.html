@@ -408,13 +408,13 @@ createParticles();
        
         const greetingElement = document.getElementById('greeting');
         if (hours >= 5 && hours < 12) {
-            greetingElement.textContent = "Bom dia!";
+            greetingElement.textContent = "Bom Dia 🌤";
         } else if (hours >= 12 && hours < 18) {
-            greetingElement.textContent = "Boa tarde!";
+            greetingElement.textContent = "Boa Tarde ☀️";
         } else if (hours >= 18 && hours < 24) {
-            greetingElement.textContent = "Boa noite!";
+            greetingElement.textContent = "Boa Noite 🌙";
         } else {
-            greetingElement.textContent = "Boa madrugada!";
+            greetingElement.textContent = "Boa Madrugada 🌙";
         }
     }
     setInterval(updateClock, 1000);

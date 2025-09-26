@@ -7743,11 +7743,11 @@ router.get('/ai-simsimi', async (req, res) => {
   }
 
   try {
-    const apiUrl = `https://api.giftedtech.web.id/api/ai/simsimi?apikey=gifted&query=${encodeURIComponent(query)}`;
+    const apiUrl = `https://api.bronxyshost.com.br/api-bronxys/simsimi?apikey=KEY-TEMPORARIA-TELEGRAM-ALEATORY&pergunta=${encodeURIComponent(query)}`;
     const { data } = await axios.get(apiUrl);
 
     if (data && data.result) {
-      res.json({ resposta: data.result });
+      res.json({ resposta: data.resposta });
     } else {
       res.status(500).json({ erro: 'Resposta inválida da API' });
     }
@@ -14339,7 +14339,7 @@ router.get('/printsite', async (req, res) => {
         const { url } = req.query;
         if (!url) return res.json({ status: false, message: 'Faltando parâmetro url' });
 
-        const printsiteLink = `https://api.bronxyshost.com.br/api-bronxys/print_de_site?url=${encodeURIComponent(url)}&apikey=tiomaker8930`;
+        const printsiteLink = `https://api.bronxyshost.com.br/api-bronxys/print_de_site?url=${encodeURIComponent(url)}&apikey=KEY-TEMPORARIA-TELEGRAM-ALEATORY`;
         const response = await axios.get(printsiteLink, { responseType: 'arraybuffer' });
 
         res.set('Content-Type', 'image/png'); // Ajuste o tipo conforme o formato da imagem

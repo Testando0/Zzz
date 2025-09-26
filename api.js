@@ -855,7 +855,7 @@ router.get('/musica8', async (req, res) => {
   if (!name) return res.status(400).send('Parâmetro "name" é obrigatório');
 
   try {
-    const response = await axios.get(`https://api.vreden.my.id/api/ytplaymp3?query=${encodeURIComponent(name)}`);
+    const response = await axios.get(`https://api.vreden.my.id/api/v1/download/play/audio?query=${encodeURIComponent(name)}`);
     const downloadUrl = response.data.result.download.url;
     res.redirect(downloadUrl);
   } catch (error) {
@@ -869,7 +869,7 @@ router.get('/clipe8', async (req, res) => {
   if (!name) return res.status(400).send('Parâmetro "name" é obrigatório');
 
   try {
-    const response = await axios.get(`https://api.vreden.my.id/api/ytplaymp4?query=${encodeURIComponent(name)}`);
+    const response = await axios.get(`https://api.vreden.my.id/api/v1/download/play/video?query=${encodeURIComponent(name)}`);
     const downloadUrl = response.data.result.download.url;
     res.redirect(downloadUrl);
   } catch (error) {
@@ -883,7 +883,7 @@ router.get('/linkmp3-8', async (req, res) => {
   if (!ytUrl) return res.status(400).send('URL do YouTube é obrigatório');
 
   try {
-    const response = await axios.get(`https://api.vreden.my.id/api/ytmp3?url=${encodeURIComponent(ytUrl)}`);
+    const response = await axios.get(`https://api.vreden.my.id/api/v1/download/youtube/audio?url=${ytUrl}&quality=128`);
     const downloadUrl = response.data.result.download.url;
     res.redirect(downloadUrl);
   } catch (error) {
@@ -2557,10 +2557,10 @@ router.get('/play2', async (req, res) => {
 
 router.get('/threads', async (req, res) => { try { const { url } = req.query; if (!url) return res.status(400).json({ error: 'URL is required' });
 
-const response = await axios.get(`https://api.vreden.my.id/api/download/threads?url=${encodeURIComponent(url)}`);
+const response = await axios.get(`https://api.vreden.my.id/api/v1/download/threads?url=${encodeURIComponent(url)}`);
     
     const data = response.data;
-    data.creator = 'come primas';
+    data.creator = 'Redzin';
     
     res.json(data);
 } catch (error) {
@@ -2576,7 +2576,7 @@ router.get('/facebook', async (req, res) => {
   if (!url) return res.status(400).json({ error: 'URL não fornecida' });
 
   try {
-    const response = await axios.get(`https://api.vreden.my.id/api/fbdl?url=${encodeURIComponent(url)}`);
+    const response = await axios.get(`https://api.vreden.my.id/api/v1/download/facebook?url=${encodeURIComponent(url)}`);
     res.json(response.data);
   } catch (err) {
     res.status(500).json({ error: 'Erro ao buscar dados do Facebook', details: err.message });
@@ -2588,7 +2588,7 @@ router.get('/drive', async (req, res) => {
   if (!url) return res.status(400).json({ error: 'URL não fornecida' });
 
   try {
-    const response = await axios.get(`https://api.vreden.my.id/api/drive?url=${encodeURIComponent(url)}`);
+    const response = await axios.get(`https://api.vreden.my.id/api/v1/download/gdrive?url=${encodeURIComponent(url)}`);
     res.json(response.data);
   } catch (err) {
     res.status(500).json({ error: 'Erro ao buscar dados do Drive', details: err.message });
@@ -2613,10 +2613,10 @@ router.get('/capcut', async (req, res) => {
         const { url } = req.query;
         if (!url) return res.status(400).json({ error: 'URL is required' });
 
-        const response = await axios.get(`https://api.vreden.my.id/api/capcutdl?url=${encodeURIComponent(url)}`);
+        const response = await axios.get(`https://api.vreden.my.id/api/v1/download/capcut?url=${encodeURIComponent(url)}`);
         
         const data = response.data;
-        data.creator = 'come primas';
+        data.creator = 'Redzin';
         
         res.json(data);
     } catch (error) {

@@ -7746,7 +7746,7 @@ router.get('/ai-simsimi', async (req, res) => {
     const apiUrl = `https://api.bronxyshost.com.br/api-bronxys/simsimi?apikey=KEY-TEMPORARIA-TELEGRAM-ALEATORY&pergunta=${query}`;
     const { data } = await axios.get(apiUrl);
 
-    if (data && data.result) {
+    if (data && data.resposta) {
       res.json({ resposta: data.resposta });
     } else {
       res.status(500).json({ erro: 'Resposta inválida da API' });

@@ -3159,7 +3159,7 @@ router.get('/hd', async (req, res) => {
     if (!imageUrl) return res.status(400).json({ error: 'Informe uma URL de imagem' });
 
     try {
-        const response = await axios.get(`https://https://api.nexfuture.com.br/api/outros/remini?url=${encodeURIComponent(imageUrl)}`, { responseType: 'arraybuffer' });
+        const response = await axios.get(`https://api.nexfuture.com.br/api/outros/remini?url=${encodeURIComponent(imageUrl)}`, { responseType: 'arraybuffer' });
         res.setHeader('Content-Type', 'image/jpeg');
         res.send(response.data);
     } catch (error) {
@@ -3668,7 +3668,7 @@ router.get('/instamp4', async (req, res) => {
 
     try {
         // Montar a URL da API externa
-        const apiUrl = `https://https://api.nexfuture.com.br/api/downloads/instagram/dl?url=${encodeURIComponent(instagramUrl)}`;
+        const apiUrl = `https://api.nexfuture.com.br/api/downloads/instagram/dl?url=${encodeURIComponent(instagramUrl)}`;
 
         // Fazer a requisição para a API externa
         const apiResponse = await axios.get(apiUrl);
@@ -3696,7 +3696,7 @@ router.get('/instamp3', (req, res) => {
 
     try {
         // Montar a URL da API externa
-        const apiUrl = `https://https://api.nexfuture.com.br/api/downloads/instagram/mp3?url=${encodeURIComponent(instagramUrl)}`;
+        const apiUrl = `https://api.nexfuture.com.br/api/downloads/instagram/mp3?url=${encodeURIComponent(instagramUrl)}`;
 
         // Redirecionar o cliente para a URL
         res.redirect(apiUrl);
@@ -3895,7 +3895,7 @@ router.get('/clipe5', async (req, res) => {
         }
         
         // Monta a URL da API com o link do vídeo encontrado
-        const apiUrl = `https://https://api.nexfuture.com.br/api/downloads/youtube/mp4?url=${encodeURIComponent(video.url)}`;
+        const apiUrl = `https://api.nexfuture.com.br/api/downloads/youtube/mp4?url=${encodeURIComponent(video.url)}`;
         
         // Redireciona para a URL da API
         res.redirect(apiUrl);
@@ -4911,7 +4911,7 @@ router.get('/ia2', async (req, res) => {
   }
 
   try {
-    const response = await axios.get(`https://https://api.nexfuture.com.br/api/ai/gpt?query=${texto}`);
+    const response = await axios.get(`https://api.nexfuture.com.br/api/ai/gpt?query=${texto}`);
 
     if (response.data && response.data.resposta) {
       res.json({ resposta: response.data.resposta });
@@ -5140,7 +5140,7 @@ router.get('/sabetudo', async (req, res) => {
   }
 
   try {
-    const response = await axios.get(`https://https://api.nexfuture.com.br/api/inteligencias/gemini/pro?query=${texto}`);
+    const response = await axios.get(`https://api.nexfuture.com.br/api/inteligencias/gemini/pro?query=${texto}`);
 
     if (response.data && response.data.resposta) {
       res.json({ resposta: response.data.resposta });
@@ -7809,7 +7809,7 @@ router.get('/playstore2', async (req, res) => {
     try {
         // Fazendo a solicitação para a API externa
         const response = await axios.get(
-            `https://https://api.nexfuture.com.br/api/pesquisa/playstore?nome=${encodeURIComponent(nome)}`
+            `https://api.nexfuture.com.br/api/pesquisa/playstore?nome=${encodeURIComponent(nome)}`
         );
 
         // Verificando se a resposta contém o campo "resultado"
@@ -7907,7 +7907,7 @@ router.get('/orbital-img', async (req, res) => {
     try {
         // Fazendo a solicitação para a API externa
         const response = await axios.get(
-            `https://https://api.nexfuture.com.br/api/ai/orbital-img?query=${encodeURIComponent(texto)}&model=animefy`
+            `https://api.nexfuture.com.br/api/ai/orbital-img?query=${encodeURIComponent(texto)}&model=animefy`
         );
 
         // Verificando a resposta
@@ -14616,7 +14616,7 @@ router.get('/fundodatela', async (req, res) => {
   }
 
   try {
-    const response = await axios.get(`https://https://api.nexfuture.com.br/api/pesquisa/wallpaper?query=${query}`);
+    const response = await axios.get(`https://api.nexfuture.com.br/api/pesquisa/wallpaper?query=${query}`);
 
     if (response.data.status) {
       // Filtrar apenas URLs válidas

@@ -235,7 +235,7 @@
                     apiUrl = `https://kuromi-system-tech.onrender.com/api/ytmp3?url=${query}`;
                     break;
                 case 'videoByName': // Assumindo que esta API busca pelo nome, caso contrário, use a mesma de 'videoByLink'
-                    apiUrl = `https://kuromi-system-tech.onrender.com/api/ytsearch?q=${query}`;
+                    apiUrl = `https://kuromi-system-tech.onrender.com/api/playvideo?name=${query}`;
                     break;
                 case 'videoByLink':
                     apiUrl = `https://kuromi-system-tech.onrender.com/api/ytmp4?url=${query}`;
@@ -261,18 +261,11 @@
                 case 'tiktokByLinkAudio':
                     apiUrl = `https://clover-t-bot-r0wt.onrender.com/download/tiktok?url=${encodeURIComponent(query)}`;
                     break;
-                case 'imgurImage':
-                case 'imgurVideo':
-                    window.open('https://imgur.com/upload', '_blank');
-                    return;
                 case 'pinterestVideo':
                     apiUrl = `https://kuromi-system-tech.onrender.com/api/pinvideo?url=${encodeURIComponent(query)}`;
                     break;
                 case 'pinterestImage':
                     apiUrl = `https://kuromi-system-tech.onrender.com/api/pinimagem?url=${encodeURIComponent(query)}`;
-                    break;
-                case 'instaByNewApi':
-                    apiUrl = `https://api-aswin-sparky.koyeb.app/api/downloader/igdl?url=${encodeURIComponent(query)}`;
                     break;
                 default:
                     resultElement.textContent = 'Opção Inválida Ou Não Suportada';

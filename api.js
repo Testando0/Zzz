@@ -2306,6 +2306,19 @@ router.get('/play-video', async (req, res) => {
   }
 });
 
+router.get('/play-video2', async (req, res) => {
+  const { url } = req.query;
+  if (!url) return res.status(400).json({ error: 'Parâmetro "url" não fornecido' });
+
+  try {
+    const endpoint = `http://speedhosting.cloud:2009/download/play-video?url=${url}`;
+    const response = await axios.get(endpoint);
+    res.json(response.data);
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao buscar vídeo do YouTube', details: err.message });
+  }
+});
+
 // Baixar áudio pelo nome
 router.get('/play', async (req, res) => {
   const { name } = req.query;
@@ -14339,7 +14352,7 @@ router.get('/printsite', async (req, res) => {
         const { url } = req.query;
         if (!url) return res.json({ status: false, message: 'Faltando parâmetro url' });
 
-        const printsiteLink = `https://api.bronxyshost.com.br/api-bronxys/print_de_site?url=${encodeURIComponent(url)}&apikey=KEY-TEMPORARIA-TELEGRAM-ALEATORY`;
+        const printsiteLink = `https://api.bronxyshost.com.br/api-bronxys/print_de_site?url=${url}&apikey=KEY-TEMPORARIA-TELEGRAM-ALEATORY`;
         const response = await axios.get(printsiteLink, { responseType: 'arraybuffer' });
 
         res.set('Content-Type', 'image/png'); // Ajuste o tipo conforme o formato da imagem

@@ -17,6 +17,8 @@ const ffmpeg = require('fluent-ffmpeg');
 const cheerio = require('cheerio');
 const search = require('yt-search');
 const ytSearch = require('yt-search');
+const { v4: uuidv4 } = require("uuid");
+const vm = require("vm");
 const fetch = require("node-fetch");
 const puppeteer = require("puppeteer-core");
 const chromium = require("@sparticuz/chromium");
@@ -35,6 +37,8 @@ const readline = require('readline');
 const { Api } = require('telegram/tl');
 const { NewMessage, CallbackQuery } = require('telegram/events');
 const input = require('input');
+const { HttpsProxyAgent } = require("https-proxy-agent");
+const https = require ('https');
 const { AI } = require('unlimited-ai');
 const { gpt, bing, llama, blackbox } = require('gpti'); 
 const ai = require('./ais');
@@ -597,6 +601,143 @@ router.get('/boneco', async (req, res) => {
 });
 
 
+async function getAny4kLink(videoUrl, tipo) {
+  console.log(`[${tipo}] Video URL:`, videoUrl);
+
+  const videoId = new URL(videoUrl).searchParams.get("v");
+  console.log(`[${tipo}] Video ID:`, videoId);
+
+  const { data: html } = await axios.get(`https://any4k.com/pt/download/youtube/${videoId}`);
+  console.log(`[${tipo}] HTML baixado, tamanho:`, html.length);
+
+  const match = html.match(/window\.__NUXT__=(.*)<\/script>/);
+  if (!match) throw new Error("Não foi possível extrair dados do site");
+  console.log(`[${tipo}] Match encontrado, comprimento:`, match[1].length);
+
+  const sandbox = {};
+  vm.createContext(sandbox);
+  try {
+    vm.runInContext(`result = ${match[1]}`, sandbox);
+  } catch (err) {
+    console.error(`[${tipo}] Erro ao executar sandbox:`, err.message);
+    throw err;
+  }
+
+  const data = sandbox.result.data[Object.keys(sandbox.result.data)[0]].data;
+  console.log(`[${tipo}] JS executado no sandbox`);
+
+  const arquivos = tipo.includes("musica") || tipo === "playlink" ? data.raw_audio : data.raw_video;
+  if (!arquivos || !arquivos.length) throw new Error("Nenhum arquivo encontrado");
+  console.log(`[${tipo}] Arquivos encontrados:`, arquivos.map(a => a.ext));
+
+  const arquivo = arquivos[0]; // primeiro arquivo
+  const deviceId = uuidv4().replace(/-/g, "");
+
+  const { data: downloadData } = await axios.post(
+    "https://api.any4k.com/v1/dlp/download",
+    {
+      url: videoUrl,
+      format: arquivo.id,
+      lang: "pt",
+      country: "BR",
+      platform: "Web",
+      deviceId,
+      sysVer: "1.0.0",
+      appVer: "1.0.0",
+      bundleId: "com.any4k.api"
+    },
+    { headers: { "Content-Type": "application/json" } }
+  );
+
+  if (downloadData.err_code !== 0) throw new Error("Falha na API Any4K");
+  console.log(`[${tipo}] Resposta da API Any4K:`, downloadData);
+
+  const fileUrl = `https://api.any4k.com/v1/file/o?i=${downloadData.id}`;
+  console.log(`[${tipo}] Redirecionando para:`, fileUrl);
+
+  return fileUrl;
+}
+
+// ===================
+// 1. musica?name=
+// ===================
+router.get("/musica", async (req, res) => {
+  const name = req.query.name;
+  if (!name) return res.status(400).send("Informe ?name=");
+
+  try {
+    console.log("[musica] Buscando:", name);
+    const r = await ytSearch(name);
+    const video = r.videos.length ? r.videos[0] : null;
+    if (!video) return res.status(404).send("Nenhum vídeo encontrado");
+
+    console.log("[musica] Vídeo encontrado:", video.title, video.url);
+    const link = await getAny4kLink(video.url, "musica");
+
+    return res.redirect(link);
+  } catch (err) {
+    console.error("[musica] Erro:", err.message);
+    return res.status(500).send("Erro interno: " + err.message);
+  }
+});
+
+// ===================
+// 2. clipe?name=
+// ===================
+router.get("/clipe", async (req, res) => {
+  const name = req.query.name;
+  if (!name) return res.status(400).send("Informe ?name=");
+
+  try {
+    console.log("[clipe] Buscando:", name);
+    const r = await ytSearch(name);
+    const video = r.videos.length ? r.videos[0] : null;
+    if (!video) return res.status(404).send("Nenhum vídeo encontrado");
+
+    console.log("[clipe] Vídeo encontrado:", video.title, video.url);
+    const link = await getAny4kLink(video.url, "clipe");
+
+    return res.redirect(link);
+  } catch (err) {
+    console.error("[clipe] Erro:", err.message);
+    return res.status(500).send("Erro interno: " + err.message);
+  }
+});
+
+// ===================
+// 3. playlink?url=
+// ===================
+router.get("/linkmp3", async (req, res) => {
+  const url = req.query.url;
+  if (!url) return res.status(400).send("Informe ?url=");
+
+  try {
+    console.log("[playlink] URL recebida:", url);
+    const link = await getAny4kLink(url, "playlink");
+    return res.redirect(link);
+  } catch (err) {
+    console.error("[playlink] Erro:", err.message);
+    return res.status(500).send("Erro interno: " + err.message);
+  }
+});
+
+// ===================
+// 4. linkmp4?url=
+// ===================
+router.get("/linkmp4", async (req, res) => {
+  const url = req.query.url;
+  if (!url) return res.status(400).send("Informe ?url=");
+
+  try {
+    console.log("[clipelink] URL recebida:", url);
+    const link = await getAny4kLink(url, "clipelink");
+    return res.redirect(link);
+  } catch (err) {
+    console.error("[clipelink] Erro:", err.message);
+    return res.status(500).send("Erro interno: " + err.message);
+  }
+});
+
 
 async function generateAudio(res, voiceId, text) {
   if (!text) return res.status(400).json({ erro: "Texto ausente" });
@@ -779,7 +920,7 @@ async function searchYoutubeVideo(query) {
 }
 
 // /musica?name=...  => redireciona para MP3 do primeiro resultado
-router.get('/musica', async (req, res) => {
+router.get('/musica-2', async (req, res) => {
   try {
     const name = req.query.name;
     if (!name) return res.status(400).send('Query "name" é obrigatória');
@@ -794,7 +935,7 @@ router.get('/musica', async (req, res) => {
 });
 
 // /clipe?name=... => redireciona para MP4 do primeiro resultado
-router.get('/clipe', async (req, res) => {
+router.get('/clipe-2', async (req, res) => {
   try {
     const name = req.query.name;
     if (!name) return res.status(400).send('Query "name" é obrigatória');
@@ -809,7 +950,7 @@ router.get('/clipe', async (req, res) => {
 });
 
 // /linkmp3?url=... => redireciona para MP3 pelo link
-router.get('/linkmp3', async (req, res) => {
+router.get('/linkmp3-2', async (req, res) => {
   try {
     const url = req.query.url;
     if (!url) return res.status(400).send('Query "url" é obrigatória');
@@ -822,7 +963,7 @@ router.get('/linkmp3', async (req, res) => {
 });
 
 // /linkmp4?url=... => redireciona para MP4 pelo link
-router.get('/linkmp4', async (req, res) => {
+router.get('/linkmp4-2', async (req, res) => {
   try {
     const url = req.query.url;
     if (!url) return res.status(400).send('Query "url" é obrigatória');
@@ -841,13 +982,14 @@ router.get('/linkmp4-8', async (req, res) => {
   if (!ytUrl) return res.status(400).send('URL do YouTube é obrigatório');
 
   try {
-    const response = await axios.get(`https://api.vreden.my.id/api/ytmp4?url=${encodeURIComponent(ytUrl)}`);
+    const response = await axios.get(`https://api.vreden.my.id/api/v1/download/youtube/video?url=${encodeURIComponent(ytUrl)}&quality=360`);
     const downloadUrl = response.data.result.download.url;
     res.redirect(downloadUrl);
   } catch (error) {
     res.status(500).send('Erro ao obter link de download');
   }
 });
+//Feito
 
 // 2) Download MP3 por busca no YouTube (usando ?name=...)
 router.get('/musica8', async (req, res) => {
@@ -862,6 +1004,7 @@ router.get('/musica8', async (req, res) => {
     res.status(500).send('Erro ao obter link de download');
   }
 });
+//Feito
 
 // 3) Download MP4 por busca no YouTube (usando ?name=...)
 router.get('/clipe8', async (req, res) => {
@@ -876,6 +1019,7 @@ router.get('/clipe8', async (req, res) => {
     res.status(500).send('Erro ao obter link de download');
   }
 });
+//Feito
 
 // 4) (Bonus) Exemplo para baixar áudio MP3 direto por URL (não tinha na sua lista, mas é comum)
 router.get('/linkmp3-8', async (req, res) => {
@@ -883,14 +1027,14 @@ router.get('/linkmp3-8', async (req, res) => {
   if (!ytUrl) return res.status(400).send('URL do YouTube é obrigatório');
 
   try {
-    const response = await axios.get(`https://api.vreden.my.id/api/v1/download/youtube/audio?url=${ytUrl}&quality=128`);
+    const response = await axios.get(`https://api.vreden.my.id/api/v1/download/youtube/audio?url=${encodeURIComponent(ytUrl)}&quality=128`);
     const downloadUrl = response.data.result.download.url;
     res.redirect(downloadUrl);
   } catch (error) {
     res.status(500).send('Erro ao obter link de download');
   }
 });
-
+//Feito
 
 // Extrai ID do vídeo do YouTube
 function getYouTubeVideoId(url) {
@@ -1376,7 +1520,7 @@ router.get('/jogo/:slug', async (req, res) => {
 
 router.get('/multicanais', async (req, res) => {
   try {
-    const { data } = await axios.get('https://multicanais.casino/api/real-games.php');
+    const { data } = await axios.get('https://multicanaisk.com/api/real-games.php');
 
     if (data?.success && Array.isArray(data.jogos)) {
       let jogos = data.jogos.map(jogo => ({
@@ -1384,11 +1528,11 @@ router.get('/multicanais', async (req, res) => {
         campeonato: jogo.campeonato,
         horario: jogo.horario,
         data: jogo.data,
-        link: `https://multicanais.casino/assistir/${jogo.slug}`,
+        link: `https://multicanaisk.com/assistir/${jogo.slug}`,
         time1: jogo.time1,
         time2: jogo.time2,
-        time1_foto: `https://multicanais.casino/api/team-logo.php?team=${encodeURIComponent(jogo.time1)}`,
-        time2_foto: `https://multicanais.casino/api/team-logo.php?team=${encodeURIComponent(jogo.time2)}`,
+        time1_foto: `https://multicanaisk.com/api/team-logo.php?team=${encodeURIComponent(jogo.time1)}`,
+        time2_foto: `https://multicanaisk.com/api/team-logo.php?team=${encodeURIComponent(jogo.time2)}`,
         transmissoes: jogo.transmissao // opcional
       }));
 
@@ -1502,7 +1646,7 @@ router.get('/assistir', async (req, res) => {
   const query = req.query.oq;
   if (!query) return res.status(400).json({ error: 'Parâmetro "oq" é obrigatório.' });
 
-  const searchUrl = `https://multicanais.casino/?s=${encodeURIComponent(query)}`;
+  const searchUrl = `https://multicanaisk.com/?s=${encodeURIComponent(query)}`;
   try {
     const searchRes = await axios.get(searchUrl, {
       headers: { 'User-Agent': 'Mozilla/5.0' }
@@ -1546,7 +1690,7 @@ router.get('/assistir2', async (req, res) => {
   const query = req.query.oq;
   if (!query) return res.status(400).json({ error: 'Parâmetro "oq" é obrigatório.' });
 
-  const searchUrl = `https://multicanais.casino/?s=${encodeURIComponent(query)}`;
+  const searchUrl = `https://multicanaisk.com/?s=${encodeURIComponent(query)}`;
   try {
     const searchRes = await axios.get(searchUrl, {
       headers: { 'User-Agent': 'Mozilla/5.0' }
@@ -1587,7 +1731,7 @@ router.get('/fut/:slug', async (req, res) => {
 
   try {
     // Monta a URL base do Multicanais SEM barra final
-    let fullUrl = `https://multicanais.casino/assistir/${slug}`;
+    let fullUrl = `https://multicanaisk.com/assistir/${slug}`;
     // Remove barra no final se houver
     fullUrl = fullUrl.replace(/\/+$/, '');
 
@@ -1980,49 +2124,1454 @@ router.get('/deepface', async (req, res) => {
     }
 });
 
-router.get("/playertv", async (req, res) => {
-  let browser;
+// Rota para canais
+router.get("/channels", async (req, res) => {
+  try {
+    const response = await axios.get("https://api.embedtv.net/api/channels");
+    res.json(response.data);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ error: "Erro ao buscar canais" });
+  }
+});
+
+// Rota para categorias
+router.get("/categories", async (req, res) => {
+  try {
+    const response = await axios.get("https://api.embedtv.net/api/channels/categories");
+    res.json(response.data);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ error: "Erro ao buscar categorias" });
+  }
+});
+
+// Rota para eventos esportivos
+router.get("/events", async (req, res) => {
+  try {
+    const response = await axios.get("https://api.embedtv.net/api/sports");
+    res.json(response.data);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ error: "Erro ao buscar eventos" });
+  }
+});
+
+router.get('/playertv', (req, res) => {
+  res.json({
+    status: true,
+    data: [
+  {
+    "link": "https://playertv.net/a-fazenda-15-sinal-6/",
+    "title": "A Fazenda 15 – Sinal 6",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2025/09/a-fazenda-25-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/a-fazenda-15-sinal-5/",
+    "title": "A Fazenda 15 – Sinal 5",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2025/09/a-fazenda-25-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/a-fazenda-15-sinal-4/",
+    "title": "A Fazenda 15 – Sinal 4",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2025/09/a-fazenda-25-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/a-fazenda-15-sinal-3/",
+    "title": "A Fazenda 15 – Sinal 3",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2025/09/a-fazenda-25-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/a-fazenda-15-sinal-2/",
+    "title": "A Fazenda 15 – Sinal 2",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2025/09/a-fazenda-25-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/a-fazenda-15-sinal-1/",
+    "title": "A Fazenda 15 – Sinal 1",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2025/09/a-fazenda-25-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/nosso-futebol/",
+    "title": "Nosso Futebol",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2025/02/nosso_futebo_1-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/nosso-futebol-plus-3/",
+    "title": "Nosso Futebol Plus 3",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2025/02/nosso_futebo_1-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/nosso-futebol-plus-2/",
+    "title": "Nosso Futebol Plus 2",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2025/02/nosso_futebo_1-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/nosso-futebol-plus/",
+    "title": "Nosso Futebol Plus",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2025/02/nosso_futebo_1-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/nba-alt/",
+    "title": "NBA Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/nba-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/nba/",
+    "title": "NBA",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/nba-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/universal-alt/",
+    "title": "Universal Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/universal-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/universal/",
+    "title": "Universal",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/universal-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/usa-network-alt/",
+    "title": "USA Network Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/usa-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/usa-network/",
+    "title": "USA Network",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/usa-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/studio-universal-alt/",
+    "title": "Studio Universal Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/studio-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/studio-universal/",
+    "title": "Studio Universal",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/studio-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/megapix-alt/",
+    "title": "Megapix Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/megapix-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/megapix/",
+    "title": "Megapix",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/megapix-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/agromais/",
+    "title": "AgroMais",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/agro-mais-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/filmarts/",
+    "title": "Film&Arts",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/film-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/tv-gazeta/",
+    "title": "TV Gazeta",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/gazeta-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/tv-aparecida/",
+    "title": "TV Aparecida",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/aparecida-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/cultura/",
+    "title": "Cultura",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/cultura-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/combate-alt-2/",
+    "title": "Combate Alt 2",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/combate-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/combate-alt/",
+    "title": "Combate Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/combate-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/combate/",
+    "title": "Combate",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/combate-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/cnn-alt/",
+    "title": "CNN Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/cnn-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/cnn/",
+    "title": "CNN",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/cnn-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/amc-alt/",
+    "title": "AMC Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/amc-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/amc/",
+    "title": "AMC",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/amc-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/axn-alt/",
+    "title": "AXN Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/axn-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/axn/",
+    "title": "AXN",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/axn-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/arte-1-alt/",
+    "title": "Arte 1 Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/arte-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/arte-1/",
+    "title": "Arte 1",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/arte-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/comedy-central-alt/",
+    "title": "Comedy Central Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/comedy-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/comedy-central/",
+    "title": "Comedy Central",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/comedy-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/bandnews-alt/",
+    "title": "BandNews Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/band-news-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/bandnews/",
+    "title": "BandNews",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/band-news-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/mtv-live-alt/",
+    "title": "MTV Live Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/mtv-live-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/mtv-live/",
+    "title": "MTV Live",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/mtv-live-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/mtv-alt/",
+    "title": "MTV Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/mtv-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/mtv/",
+    "title": "MTV",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/mtv-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/paramount-alt/",
+    "title": "Paramount Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/paramount-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/paramount/",
+    "title": "Paramount",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/paramount-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/nick-jr-alt/",
+    "title": "Nick Jr Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/nickjr-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/nick-jr/",
+    "title": "Nick Jr",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/nickjr-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/nick-alt/",
+    "title": "Nick Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/nick-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/nick/",
+    "title": "Nick",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/nick-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/band-alt-2/",
+    "title": "Band Alt 2",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/band-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/band-alt/",
+    "title": "Band Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/band-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/band/",
+    "title": "Band",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/band-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/telecine-premium/",
+    "title": "Telecine Premium",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/tc-premium-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/telecine-pipoca/",
+    "title": "Telecine Pipoca",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/tc-pipoca-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/telecine-fun/",
+    "title": "Telecine Fun",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/tc-fun-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/telecine-cult/",
+    "title": "Telecine Cult",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/tc-cult-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/telecine-action/",
+    "title": "Telecine Action",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/tc-action-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/telecine-touch/",
+    "title": "Telecine Touch",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/tc-touch-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/ra-tim-bum/",
+    "title": "Rá-Tim-Bum",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/ratimbum-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/globo-pr-alt/",
+    "title": "Globo PR Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/globo-ms-alt/",
+    "title": "Globo MS Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/globo-pa-alt/",
+    "title": "Globo PA Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/globo-to/",
+    "title": "Globo TO",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/globo-se/",
+    "title": "Globo SE",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/globo-sc/",
+    "title": "Globo SC",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/globo-rr/",
+    "title": "Globo RR",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/globo-ro/",
+    "title": "Globo RO",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/globo-rs/",
+    "title": "Globo RS",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/globo-rn/",
+    "title": "Globo RN",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/globo-pi/",
+    "title": "Globo PI",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/globo-pr/",
+    "title": "Globo PR",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/globo-pb/",
+    "title": "Globo PB",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/globo-pa/",
+    "title": "Globo PA",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/globo-ms/",
+    "title": "Globo MS",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/globo-mt/",
+    "title": "Globo MT",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/globo-ma/",
+    "title": "Globo MA",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/globo-go/",
+    "title": "Globo GO",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/globo-es/",
+    "title": "Globo ES",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/globo-ce/",
+    "title": "Globo CE",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/globo-ba/",
+    "title": "Globo BA",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/globo-am/",
+    "title": "Globo AM",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/globo-ap/",
+    "title": "Globo AP",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/globo-al/",
+    "title": "Globo AL",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/globo-ac/",
+    "title": "Globo AC",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/globo-mg/",
+    "title": "Globo MG",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/globo-pe/",
+    "title": "Globo PE",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/globo-df/",
+    "title": "Globo DF",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/globo-sp/",
+    "title": "Globo SP",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/globo-rj/",
+    "title": "Globo RJ",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/tnt-series/",
+    "title": "TNT Séries",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/tnt-series-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/tnt-novelas/",
+    "title": "TNT Novelas",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/tnt-novelas-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/tlc/",
+    "title": "TLC",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/tlc-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/star-channel/",
+    "title": "Star Channel",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/star-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/national-geographic/",
+    "title": "National Geographic",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/nat-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/investigacao-discovery/",
+    "title": "Investigação Discovery",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/id-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/hgtv/",
+    "title": "HGTV",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/hgtv-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/fx/",
+    "title": "FX",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/fx-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/food-network/",
+    "title": "Food Network",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/food-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/e-entertainment/",
+    "title": "E! Entertainment",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/e-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/disney-channel/",
+    "title": "Disney Channel",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/disney-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/discovery-world/",
+    "title": "Discovery World",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/world-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/discovery-turbo/",
+    "title": "Discovery Turbo",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/turbo-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/discovery-theater/",
+    "title": "Discovery Theater",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/theater-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/discovery-science/",
+    "title": "Discovery Science",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/science-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/discovery-kids/",
+    "title": "Discovery Kids",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/kids-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/discovery-home-health/",
+    "title": "Discovery Home & Health",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/hh-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/cine-canal/",
+    "title": "Cine Canal",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/cine-canal-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/cartoonito/",
+    "title": "Cartoonito",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/cartoonito-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/cartoon-network/",
+    "title": "Cartoon Network",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/cartoon-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/adult-swim/",
+    "title": "Adult Swim",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/adult-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/cazetv-6/",
+    "title": "CazéTV 6",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/10/caze-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/cazetv-5/",
+    "title": "CazéTV 5",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/10/caze-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/cazetv-4/",
+    "title": "CazéTV 4",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/10/caze-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/cazetv-3/",
+    "title": "CazéTV 3",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/10/caze-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/cazetv-2/",
+    "title": "CazéTV 2",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/10/caze-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/cazetv/",
+    "title": "CazéTV",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/10/caze-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/warner-channel-alt/",
+    "title": "Warner Channel Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/warner-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/warner-channel/",
+    "title": "Warner Channel",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/warner-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/discovery-channel/",
+    "title": "Discovery Channel",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/discovery-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/redetv/",
+    "title": "RedeTV",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/redetv-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/globonews-alt/",
+    "title": "GloboNews Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-news-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/globonews/",
+    "title": "GloboNews",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-news-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/malhacao/",
+    "title": "Malhação",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/10/malhacao-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/futura-alt/",
+    "title": "Futura Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/futura-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/futura/",
+    "title": "Futura",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/futura-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/modo-viagem-alt/",
+    "title": "Modo Viagem Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/modo-viagem-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/modo-viagem/",
+    "title": "Modo Viagem",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/modo-viagem-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/bis-alt/",
+    "title": "Bis Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/bis-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/bis/",
+    "title": "Bis",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/bis-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/canal-off-alt/",
+    "title": "Canal Off Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/off-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/canal-off/",
+    "title": "Canal Off",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/off-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/canal-brasil-alt/",
+    "title": "Canal Brasil Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/canal-brasil-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/canal-brasil/",
+    "title": "Canal Brasil",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/canal-brasil-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/gloobinho-alt/",
+    "title": "Gloobinho Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/gloobinho-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/gloobinho/",
+    "title": "Gloobinho",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/gloobinho-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/gloob-alt/",
+    "title": "Gloob Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/gloob-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/gloob/",
+    "title": "Gloob",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/gloob-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/viva-alt/",
+    "title": "Viva Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/viva-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/viva/",
+    "title": "Viva",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/viva-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/gnt-alt/",
+    "title": "GNT Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/gnt-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/gnt/",
+    "title": "GNT",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/gnt-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/multishow-alt/",
+    "title": "Multishow Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/multishow-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/multishow/",
+    "title": "Multishow",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/multishow-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/history-2/",
+    "title": "History 2",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/h2-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/history/",
+    "title": "History",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/h1-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/lifetime/",
+    "title": "Lifetime",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/lifetime-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/sony/",
+    "title": "Sony",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sony-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/sony-movies/",
+    "title": "Sony Movies",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sony-movies-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/ae/",
+    "title": "A&E",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/ae-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/record-news/",
+    "title": "Record News",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/record-news-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/record-goytacazes/",
+    "title": "Record Goytacazes",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/record-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/record-ribeirao-preto/",
+    "title": "Record Ribeirão Preto",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/record-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/record-rio-preto/",
+    "title": "Record Rio Preto",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/record-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/record-bauru/",
+    "title": "Record Bauru",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/record-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/record-cabralia/",
+    "title": "Record Cabrália",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/record-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/record-santos-e-vale/",
+    "title": "Record Santos e Vale",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/record-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/record-am/",
+    "title": "Record AM",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/record-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/record-pa/",
+    "title": "Record PA",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/record-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/record-go/",
+    "title": "Record GO",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/record-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/record-df/",
+    "title": "Record DF",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/record-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/record-ba/",
+    "title": "Record BA",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/record-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/record-rs/",
+    "title": "Record RS",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/record-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/record-mg/",
+    "title": "Record MG",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/record-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/record-rj/",
+    "title": "Record RJ",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/record-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/record-sp/",
+    "title": "Record SP",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/record-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/space-alt/",
+    "title": "SPACE ALT",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/space-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/space/",
+    "title": "SPACE",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/space-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/sportv-4/",
+    "title": "Sportv 4",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sportv-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/sbt-alt-2/",
+    "title": "SBT Alt 2",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sbt-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/sbt-alt/",
+    "title": "SBT Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sbt-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/sbt/",
+    "title": "SBT",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sbt-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/star-plus-alt-2/",
+    "title": "Star Plus Alt 2",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/star3-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/star-plus-alt/",
+    "title": "Star Plus Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/star2-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/star-plus/",
+    "title": "Star Plus",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/star1-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/prime-video-4/",
+    "title": "Prime Video 4",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/prime4-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/prime-video-3/",
+    "title": "Prime Video 3",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/prime3-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/prime-video-2/",
+    "title": "Prime Video 2",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/prime2-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/prime-video/",
+    "title": "Prime Video",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/prime1-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/band-sports-alt/",
+    "title": "Band Sports Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/band-sports-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/band-sports/",
+    "title": "Band Sports",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/band-sports-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/max-alt/",
+    "title": "Max Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/hbo-max-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/max/",
+    "title": "Max",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/hbo-max-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/tnt-alt/",
+    "title": "TNT Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/tnt-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/tnt/",
+    "title": "TNT",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/tnt-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/paramount-4-conmebol/",
+    "title": "Paramount+ 4 (Conmebol)",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/paramount4-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/paramount-3-conmebol/",
+    "title": "Paramount+ 3 (Conmebol)",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/paramount3-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/paramount-2-conmebol/",
+    "title": "Paramount+ 2 (Conmebol)",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/paramount2-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/paramount-1-conmebol/",
+    "title": "Paramount+ 1 (Conmebol)",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/paramount1-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/universal-reality/",
+    "title": "Universal Reality",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/universal-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/universal-premiere/",
+    "title": "Universal Premiere",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/universal-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/btv/",
+    "title": "BTV",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/btv-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/eleven-6/",
+    "title": "Eleven 6",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/eleven-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/eleven-5/",
+    "title": "Eleven 5",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/eleven-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/eleven-4/",
+    "title": "Eleven 4",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/eleven-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/eleven-3/",
+    "title": "Eleven 3",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/eleven-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/eleven-2/",
+    "title": "Eleven 2",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/eleven-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/eleven/",
+    "title": "Eleven",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/eleven-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/sport-tv-6/",
+    "title": "Sport TV 6",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sporttv-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/sport-tv-5/",
+    "title": "Sport TV 5",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sporttv-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/sport-tv-4/",
+    "title": "Sport TV 4",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sporttv-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/sport-tv-3/",
+    "title": "Sport TV 3",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sporttv-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/sport-tv-2/",
+    "title": "Sport TV 2",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sporttv-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/sport-tv/",
+    "title": "Sport TV",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sporttv-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/premiere-8-alt-3/",
+    "title": "Premiere 8 Alt 3",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere8-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/premiere-8-alt-2/",
+    "title": "Premiere 8 Alt 2",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere8-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/premiere-8-alt/",
+    "title": "Premiere 8 Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere8-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/premiere-8/",
+    "title": "Premiere 8",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere8-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/premiere-7-alt-3/",
+    "title": "Premiere 7 Alt 3",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere7-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/premiere-7-alt-2/",
+    "title": "Premiere 7 Alt 2",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere7-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/premiere-7-alt/",
+    "title": "Premiere 7 Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere7-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/premiere-7/",
+    "title": "Premiere 7",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere7-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/premiere-6-alt-3/",
+    "title": "Premiere 6 Alt 3",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere6-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/premiere-6-alt-2/",
+    "title": "Premiere 6 Alt 2",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere6-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/premiere-6-alt/",
+    "title": "Premiere 6 Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere6-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/premiere-6/",
+    "title": "Premiere 6",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere6-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/premiere-5-alt-3/",
+    "title": "Premiere 5 Alt 3",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere5-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/premiere-5-alt-2/",
+    "title": "Premiere 5 Alt 2",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere5-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/premiere-5-alt/",
+    "title": "Premiere 5 Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere5-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/premiere-5/",
+    "title": "Premiere 5",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere5-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/premiere-4-alt-3/",
+    "title": "Premiere 4 Alt 3",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere4-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/premiere-4-alt-2/",
+    "title": "Premiere 4 Alt 2",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere4-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/premiere-4-alt/",
+    "title": "Premiere 4 Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere4-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/premiere-4/",
+    "title": "Premiere 4",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere4-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/premiere-3-alt-2/",
+    "title": "Premiere 3 Alt 2",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere3-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/premiere-3-alt/",
+    "title": "Premiere 3 Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere3-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/premiere-3/",
+    "title": "Premiere 3",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere3-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/premiere-2-alt-3/",
+    "title": "Premiere 2 Alt 3",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere2-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/premiere-2-alt-2/",
+    "title": "Premiere 2 Alt 2",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere2-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/premiere-2-alt/",
+    "title": "Premiere 2 Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere2-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/premiere-2/",
+    "title": "Premiere 2",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere2-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/premiere-alt-3/",
+    "title": "Premiere Alt 3",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/premiere-alt-2/",
+    "title": "Premiere Alt 2",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/premiere-alt/",
+    "title": "Premiere Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/premiere/",
+    "title": "Premiere",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/sportv-mosaico/",
+    "title": "Sportv Mosaico",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sportv-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/sportv-3-alt-2/",
+    "title": "Sportv 3 Alt 2",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sportv3-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/sportv-3-alt/",
+    "title": "Sportv 3 Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sportv3-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/sportv-3/",
+    "title": "Sportv 3",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sportv3-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/sportv-2-alt-3/",
+    "title": "Sportv 2 Alt 3",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sportv2-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/sportv-2-alt-2/",
+    "title": "Sportv 2 Alt 2",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sportv2-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/sportv-2-alt/",
+    "title": "Sportv 2 Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sportv2-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/sportv-2/",
+    "title": "Sportv 2",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sportv2-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/sportv-alt-3/",
+    "title": "Sportv Alt 3",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sportv-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/sportv-alt-2/",
+    "title": "Sportv Alt 2",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sportv-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/sportv-alt/",
+    "title": "Sportv Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sportv-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/sportv/",
+    "title": "Sportv",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sportv-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/espn-6-alt/",
+    "title": "ESPN 6 Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/espn6-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/espn-6/",
+    "title": "ESPN 6",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/espn6-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/espn-5-alt/",
+    "title": "ESPN 5 Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/espn5-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/espn-5/",
+    "title": "ESPN 5",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/espn5-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/espn-4-alt-2/",
+    "title": "ESPN 4 Alt 2",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/espn4-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/espn-4-alt/",
+    "title": "ESPN 4 Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/espn4-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/espn-4/",
+    "title": "ESPN 4",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/espn4-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/espn-3-alt-2/",
+    "title": "ESPN 3 Alt 2",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/espn3-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/espn-3-alt/",
+    "title": "ESPN 3 Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/espn3-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/espn-3/",
+    "title": "ESPN 3",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/espn3-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/espn-2-alt-2/",
+    "title": "ESPN 2 Alt 2",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/espn2-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/espn-2-alt/",
+    "title": "ESPN 2 Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/espn2-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/espn-2/",
+    "title": "ESPN 2",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/espn2-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/espn-alt-2/",
+    "title": "ESPN Alt 2",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/espn-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/espn-alt/",
+    "title": "ESPN Alt",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/espn-300x169.webp"
+  },
+  {
+    "link": "https://playertv.net/espn/",
+    "title": "ESPN",
+    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/espn-300x169.webp"
+  }
+    ]
+  });
+});
+
+
+router.get("/playertv2", async (req, res) => {
   try {
     const baseUrl = "https://playertv.net";
 
-    browser = await puppeteer.launch({
-      args: chromium.args,
-      defaultViewport: chromium.defaultViewport,
-      executablePath: await chromium.executablePath(), // usa binário do @sparticuz/chromium
-      headless: chromium.headless,
+    const proxyHost = "65.108.159.129";
+    const proxyPort = 8081;
+    const proxyUrl = `http://${proxyHost}:${proxyPort}`;
+
+    // Criar agente HTTPS para proxy (forma correta na versão atual)
+    const agent = new HttpsProxyAgent(proxyUrl);
+
+    // Ignorar verificação de SSL
+    agent.options = { ...agent.options, rejectUnauthorized: false };
+
+    const { data } = await axios.get(baseUrl, {
+      timeout: 20000,
+      httpsAgent: agent,
+      proxy: false,
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
+          "(KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36",
+        Accept:
+          "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      },
     });
 
-    const page = await browser.newPage();
-    await page.goto(baseUrl, { waitUntil: "networkidle2", timeout: 0 });
+    const $ = cheerio.load(data);
+    const posts = [];
 
-    // executa dentro da página
-    const posts = await page.evaluate(() => {
-      const items = [];
-      document.querySelectorAll(".elementor-post").forEach((el) => {
-        const link = el.querySelector(".elementor-post__title a")?.href || "";
-        const title = el.querySelector(".elementor-post__title a")?.innerText.trim() || "";
-        let imgSrc = el.querySelector(".elementor-post__thumbnail__link img")?.getAttribute("src") || "";
+    $(".elementor-post").each((_, el) => {
+      const link = $(el).find(".elementor-post__title a").attr("href") || "";
+      const title = $(el).find(".elementor-post__title a").text().trim() || "";
+      let imgSrc =
+        $(el).find(".elementor-post__thumbnail__link img").attr("src") || "";
 
-        // corrige URL relativa
-        if (imgSrc && !imgSrc.startsWith("http")) {
-          imgSrc = `https://playertv.net/${imgSrc.replace(/^\//, "")}`;
-        }
+      if (imgSrc && !imgSrc.startsWith("http")) {
+        imgSrc = `${baseUrl}/${imgSrc.replace(/^\//, "")}`;
+      }
 
-        items.push({ link, title, imgSrc });
-      });
-      return items;
+      posts.push({ link, title, imgSrc });
     });
 
     res.json(posts);
   } catch (err) {
-    console.error("Erro ao carregar página:", err.message);
+    console.error("Erro ao buscar conteúdo:", err.message);
     res.status(500).json({ error: "Erro ao buscar o conteúdo." });
-  } finally {
-    if (browser) await browser.close();
   }
 });
 
+router.get("/playertv4", async (req, res) => {
+  let browser;
+  try {
+    const baseUrl = "https://playertv.net";
 
+    // Inicializa o navegador headless
+    browser = await puppeteer.launch({
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath(),
+      headless: chromium.headless,
+    });
+
+    const page = await browser.newPage();
+    await page.goto(baseUrl, { waitUntil: "networkidle2", timeout: 30000 });
+
+    const html = await page.content();
+    const $ = cheerio.load(html);
+    const posts = [];
+
+    $(".elementor-post").each((_, el) => {
+      const link = $(el).find(".elementor-post__title a").attr("href") || "";
+      const title = $(el).find(".elementor-post__title a").text().trim() || "";
+      let imgSrc =
+        $(el).find(".elementor-post__thumbnail__link img").attr("src") || "";
+
+      if (imgSrc && !imgSrc.startsWith("http")) {
+        imgSrc = `${baseUrl}/${imgSrc.replace(/^\//, "")}`;
+      }
+
+      posts.push({ link, title, imgSrc });
+    });
+
+    await browser.close();
+    res.json(posts);
+  } catch (err) {
+    if (browser) await browser.close();
+    console.error("❌ Erro ao buscar conteúdo:", err.message);
+    res.status(500).json({ error: "Erro ao buscar o conteúdo." });
+  }
+});
 
 router.get('/playertv2', async (req, res) => {
   try {
@@ -2081,30 +3630,42 @@ router.get('/playertv3', async (req, res) => {
   }
 });
 
+
 router.get('/iframe', async (req, res) => {
   const canalUrl = req.query.canal;
-  if (!canalUrl) {
-    return res.status(400).json({ error: 'URL do canal é necessária' });
-  }
+  if (!canalUrl) return res.status(400).json({ error: 'URL do canal é necessária' });
 
+  let browser;
   try {
-    // Faz a requisição para a página do canal
-    const { data } = await axios.get(canalUrl);
-    const $ = cheerio.load(data);
+    // Inicializa o navegador usando o Chromium do Sparticuz
+    browser = await puppeteer.launch({
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath(),
+      headless: chromium.headless,
+    });
 
-    // Busca o iframe correto dentro da página
-    const iframeSrc = $('.entry-content iframe').attr('src');
+    const page = await browser.newPage();
+    await page.goto(canalUrl, { waitUntil: 'networkidle2', timeout: 30000 });
+
+    // Espera pelo iframe carregar
+    const iframeSrc = await page.$eval('.entry-content iframe', el => el.src).catch(() => null);
 
     if (!iframeSrc) {
+      await browser.close();
       return res.status(404).json({ error: 'Iframe não encontrado' });
     }
 
+    await browser.close();
     res.json({ iframe: iframeSrc });
+
   } catch (error) {
-    console.error('Erro ao buscar o iframe:', error);
+    if (browser) await browser.close();
+    console.error('Erro ao buscar o iframe:', error.message);
     res.status(500).json({ error: 'Erro ao processar a página do canal' });
   }
 });
+
 
 
 
@@ -2306,19 +3867,6 @@ router.get('/play-video', async (req, res) => {
   }
 });
 
-router.get('/play-video2', async (req, res) => {
-  const { url } = req.query;
-  if (!url) return res.status(400).json({ error: 'Parâmetro "url" não fornecido' });
-
-  try {
-    const endpoint = `http://speedhosting.cloud:2009/download/play-video?url=${url}`;
-    const response = await axios.get(endpoint);
-    res.json(response.data);
-  } catch (err) {
-    res.status(500).json({ error: 'Erro ao buscar vídeo do YouTube', details: err.message });
-  }
-});
-
 // Baixar áudio pelo nome
 router.get('/play', async (req, res) => {
   const { name } = req.query;
@@ -2330,7 +3878,7 @@ router.get('/play', async (req, res) => {
   try {
     const response = await axios.get(`https://api.vreden.my.id/api/v1/download/play/audio?query=${encodeURIComponent(name)}`);
     const downloadUrl = response.data.result.download.url;
-
+//Feito
     if (downloadUrl) {
       return res.redirect(downloadUrl);  // Redireciona para o link de download do áudio
     } else {
@@ -2351,7 +3899,7 @@ router.get('/playvideo', async (req, res) => {
   try {
     const response = await axios.get(`https://api.vreden.my.id/api/v1/download/play/video?query=${encodeURIComponent(name)}`);
     const downloadUrl = response.data.result.download.url;
-
+//Feito
     if (downloadUrl) {
       return res.redirect(downloadUrl);  // Redireciona para o link de download do vídeo
     } else {
@@ -2373,7 +3921,7 @@ router.get('/ytmp3', async (req, res) => {
   try {
     const response = await axios.get(`https://api.vreden.my.id/api/v1/download/youtube/audio?url=${url}&quality=128`);
     const downloadUrl = response.data.result.download.url;
-
+//Feito
     if (downloadUrl) {
       return res.redirect(downloadUrl);  // Redireciona para o link de download do áudio
     } else {
@@ -2396,7 +3944,7 @@ router.get('/ytmp4', async (req, res) => {
   try {
     const response = await axios.get(`https://api.vreden.my.id/api/v1/download/youtube/video?url=${url}&quality=360`);
     const downloadUrl = response.data.result.download.url;
-
+//Feito
     if (downloadUrl) {
       return res.redirect(downloadUrl);  // Redireciona para o link de download do vídeo
     } else {
@@ -3547,7 +5095,7 @@ router.get('/likesff', async (req, res) => {
   }
 
   try {
-    const apiUrl = `https://likesff.online/api/likesbase?uid=${encodeURIComponent(id)}`;
+    const apiUrl = `https://likesff.online/api/likes_all_regions?uid=${encodeURIComponent(id)}`;
     const response = await axios.get(apiUrl);
     const data = response.data;
 
@@ -3671,6 +5219,98 @@ router.get('/likesff2', async (req, res) => {
   }
 });
 
+router.get('/likesff3', async (req, res) => {
+  const id = req.query.id;
+  const region = req.query.region || 'br';
+
+  if (!id) {
+    console.log('❌ Parâmetro id ausente');
+    return res.json({ status: false, resultado: 'Cadê o parâmetro id?' });
+  }
+
+  console.log(`📩 Enviando likes para ID = ${id}`);
+
+  const getUserInfo = async () => {
+    try {
+      const { data } = await axios.get(
+        `https://freefireapis.squareweb.app/api/info_player?uid=${id}&region=${region}&clothes=false`
+      );
+
+      return {
+        liked: data.basicInfo?.liked || 0,
+        nickname: data.basicInfo?.nickname || 'Desconhecido',
+        level: data.basicInfo?.level || 0,
+        avatar: data.basicInfo?.avatars?.webp || '',
+        skin: data.profileInfo?.clothesImage || ''
+      };
+    } catch (err) {
+      console.error('❌ Erro na nova API:', err.message);
+      return null;
+    }
+  };
+
+  const infoAntes = await getUserInfo();
+  if (!infoAntes) {
+    return res.json({
+      status: false,
+      resultado: 'Erro ao consultar informações do jogador antes do envio.'
+    });
+  }
+
+  try {
+    // 📩 Envia a mensagem de like no grupo definido
+    const sent = await client.sendMessage(grupoChatId, {
+      message: `/like ${region} ${id}`
+    });
+    console.log(`✅ Mensagem enviada: /like ${region} ${id}`);
+
+    // ⏳ Apaga automaticamente após 10 segundos
+    setTimeout(async () => {
+      try {
+        await client.deleteMessages(grupoChatId, [sent.id], { revoke: true });
+        console.log("🗑️ Mensagem apagada automaticamente após 10s");
+      } catch (err) {
+        console.error("❌ Erro ao apagar mensagem:", err.message);
+      }
+    }, 10000);
+
+    let infoDepois = null;
+
+    for (let i = 0; i < 10; i++) {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      infoDepois = await getUserInfo();
+
+      if (!infoDepois) {
+        return res.json({
+          status: false,
+          resultado: 'Erro ao consultar informações após envio.'
+        });
+      }
+
+      if (infoDepois.liked > infoAntes.liked) break;
+    }
+
+    return res.json({
+      status: true,
+      resultado: {
+        likesAntes: infoAntes.liked,
+        likesDepois: infoDepois.liked,
+        likesGanhos: infoDepois.liked - infoAntes.liked,
+        nick: infoDepois.nickname,
+        nivel: infoDepois.level,
+        avatar: infoDepois.avatar,
+        skin: infoDepois.skin,
+        região: region
+      }
+    });
+  } catch (err) {
+    console.error('❌ Erro na rota /novoLikes:', err.message);
+    return res.json({
+      status: false,
+      resultado: 'Erro ao tentar registrar os likes.'
+    });
+  }
+});
 
 router.get('/instamp4', async (req, res) => {
     const { url: instagramUrl } = req.query;
@@ -4937,8 +6577,36 @@ router.get('/ia2', async (req, res) => {
   }
 });
 
-
 router.get('/chatgpt', async (req, res) => {
+  const texto = req.query.texto;
+
+  if (!texto) {
+    return res.status(400).json({
+      erro: 'Parâmetro texto não fornecido. Use /chatgpt?texto=Sua pergunta'
+    });
+  }
+
+  try {
+    const response = await axios.get(`https://api.nekolabs.my.id/ai/gpt/5?text=${encodeURIComponent(texto)}`);
+    const data = response.data;
+
+    if (data.status) {
+      res.json({ resposta: data.result });
+    } else {
+      res.status(500).json({
+        erro: 'API retornou falha',
+        detalhes: data
+      });
+    }
+  } catch (err) {
+    res.status(500).json({
+      erro: 'Erro ao consultar API Nekolabs',
+      detalhes: err.message
+    });
+  }
+});
+
+router.get('/chatgpt5', async (req, res) => {
   const texto = req.query.texto;
 
   if (!texto) {
@@ -5800,7 +7468,7 @@ router.get('/guia-series', async (req, res) => {
     }
 });
 
-router.get('/calendario', async (req, res) => { try { const { data } = await axios.get('https://multicanais.casino/calendario'); const $ = cheerio.load(data);
+router.get('/calendario', async (req, res) => { try { const { data } = await axios.get('https://multicanaisk.com/calendario'); const $ = cheerio.load(data);
 
 const dias = [];
 
@@ -5821,8 +7489,8 @@ $('.section').each((_, el) => {
 
     const time1_nome = time1.find('.team-name').text().trim();
     const time2_nome = time2.find('.team-name').text().trim();
-    const time1_img = time1.find('img').attr('src')?.startsWith('http') ? time1.find('img').attr('src') : `https://multicanais.casino/${time1.find('img').attr('src')}`;
-    const time2_img = time2.find('img').attr('src')?.startsWith('http') ? time2.find('img').attr('src') : `https://multicanais.casino/${time2.find('img').attr('src')}`;
+    const time1_img = time1.find('img').attr('src')?.startsWith('http') ? time1.find('img').attr('src') : `https://multicanaisk.com/${time1.find('img').attr('src')}`;
+    const time2_img = time2.find('img').attr('src')?.startsWith('http') ? time2.find('img').attr('src') : `https://multicanaisk.com/${time2.find('img').attr('src')}`;
 
     const transmissoes = $(jogoEl)
       .find('.transmission')
@@ -5834,7 +7502,7 @@ $('.section').each((_, el) => {
 
     jogos.push({
       titulo: `${time1_nome} x ${time2_nome}`,
-      link: `https://multicanais.casino${link}`,
+      link: `https://multicanaisk.com${link}`,
       horario,
       campeonato,
       time1: time1_nome,
@@ -5854,7 +7522,7 @@ res.json({ success: true, dias });
 
 router.get('/jogosdodia', async (req, res) => {
   try {
-    const { data } = await axios.get('https://multicanais.casino/api/real-games.php');
+    const { data } = await axios.get('https://multicanaisk.com/api/real-games.php');
 
     if (data?.success && Array.isArray(data.jogos)) {
       const jogosComExtras = data.jogos.map(jogo => ({
@@ -5862,11 +7530,11 @@ router.get('/jogosdodia', async (req, res) => {
         campeonato: jogo.campeonato,
         data: jogo.data,
         horario: jogo.horario,
-        link: `https://multicanais.casino/assistir/${jogo.slug}`,
+        link: `https://multicanaisk.com/assistir/${jogo.slug}`,
         time1: jogo.time1,
         time2: jogo.time2,
-        time1_foto: `https://multicanais.casino/api/team-logo.php?team=${encodeURIComponent(jogo.time1)}`,
-        time2_foto: `https://multicanais.casino/api/team-logo.php?team=${encodeURIComponent(jogo.time2)}`,
+        time1_foto: `https://multicanaisk.com/api/team-logo.php?team=${encodeURIComponent(jogo.time1)}`,
+        time2_foto: `https://multicanaisk.com/api/team-logo.php?team=${encodeURIComponent(jogo.time2)}`,
         transmissoes: jogo.transmissao
       }));
 
@@ -6795,7 +8463,7 @@ router.get('/prox-jogos', async (req, res) => {
 
 router.get('/ufc', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.casino/jogo-ao-vivo/ufc-ao-vivo/';
+    const siteUrl = 'https://multicanaisk.com/jogo-ao-vivo/ufc-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -6826,7 +8494,7 @@ router.get('/ufc', async (req, res) => {
 // Rota para a API bbb25
 router.get('/bbb25', (req, res) => {
   const resultado = [
-    "https://multicanais.casino/assistir-bbb-ao-vivo-online-24-horas/",
+    "https://multicanaisk.com/assistir-bbb-ao-vivo-online-24-horas/",
     "https://globoplay.gratis/"
   ];
   
@@ -6835,7 +8503,7 @@ router.get('/bbb25', (req, res) => {
 
 router.get('/basquete', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.casino/categoria/jogo-ao-vivo/nba-ao-vivo/';
+    const siteUrl = 'https://multicanaisk.com/categoria/jogo-ao-vivo/nba-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -6867,7 +8535,7 @@ router.get('/basquete', async (req, res) => {
 
 router.get('/nfl', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.casino/jogo-ao-vivo/nfl-ao-vivo/';
+    const siteUrl = 'https://multicanaisk.com/jogo-ao-vivo/nfl-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -6898,7 +8566,7 @@ router.get('/nfl', async (req, res) => {
 
  router.get('/ucl', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.casino/jogo-ao-vivo/champions-league-ao-vivo/';
+    const siteUrl = 'https://multicanaisk.com/jogo-ao-vivo/champions-league-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -6929,7 +8597,7 @@ router.get('/nfl', async (req, res) => {
 
 router.get('/brasileirao', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.casino/jogo-ao-vivo/brasileiro-ao-vivo/';
+    const siteUrl = 'https://multicanaisk.com/jogo-ao-vivo/brasileiro-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -6959,7 +8627,7 @@ router.get('/brasileirao', async (req, res) => {
 });
 router.get('/tv', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.casino/jogo-ao-vivo/tv-online-ao-vivo/';
+    const siteUrl = 'https://multicanaisk.com/jogo-ao-vivo/tv-online-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -6989,7 +8657,7 @@ router.get('/tv', async (req, res) => {
 });
 router.get('/esportedodia', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.casino/jogo-ao-vivo/canais-de-esportes/';
+    const siteUrl = 'https://multicanaisk.com/jogo-ao-vivo/canais-de-esportes/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -7020,7 +8688,7 @@ router.get('/esportedodia', async (req, res) => {
 });
 router.get('/futebol', async (req, res) => {
   try {
-    const siteUrl = 'https://multicanais.casino/jogo-ao-vivo/futebol-ao-vivo/';
+    const siteUrl = 'https://multicanaisk.com/jogo-ao-vivo/futebol-ao-vivo/';
     const { data } = await axios.get(siteUrl);
 
     const $ = cheerio.load(data);
@@ -7756,11 +9424,11 @@ router.get('/ai-simsimi', async (req, res) => {
   }
 
   try {
-    const apiUrl = `https://api.bronxyshost.com.br/api-bronxys/simsimi?apikey=KEY-TEMPORARIA-TELEGRAM-ALEATORY&pergunta=${query}`;
+    const apiUrl = `https://api.giftedtech.web.id/api/ai/simsimi?apikey=gifted&query=${encodeURIComponent(query)}`;
     const { data } = await axios.get(apiUrl);
 
-    if (data && data.resposta) {
-      res.json({ resposta: data.resposta });
+    if (data && data.result) {
+      res.json({ resposta: data.result });
     } else {
       res.status(500).json({ erro: 'Resposta inválida da API' });
     }
@@ -10140,7 +11808,7 @@ router.get('/netersg', async (req, res) => {
         res.status(500).json({ status: false, mensagem: "Erro interno ao processar a solicitação." });
     }
 });
-//gerar imagem by Redzin 
+//gerar imagem by luan 
 
 
 router.get('/gerar-imagem', async (req, res) => {
@@ -10362,7 +12030,7 @@ router.get('/gerar-imagem2', async (req, res) => {
 
 //fim 
 
-// play e playvideo by Redzin
+// play e playvideo by Redzin 
 
 const got = require('got');
 const ytsr = require('yt-search');
@@ -10573,7 +12241,7 @@ router.get('/clipe2', async (req, res) => {
 
         // Pegar o primeiro vídeo da lista de resultados
         const videoId = searchResults.videos[0].videoId; // Obtém o ID do vídeo
-        const apiUrl = `https://api.giftedtech.web.id/api/download/ytmp3?apikey=gifted&url=https://youtu.be/${videoId}`;
+        const apiUrl = `https://api.giftedtech.web.id/api/download/dlmp3q?apikey=gifted&quality=128&url=https://youtu.be/${videoId}`;
 
         // Requisição à API para baixar o vídeo
         const response = await axios.get(apiUrl);
@@ -13058,7 +14726,7 @@ router.get('/igstalker', async (req, res) => {
   const conta = req.query.conta;
   
   try {
-    const response = await axios.get(`https://api.vreden.my.id/api/instagram/users?query=${conta}`);
+    const response = await axios.get(`https://api.vreden.my.id/api/v1/stalker/instagram?username=${conta}`);
     
     if (response.data.status && response.data.result.users.length > 0) {
       const firstUser = response.data.result.users[0];
@@ -13100,7 +14768,7 @@ router.get('/pin/video', (req, res) => {
 
 const apiId = 21844566;
 const apiHash = 'ff82e94bfed22534a083c3aee236761a';
-const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBu8IJTa1bfOS+/1WHs/eLZyUtu2DrQU2s/zHdAGvjNeZ1HYT8X0KUB1SKpxprepNNqJ8mWzfVIbdE2DiKJHY7PNnwtiuLl+HgtLyXta9cHmlqUoFyg+8rfIMxOJcybd2E7+YOrp4Vg2a/IUvfgeMV54VxH3LBAMqlrP3FEzcDYHbtEy6Y7jJCAjI8ArUu1bedM15g7ipIq29kUoFPvLBYoKZXoF0LnP7pQI1q6FkuYMBv1tdKDb2mmcbqEv6qcwNfS/gAz7kaWLvlHIfseYHp1o1J0qg5IiJZ2eulxVn5acagxUHaMGPaCafaqI2i7EDGsZH/u5z8mdTKAgkyODjzERE=');
+const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBuwdxsyFiiCfEuz6/oGmTG8F+IorZd/u8UGSzqOKjX80MPLuB6BiU90f0gxwl7wicmHf4gqDvmooARNZKv4joFt9naadBaMRVqPfV5ZY6V/6HjEnjXq5+2mKIU38SRZw+wrLeawlQgm/ao73Fn/WNNAKZ3YsJW6EGGuKYr09ng34Q3ZU4GWHlLagXSvhbUW4clX6ElFze0iv0o1vjG6Zcjv7Lrmx4tSYkM3G/MSOTNRsXWsi8BUsukYsgbUiGMWLDWhmfP8oGNfsRsKImaQtL3/4bAyXl5UYMwYKe8QTS19+FFAUG15fyaL+jiFXoYB32+Ctc0R4sijxNLqKPMg+ZnW0=');
 const grupoChatId = -1002208588695;
 
 const rl = readline.createInterface({
@@ -14352,7 +16020,7 @@ router.get('/printsite', async (req, res) => {
         const { url } = req.query;
         if (!url) return res.json({ status: false, message: 'Faltando parâmetro url' });
 
-        const printsiteLink = `https://api.bronxyshost.com.br/api-bronxys/print_de_site?url=${url}&apikey=KEY-TEMPORARIA-TELEGRAM-ALEATORY`;
+        const printsiteLink = `https://api.bronxyshost.com.br/api-bronxys/print_de_site?url=${encodeURIComponent(url)}&apikey=tiomaker8930`;
         const response = await axios.get(printsiteLink, { responseType: 'arraybuffer' });
 
         res.set('Content-Type', 'image/png'); // Ajuste o tipo conforme o formato da imagem
@@ -16129,6 +17797,68 @@ router.get('/frases', (req, res) => {
         res.status(500).json({ error: 'Erro ao obter a frase aleatória' });
     }
 });
+
+
+router.get('/fundosff', async (req, res) => {
+    try {
+        // Caminho para o arquivo JSON contendo as imagens
+        const filePath = path.join(__dirname, 'dados', 'fundosff.json');
+
+        // Função para ler o arquivo JSON
+        function lerArquivoJSON() {
+            const rawdata = fs.readFileSync(filePath);
+            return JSON.parse(rawdata);
+        }
+
+        // Carregar as imagens do arquivo JSON
+        const imagensData = lerArquivoJSON();
+        const imagens = imagensData.imagens;
+
+        // Escolher uma imagem aleatória
+        const imagemAleatoria = imagens[Math.floor(Math.random() * imagens.length)];
+
+        // Fazer requisição para obter a imagem
+        const response = await axios.get(imagemAleatoria, { responseType: 'arraybuffer' });
+
+        // Enviar a imagem como resposta
+        res.set('Content-Type', 'image/jpeg'); // Define o tipo de conteúdo como imagem JPEG
+        res.send(Buffer.from(response.data, 'binary'));
+    } catch (error) {
+        console.error('Erro ao obter imagem aleatória:', error);
+        res.status(500).send('Erro ao obter imagem aleatória');
+    }
+});
+
+router.get('/fotosff', async (req, res) => {
+    try {
+        // Caminho para o arquivo JSON contendo as imagens
+        const filePath = path.join(__dirname, 'dados', 'fotosff.json');
+
+        // Função para ler o arquivo JSON
+        function lerArquivoJSON() {
+            const rawdata = fs.readFileSync(filePath);
+            return JSON.parse(rawdata);
+        }
+
+        // Carregar as imagens do arquivo JSON
+        const imagensData = lerArquivoJSON();
+        const imagens = imagensData.imagens;
+
+        // Escolher uma imagem aleatória
+        const imagemAleatoria = imagens[Math.floor(Math.random() * imagens.length)];
+
+        // Fazer requisição para obter a imagem
+        const response = await axios.get(imagemAleatoria, { responseType: 'arraybuffer' });
+
+        // Enviar a imagem como resposta
+        res.set('Content-Type', 'image/jpeg'); // Define o tipo de conteúdo como imagem JPEG
+        res.send(Buffer.from(response.data, 'binary'));
+    } catch (error) {
+        console.error('Erro ao obter imagem aleatória:', error);
+        res.status(500).send('Erro ao obter imagem aleatória');
+    }
+});
+
 router.get('/aesthetic', async (req, res) => {
     try {
         // Caminho para o arquivo JSON contendo as imagens

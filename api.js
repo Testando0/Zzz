@@ -982,14 +982,13 @@ router.get('/linkmp4-8', async (req, res) => {
   if (!ytUrl) return res.status(400).send('URL do YouTube é obrigatório');
 
   try {
-    const response = await axios.get(`https://api.vreden.my.id/api/v1/download/youtube/video?url=${encodeURIComponent(ytUrl)}&quality=360`);
+    const response = await axios.get(`https://api.vreden.my.id/api/v1/download/youtube/video?url=${ytUrl}&quality=360`);
     const downloadUrl = response.data.result.download.url;
     res.redirect(downloadUrl);
   } catch (error) {
     res.status(500).send('Erro ao obter link de download');
   }
 });
-//Feito
 
 // 2) Download MP3 por busca no YouTube (usando ?name=...)
 router.get('/musica8', async (req, res) => {
@@ -1004,7 +1003,6 @@ router.get('/musica8', async (req, res) => {
     res.status(500).send('Erro ao obter link de download');
   }
 });
-//Feito
 
 // 3) Download MP4 por busca no YouTube (usando ?name=...)
 router.get('/clipe8', async (req, res) => {
@@ -1019,7 +1017,6 @@ router.get('/clipe8', async (req, res) => {
     res.status(500).send('Erro ao obter link de download');
   }
 });
-//Feito
 
 // 4) (Bonus) Exemplo para baixar áudio MP3 direto por URL (não tinha na sua lista, mas é comum)
 router.get('/linkmp3-8', async (req, res) => {
@@ -1027,14 +1024,14 @@ router.get('/linkmp3-8', async (req, res) => {
   if (!ytUrl) return res.status(400).send('URL do YouTube é obrigatório');
 
   try {
-    const response = await axios.get(`https://api.vreden.my.id/api/v1/download/youtube/audio?url=${encodeURIComponent(ytUrl)}&quality=128`);
+    const response = await axios.get(`https://api.vreden.my.id/api/v1/download/youtube/audio?url=${ytUrl}&quality=128`);
     const downloadUrl = response.data.result.download.url;
     res.redirect(downloadUrl);
   } catch (error) {
     res.status(500).send('Erro ao obter link de download');
   }
 });
-//Feito
+
 
 // Extrai ID do vídeo do YouTube
 function getYouTubeVideoId(url) {
@@ -1420,6 +1417,28 @@ router.get('/igstalk', async (req, res) => {
     res.status(500).json({ error: 'Erro interno no servidor' })
   }
 })
+
+router.get('/futeproxy', async (req, res) => {
+  try {
+ 
+    const agent = new https.Agent({  
+  rejectUnauthorized: false  // ⚠️ ignora certificados inválidos
+});
+    const response = await axios.get('https://futemaxhd.io/proxy.php', {
+      httpsAgent: agent,
+      headers: {
+        'User-Agent': 'Mozilla/5.0',
+        'Referer': 'https://futemaxhd.io/',
+        'Accept': 'application/json'
+      }
+    });
+    res.json(response.data);
+  } catch (err) {
+    console.error(err.response?.status || err.code, err.message);
+    res.status(500).json({ error: 'Erro ao acessar proxy' });
+  }
+});
+
 
 router.get('/jogo/:slug', async (req, res) => {
   const { slug } = req.params;
@@ -2157,1328 +2176,7 @@ router.get("/events", async (req, res) => {
   }
 });
 
-router.get('/playertv', (req, res) => {
-  res.json({
-    status: true,
-    data: [
-  {
-    "link": "https://playertv.net/a-fazenda-15-sinal-6/",
-    "title": "A Fazenda 15 – Sinal 6",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2025/09/a-fazenda-25-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/a-fazenda-15-sinal-5/",
-    "title": "A Fazenda 15 – Sinal 5",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2025/09/a-fazenda-25-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/a-fazenda-15-sinal-4/",
-    "title": "A Fazenda 15 – Sinal 4",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2025/09/a-fazenda-25-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/a-fazenda-15-sinal-3/",
-    "title": "A Fazenda 15 – Sinal 3",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2025/09/a-fazenda-25-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/a-fazenda-15-sinal-2/",
-    "title": "A Fazenda 15 – Sinal 2",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2025/09/a-fazenda-25-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/a-fazenda-15-sinal-1/",
-    "title": "A Fazenda 15 – Sinal 1",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2025/09/a-fazenda-25-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/nosso-futebol/",
-    "title": "Nosso Futebol",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2025/02/nosso_futebo_1-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/nosso-futebol-plus-3/",
-    "title": "Nosso Futebol Plus 3",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2025/02/nosso_futebo_1-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/nosso-futebol-plus-2/",
-    "title": "Nosso Futebol Plus 2",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2025/02/nosso_futebo_1-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/nosso-futebol-plus/",
-    "title": "Nosso Futebol Plus",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2025/02/nosso_futebo_1-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/nba-alt/",
-    "title": "NBA Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/nba-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/nba/",
-    "title": "NBA",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/nba-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/universal-alt/",
-    "title": "Universal Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/universal-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/universal/",
-    "title": "Universal",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/universal-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/usa-network-alt/",
-    "title": "USA Network Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/usa-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/usa-network/",
-    "title": "USA Network",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/usa-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/studio-universal-alt/",
-    "title": "Studio Universal Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/studio-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/studio-universal/",
-    "title": "Studio Universal",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/studio-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/megapix-alt/",
-    "title": "Megapix Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/megapix-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/megapix/",
-    "title": "Megapix",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/megapix-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/agromais/",
-    "title": "AgroMais",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/agro-mais-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/filmarts/",
-    "title": "Film&Arts",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/film-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/tv-gazeta/",
-    "title": "TV Gazeta",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/gazeta-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/tv-aparecida/",
-    "title": "TV Aparecida",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/aparecida-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/cultura/",
-    "title": "Cultura",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/cultura-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/combate-alt-2/",
-    "title": "Combate Alt 2",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/combate-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/combate-alt/",
-    "title": "Combate Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/combate-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/combate/",
-    "title": "Combate",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/combate-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/cnn-alt/",
-    "title": "CNN Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/cnn-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/cnn/",
-    "title": "CNN",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/cnn-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/amc-alt/",
-    "title": "AMC Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/amc-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/amc/",
-    "title": "AMC",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/amc-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/axn-alt/",
-    "title": "AXN Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/axn-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/axn/",
-    "title": "AXN",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/axn-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/arte-1-alt/",
-    "title": "Arte 1 Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/arte-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/arte-1/",
-    "title": "Arte 1",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/arte-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/comedy-central-alt/",
-    "title": "Comedy Central Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/comedy-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/comedy-central/",
-    "title": "Comedy Central",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/comedy-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/bandnews-alt/",
-    "title": "BandNews Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/band-news-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/bandnews/",
-    "title": "BandNews",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/band-news-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/mtv-live-alt/",
-    "title": "MTV Live Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/mtv-live-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/mtv-live/",
-    "title": "MTV Live",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/mtv-live-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/mtv-alt/",
-    "title": "MTV Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/mtv-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/mtv/",
-    "title": "MTV",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/mtv-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/paramount-alt/",
-    "title": "Paramount Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/paramount-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/paramount/",
-    "title": "Paramount",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/paramount-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/nick-jr-alt/",
-    "title": "Nick Jr Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/nickjr-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/nick-jr/",
-    "title": "Nick Jr",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/nickjr-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/nick-alt/",
-    "title": "Nick Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/nick-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/nick/",
-    "title": "Nick",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/nick-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/band-alt-2/",
-    "title": "Band Alt 2",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/band-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/band-alt/",
-    "title": "Band Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/band-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/band/",
-    "title": "Band",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/band-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/telecine-premium/",
-    "title": "Telecine Premium",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/tc-premium-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/telecine-pipoca/",
-    "title": "Telecine Pipoca",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/tc-pipoca-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/telecine-fun/",
-    "title": "Telecine Fun",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/tc-fun-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/telecine-cult/",
-    "title": "Telecine Cult",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/tc-cult-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/telecine-action/",
-    "title": "Telecine Action",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/tc-action-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/telecine-touch/",
-    "title": "Telecine Touch",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/tc-touch-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/ra-tim-bum/",
-    "title": "Rá-Tim-Bum",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/ratimbum-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/globo-pr-alt/",
-    "title": "Globo PR Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/globo-ms-alt/",
-    "title": "Globo MS Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/globo-pa-alt/",
-    "title": "Globo PA Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/globo-to/",
-    "title": "Globo TO",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/globo-se/",
-    "title": "Globo SE",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/globo-sc/",
-    "title": "Globo SC",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/globo-rr/",
-    "title": "Globo RR",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/globo-ro/",
-    "title": "Globo RO",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/globo-rs/",
-    "title": "Globo RS",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/globo-rn/",
-    "title": "Globo RN",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/globo-pi/",
-    "title": "Globo PI",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/globo-pr/",
-    "title": "Globo PR",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/globo-pb/",
-    "title": "Globo PB",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/globo-pa/",
-    "title": "Globo PA",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/globo-ms/",
-    "title": "Globo MS",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/globo-mt/",
-    "title": "Globo MT",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/globo-ma/",
-    "title": "Globo MA",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/globo-go/",
-    "title": "Globo GO",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/globo-es/",
-    "title": "Globo ES",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/globo-ce/",
-    "title": "Globo CE",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/globo-ba/",
-    "title": "Globo BA",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/globo-am/",
-    "title": "Globo AM",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/globo-ap/",
-    "title": "Globo AP",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/globo-al/",
-    "title": "Globo AL",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/globo-ac/",
-    "title": "Globo AC",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/globo-mg/",
-    "title": "Globo MG",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/globo-pe/",
-    "title": "Globo PE",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/globo-df/",
-    "title": "Globo DF",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/globo-sp/",
-    "title": "Globo SP",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/globo-rj/",
-    "title": "Globo RJ",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/tnt-series/",
-    "title": "TNT Séries",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/tnt-series-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/tnt-novelas/",
-    "title": "TNT Novelas",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/tnt-novelas-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/tlc/",
-    "title": "TLC",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/tlc-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/star-channel/",
-    "title": "Star Channel",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/star-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/national-geographic/",
-    "title": "National Geographic",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/nat-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/investigacao-discovery/",
-    "title": "Investigação Discovery",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/id-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/hgtv/",
-    "title": "HGTV",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/hgtv-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/fx/",
-    "title": "FX",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/fx-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/food-network/",
-    "title": "Food Network",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/food-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/e-entertainment/",
-    "title": "E! Entertainment",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/e-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/disney-channel/",
-    "title": "Disney Channel",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/disney-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/discovery-world/",
-    "title": "Discovery World",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/world-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/discovery-turbo/",
-    "title": "Discovery Turbo",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/turbo-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/discovery-theater/",
-    "title": "Discovery Theater",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/theater-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/discovery-science/",
-    "title": "Discovery Science",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/science-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/discovery-kids/",
-    "title": "Discovery Kids",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/kids-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/discovery-home-health/",
-    "title": "Discovery Home & Health",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/hh-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/cine-canal/",
-    "title": "Cine Canal",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/cine-canal-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/cartoonito/",
-    "title": "Cartoonito",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/cartoonito-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/cartoon-network/",
-    "title": "Cartoon Network",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/cartoon-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/adult-swim/",
-    "title": "Adult Swim",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/adult-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/cazetv-6/",
-    "title": "CazéTV 6",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/10/caze-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/cazetv-5/",
-    "title": "CazéTV 5",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/10/caze-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/cazetv-4/",
-    "title": "CazéTV 4",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/10/caze-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/cazetv-3/",
-    "title": "CazéTV 3",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/10/caze-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/cazetv-2/",
-    "title": "CazéTV 2",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/10/caze-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/cazetv/",
-    "title": "CazéTV",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/10/caze-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/warner-channel-alt/",
-    "title": "Warner Channel Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/warner-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/warner-channel/",
-    "title": "Warner Channel",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/warner-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/discovery-channel/",
-    "title": "Discovery Channel",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/discovery-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/redetv/",
-    "title": "RedeTV",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/redetv-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/globonews-alt/",
-    "title": "GloboNews Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-news-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/globonews/",
-    "title": "GloboNews",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/globo-news-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/malhacao/",
-    "title": "Malhação",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/10/malhacao-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/futura-alt/",
-    "title": "Futura Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/futura-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/futura/",
-    "title": "Futura",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/futura-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/modo-viagem-alt/",
-    "title": "Modo Viagem Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/modo-viagem-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/modo-viagem/",
-    "title": "Modo Viagem",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/modo-viagem-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/bis-alt/",
-    "title": "Bis Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/bis-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/bis/",
-    "title": "Bis",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/bis-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/canal-off-alt/",
-    "title": "Canal Off Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/off-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/canal-off/",
-    "title": "Canal Off",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/off-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/canal-brasil-alt/",
-    "title": "Canal Brasil Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/canal-brasil-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/canal-brasil/",
-    "title": "Canal Brasil",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/canal-brasil-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/gloobinho-alt/",
-    "title": "Gloobinho Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/gloobinho-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/gloobinho/",
-    "title": "Gloobinho",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/gloobinho-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/gloob-alt/",
-    "title": "Gloob Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/gloob-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/gloob/",
-    "title": "Gloob",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/gloob-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/viva-alt/",
-    "title": "Viva Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/viva-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/viva/",
-    "title": "Viva",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/viva-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/gnt-alt/",
-    "title": "GNT Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/gnt-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/gnt/",
-    "title": "GNT",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/gnt-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/multishow-alt/",
-    "title": "Multishow Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/multishow-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/multishow/",
-    "title": "Multishow",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/multishow-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/history-2/",
-    "title": "History 2",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/h2-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/history/",
-    "title": "History",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/h1-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/lifetime/",
-    "title": "Lifetime",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/lifetime-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/sony/",
-    "title": "Sony",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sony-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/sony-movies/",
-    "title": "Sony Movies",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sony-movies-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/ae/",
-    "title": "A&E",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/ae-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/record-news/",
-    "title": "Record News",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/record-news-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/record-goytacazes/",
-    "title": "Record Goytacazes",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/record-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/record-ribeirao-preto/",
-    "title": "Record Ribeirão Preto",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/record-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/record-rio-preto/",
-    "title": "Record Rio Preto",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/record-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/record-bauru/",
-    "title": "Record Bauru",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/record-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/record-cabralia/",
-    "title": "Record Cabrália",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/record-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/record-santos-e-vale/",
-    "title": "Record Santos e Vale",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/record-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/record-am/",
-    "title": "Record AM",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/record-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/record-pa/",
-    "title": "Record PA",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/record-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/record-go/",
-    "title": "Record GO",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/record-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/record-df/",
-    "title": "Record DF",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/record-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/record-ba/",
-    "title": "Record BA",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/record-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/record-rs/",
-    "title": "Record RS",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/record-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/record-mg/",
-    "title": "Record MG",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/record-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/record-rj/",
-    "title": "Record RJ",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/record-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/record-sp/",
-    "title": "Record SP",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/record-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/space-alt/",
-    "title": "SPACE ALT",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/space-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/space/",
-    "title": "SPACE",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/space-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/sportv-4/",
-    "title": "Sportv 4",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sportv-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/sbt-alt-2/",
-    "title": "SBT Alt 2",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sbt-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/sbt-alt/",
-    "title": "SBT Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sbt-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/sbt/",
-    "title": "SBT",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sbt-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/star-plus-alt-2/",
-    "title": "Star Plus Alt 2",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/star3-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/star-plus-alt/",
-    "title": "Star Plus Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/star2-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/star-plus/",
-    "title": "Star Plus",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/star1-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/prime-video-4/",
-    "title": "Prime Video 4",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/prime4-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/prime-video-3/",
-    "title": "Prime Video 3",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/prime3-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/prime-video-2/",
-    "title": "Prime Video 2",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/prime2-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/prime-video/",
-    "title": "Prime Video",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/prime1-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/band-sports-alt/",
-    "title": "Band Sports Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/band-sports-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/band-sports/",
-    "title": "Band Sports",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/band-sports-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/max-alt/",
-    "title": "Max Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/hbo-max-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/max/",
-    "title": "Max",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/hbo-max-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/tnt-alt/",
-    "title": "TNT Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/tnt-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/tnt/",
-    "title": "TNT",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/tnt-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/paramount-4-conmebol/",
-    "title": "Paramount+ 4 (Conmebol)",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/paramount4-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/paramount-3-conmebol/",
-    "title": "Paramount+ 3 (Conmebol)",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/paramount3-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/paramount-2-conmebol/",
-    "title": "Paramount+ 2 (Conmebol)",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/paramount2-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/paramount-1-conmebol/",
-    "title": "Paramount+ 1 (Conmebol)",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/paramount1-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/universal-reality/",
-    "title": "Universal Reality",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/universal-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/universal-premiere/",
-    "title": "Universal Premiere",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/universal-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/btv/",
-    "title": "BTV",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/btv-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/eleven-6/",
-    "title": "Eleven 6",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/eleven-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/eleven-5/",
-    "title": "Eleven 5",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/eleven-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/eleven-4/",
-    "title": "Eleven 4",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/eleven-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/eleven-3/",
-    "title": "Eleven 3",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/eleven-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/eleven-2/",
-    "title": "Eleven 2",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/eleven-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/eleven/",
-    "title": "Eleven",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/eleven-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/sport-tv-6/",
-    "title": "Sport TV 6",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sporttv-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/sport-tv-5/",
-    "title": "Sport TV 5",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sporttv-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/sport-tv-4/",
-    "title": "Sport TV 4",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sporttv-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/sport-tv-3/",
-    "title": "Sport TV 3",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sporttv-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/sport-tv-2/",
-    "title": "Sport TV 2",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sporttv-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/sport-tv/",
-    "title": "Sport TV",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sporttv-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/premiere-8-alt-3/",
-    "title": "Premiere 8 Alt 3",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere8-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/premiere-8-alt-2/",
-    "title": "Premiere 8 Alt 2",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere8-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/premiere-8-alt/",
-    "title": "Premiere 8 Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere8-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/premiere-8/",
-    "title": "Premiere 8",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere8-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/premiere-7-alt-3/",
-    "title": "Premiere 7 Alt 3",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere7-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/premiere-7-alt-2/",
-    "title": "Premiere 7 Alt 2",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere7-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/premiere-7-alt/",
-    "title": "Premiere 7 Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere7-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/premiere-7/",
-    "title": "Premiere 7",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere7-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/premiere-6-alt-3/",
-    "title": "Premiere 6 Alt 3",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere6-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/premiere-6-alt-2/",
-    "title": "Premiere 6 Alt 2",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere6-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/premiere-6-alt/",
-    "title": "Premiere 6 Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere6-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/premiere-6/",
-    "title": "Premiere 6",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere6-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/premiere-5-alt-3/",
-    "title": "Premiere 5 Alt 3",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere5-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/premiere-5-alt-2/",
-    "title": "Premiere 5 Alt 2",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere5-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/premiere-5-alt/",
-    "title": "Premiere 5 Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere5-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/premiere-5/",
-    "title": "Premiere 5",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere5-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/premiere-4-alt-3/",
-    "title": "Premiere 4 Alt 3",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere4-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/premiere-4-alt-2/",
-    "title": "Premiere 4 Alt 2",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere4-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/premiere-4-alt/",
-    "title": "Premiere 4 Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere4-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/premiere-4/",
-    "title": "Premiere 4",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere4-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/premiere-3-alt-2/",
-    "title": "Premiere 3 Alt 2",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere3-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/premiere-3-alt/",
-    "title": "Premiere 3 Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere3-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/premiere-3/",
-    "title": "Premiere 3",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere3-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/premiere-2-alt-3/",
-    "title": "Premiere 2 Alt 3",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere2-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/premiere-2-alt-2/",
-    "title": "Premiere 2 Alt 2",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere2-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/premiere-2-alt/",
-    "title": "Premiere 2 Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere2-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/premiere-2/",
-    "title": "Premiere 2",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere2-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/premiere-alt-3/",
-    "title": "Premiere Alt 3",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/premiere-alt-2/",
-    "title": "Premiere Alt 2",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/premiere-alt/",
-    "title": "Premiere Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/premiere/",
-    "title": "Premiere",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/premiere-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/sportv-mosaico/",
-    "title": "Sportv Mosaico",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sportv-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/sportv-3-alt-2/",
-    "title": "Sportv 3 Alt 2",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sportv3-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/sportv-3-alt/",
-    "title": "Sportv 3 Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sportv3-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/sportv-3/",
-    "title": "Sportv 3",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sportv3-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/sportv-2-alt-3/",
-    "title": "Sportv 2 Alt 3",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sportv2-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/sportv-2-alt-2/",
-    "title": "Sportv 2 Alt 2",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sportv2-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/sportv-2-alt/",
-    "title": "Sportv 2 Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sportv2-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/sportv-2/",
-    "title": "Sportv 2",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sportv2-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/sportv-alt-3/",
-    "title": "Sportv Alt 3",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sportv-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/sportv-alt-2/",
-    "title": "Sportv Alt 2",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sportv-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/sportv-alt/",
-    "title": "Sportv Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sportv-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/sportv/",
-    "title": "Sportv",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/sportv-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/espn-6-alt/",
-    "title": "ESPN 6 Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/espn6-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/espn-6/",
-    "title": "ESPN 6",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/espn6-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/espn-5-alt/",
-    "title": "ESPN 5 Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/espn5-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/espn-5/",
-    "title": "ESPN 5",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/espn5-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/espn-4-alt-2/",
-    "title": "ESPN 4 Alt 2",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/espn4-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/espn-4-alt/",
-    "title": "ESPN 4 Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/espn4-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/espn-4/",
-    "title": "ESPN 4",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/espn4-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/espn-3-alt-2/",
-    "title": "ESPN 3 Alt 2",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/espn3-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/espn-3-alt/",
-    "title": "ESPN 3 Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/espn3-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/espn-3/",
-    "title": "ESPN 3",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/espn3-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/espn-2-alt-2/",
-    "title": "ESPN 2 Alt 2",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/espn2-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/espn-2-alt/",
-    "title": "ESPN 2 Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/espn2-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/espn-2/",
-    "title": "ESPN 2",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/espn2-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/espn-alt-2/",
-    "title": "ESPN Alt 2",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/espn-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/espn-alt/",
-    "title": "ESPN Alt",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/espn-300x169.webp"
-  },
-  {
-    "link": "https://playertv.net/espn/",
-    "title": "ESPN",
-    "imgSrc": "https://playertv.net/wp-content/uploads/2024/04/espn-300x169.webp"
-  }
-    ]
-  });
-});
+
 
 
 router.get("/playertv2", async (req, res) => {
@@ -3666,6 +2364,39 @@ router.get('/iframe', async (req, res) => {
   }
 });
 
+router.get('/embedcanais', async (req, res) => {
+  try {
+    const { data } = await axios.get('https://embedcanais.com/');
+    const $ = cheerio.load(data);
+    const channels = [];
+
+    $('div.card').each((i, el) => {
+      const name = $(el).find('.title span, .title').first().text().trim();
+      const channelUrl = $(el).find('a.thumb').attr('href');
+      const img = $(el).find('a.thumb img').attr('src');
+      const iframe = $(el).find('input.embed-input').val();
+
+      // Corrige src relativo
+      const fullImg = img.startsWith('http') ? img : `https://embedcanais.com/${img}`;
+
+      channels.push({
+        name,
+        url: channelUrl,
+        img: fullImg,
+        iframe
+      });
+    });
+
+    res.json({
+      status: true,
+      total: channels.length,
+      channels
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ status: false, message: 'Erro ao buscar os canais' });
+  }
+});
 
 
 
@@ -3878,7 +2609,7 @@ router.get('/play', async (req, res) => {
   try {
     const response = await axios.get(`https://api.vreden.my.id/api/v1/download/play/audio?query=${encodeURIComponent(name)}`);
     const downloadUrl = response.data.result.download.url;
-//Feito
+
     if (downloadUrl) {
       return res.redirect(downloadUrl);  // Redireciona para o link de download do áudio
     } else {
@@ -3899,7 +2630,7 @@ router.get('/playvideo', async (req, res) => {
   try {
     const response = await axios.get(`https://api.vreden.my.id/api/v1/download/play/video?query=${encodeURIComponent(name)}`);
     const downloadUrl = response.data.result.download.url;
-//Feito
+
     if (downloadUrl) {
       return res.redirect(downloadUrl);  // Redireciona para o link de download do vídeo
     } else {
@@ -3921,7 +2652,7 @@ router.get('/ytmp3', async (req, res) => {
   try {
     const response = await axios.get(`https://api.vreden.my.id/api/v1/download/youtube/audio?url=${url}&quality=128`);
     const downloadUrl = response.data.result.download.url;
-//Feito
+
     if (downloadUrl) {
       return res.redirect(downloadUrl);  // Redireciona para o link de download do áudio
     } else {
@@ -3944,7 +2675,7 @@ router.get('/ytmp4', async (req, res) => {
   try {
     const response = await axios.get(`https://api.vreden.my.id/api/v1/download/youtube/video?url=${url}&quality=360`);
     const downloadUrl = response.data.result.download.url;
-//Feito
+
     if (downloadUrl) {
       return res.redirect(downloadUrl);  // Redireciona para o link de download do vídeo
     } else {
@@ -5095,26 +3826,11 @@ router.get('/likesff', async (req, res) => {
   }
 
   try {
-    const apiUrl = `https://likesff.online/api/likes_all_regions?uid=${encodeURIComponent(id)}`;
+    const apiUrl = `https://come-likes.onrender.com/like?uid=${encodeURIComponent(id)}&server=br`;
     const response = await axios.get(apiUrl);
-    const data = response.data;
 
-    if (data.status !== 200) {
-      return res.status(500).json({ error: 'Erro ao buscar informações do jogador.' });
-    }
-
-    const formattedResponse = {
-      "ID do Jogador": id,
-      "Apelido": data.nickname,
-      "Região": data.region,
-      "Nível": data.level,
-      "Experiência": data.exp,
-      "Likes Antes": data.likes_antes,
-      "Likes Depois": data.likes_depois,
-      "Likes Enviados": data.sent // já vem pronto
-    };
-
-    res.json(formattedResponse);
+    // Retorna exatamente o JSON que a API respondeu
+    res.json(response.data);
   } catch (error) {
     res.status(500).json({
       error: 'Erro ao buscar informações de likes.',
@@ -5122,7 +3838,6 @@ router.get('/likesff', async (req, res) => {
     });
   }
 });
-
 
 const idDoGrupoDeLikes = -1002940331751;
 
@@ -9424,11 +8139,11 @@ router.get('/ai-simsimi', async (req, res) => {
   }
 
   try {
-    const apiUrl = `https://api.giftedtech.web.id/api/ai/simsimi?apikey=gifted&query=${encodeURIComponent(query)}`;
+    const apiUrl = `https://api.bronxyshost.com.br/api-bronxys/simsimi?apikey=KEY-TEMPORARIA-TELEGRAM-ALEATORY&pergunta=${encodeURIComponent(query)}`;
     const { data } = await axios.get(apiUrl);
 
-    if (data && data.result) {
-      res.json({ resposta: data.result });
+    if (data && data.resposta) {
+      res.json({ resposta: data.resposta });
     } else {
       res.status(500).json({ erro: 'Resposta inválida da API' });
     }
@@ -11808,7 +10523,7 @@ router.get('/netersg', async (req, res) => {
         res.status(500).json({ status: false, mensagem: "Erro interno ao processar a solicitação." });
     }
 });
-//gerar imagem by luan 
+//gerar imagem by Redzin 
 
 
 router.get('/gerar-imagem', async (req, res) => {
@@ -12030,7 +10745,7 @@ router.get('/gerar-imagem2', async (req, res) => {
 
 //fim 
 
-// play e playvideo by Redzin 
+// play e playvideo by Redzin
 
 const got = require('got');
 const ytsr = require('yt-search');
@@ -14724,7 +13439,7 @@ const downloadFile = async (url, filePath, res) => {
 
 router.get('/igstalker', async (req, res) => {
   const conta = req.query.conta;
-  
+
   try {
     const response = await axios.get(`https://api.vreden.my.id/api/v1/stalker/instagram?username=${conta}`);
     
@@ -14768,7 +13483,7 @@ router.get('/pin/video', (req, res) => {
 
 const apiId = 21844566;
 const apiHash = 'ff82e94bfed22534a083c3aee236761a';
-const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBuwdxsyFiiCfEuz6/oGmTG8F+IorZd/u8UGSzqOKjX80MPLuB6BiU90f0gxwl7wicmHf4gqDvmooARNZKv4joFt9naadBaMRVqPfV5ZY6V/6HjEnjXq5+2mKIU38SRZw+wrLeawlQgm/ao73Fn/WNNAKZ3YsJW6EGGuKYr09ng34Q3ZU4GWHlLagXSvhbUW4clX6ElFze0iv0o1vjG6Zcjv7Lrmx4tSYkM3G/MSOTNRsXWsi8BUsukYsgbUiGMWLDWhmfP8oGNfsRsKImaQtL3/4bAyXl5UYMwYKe8QTS19+FFAUG15fyaL+jiFXoYB32+Ctc0R4sijxNLqKPMg+ZnW0=');
+const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTkBu3wvsU0mRSoQTcpdKEycPUbf7ss7/48f9tFIduf2TAHqzsg2z6fCfEnNW1l8KvJCkFt5OWmIcaYLT2Im535+Zw37EEW7YenmDGPwaoc4HRlSW7hTN+IWcYLIbCoRfgaLIaVmK7w2HyofQZ/6++uWufGRj3em5vT2uzaY5erApN4+EHYF7YabYeDcSKLEqLgzjaSDi3N3yEVxTk5IxwmsJiOVnEnB5NDUS9Oy2QxrPWUyQfovtEUFfvMfXtaHjA+PB5HnzRg4I3su9NUwG1HjlT/A/oW3Nw31WYqlQq32wZ+6aMTOTv2H95aoOGK8Rv/pkb9drMfXhk/NEcNDInfY7QA=');
 const grupoChatId = -1002208588695;
 
 const rl = readline.createInterface({

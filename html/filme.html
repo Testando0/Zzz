@@ -4,31 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Filme</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <link rel="icon" href="./icones/favicon-32x32.png" type="image/png" sizes="32x32">
-    <link rel="icon" href="./icones/favicon-16x16.png" type="image/png" sizes="16x16">
-    <link rel="icon" href="./icones/android-chrome-192x192.png" type="image/png" sizes="192x192">
-    <link rel="icon" href="./icones/android-chrome-512x512.png" type="image/png" sizes="512x512">
-    <link rel="apple-touch-icon" href="./icones/apple-touch-icon.png">
-    <link rel="manifest" href="./site.webmanifest">
-
     <style>
         body {
             font-family: Arial, sans-serif;
             background-color: #111;
             margin: 0;
             padding: 0;
-            overflow: hidden; /* Impede rolagem da página */
-            display: flex; /* Centraliza o conteúdo */
-            justify-content: center;
-            align-items: center;
-            cursor: pointer; /* Adiciona um cursor de ponteiro para indicar que é clicável */
+            overflow: hidden;
+            /* Remove 'cursor: pointer;' para não confundir, já que a interação será no iframe */
         }
 
         iframe {
-            width: 100vw; /* Ajusta o iframe para ocupar toda a largura da tela */
-            height: 100vh; /* Ajusta o iframe para ocupar toda a altura da tela */
-            border: none; /* Remove a borda do iframe */
+            width: 100vw;
+            height: 100vh;
+            border: none;
+            /* Adiciona flexbox para garantir que o iframe preencha 100% */
+            display: block; 
         }
     </style>
 </head>
@@ -36,47 +27,29 @@
     <iframe id="videoPlayer" frameborder="0" allowfullscreen></iframe>
 
     <script>
-        const API_KEY = 'cf72f14362cff1da8bed9fa86831de66';
+        // Não precisamos mais da chave TMDB, pois ela não era usada para o player
         let filmeId = new URLSearchParams(window.location.search).get("id");
-
-        function loadFilmeDetails() {
-            fetch(`https://api.themoviedb.org/3/movie/${filmeId}?api_key=${API_KEY}&language=pt-BR`)
-                .then(response => response.json())
-                .then(data => {
-                    const videoPlayer = document.getElementById("videoPlayer");
-                    videoPlayer.src = `https://superflixapi.lat/filme/${filmeId}`;
-
-                    // Função para iniciar a reprodução em tela cheia após a interação do usuário
-                    function playVideoAndFullscreen() {
-                        const iframeContent = videoPlayer.contentWindow;
-                        if (iframeContent) {
-                            try {
-                                // Tenta despausar o vídeo dentro do iframe
-                                iframeContent.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
-                            } catch (e) {
-                                console.error("Não foi possível enviar a mensagem para despausar o vídeo.", e);
-                            }
-                        }
-
-                        // Entra em tela cheia
-                        if (videoPlayer.requestFullscreen) {
-                            videoPlayer.requestFullscreen();
-                        } else if (videoPlayer.mozRequestFullScreen) { // Firefox
-                            videoPlayer.mozRequestFullScreen();
-                        } else if (videoPlayer.webkitRequestFullscreen) { // Chrome, Safari e Opera
-                            videoPlayer.webkitRequestFullscreen();
-                        } else if (videoPlayer.msRequestFullscreen) { // IE/Edge
-                            videoPlayer.msRequestFullscreen();
-                        }
-                    }
-
-                    // Adiciona um evento de clique para iniciar a reprodução e tela cheia
-                    document.body.addEventListener('click', playVideoAndFullscreen);
-                })
-                .catch(error => console.error("Erro ao carregar os detalhes do filme:", error));
+        
+        // 1. Monta a URL do player
+        const playerUrl = `https://superflixapi.lat/filme/${filmeId}`;
+        
+        // 2. Define o src do iframe imediatamente
+        const videoPlayer = document.getElementById("videoPlayer");
+        
+        // Verificação se o ID existe
+        if (filmeId) {
+            videoPlayer.src = playerUrl;
+        } else {
+            // Caso não tenha ID, mostre algo no iframe
+            videoPlayer.src = "about:blank"; 
+            alert("Erro: ID do filme não encontrado na URL.");
         }
-
-        loadFilmeDetails();
+        
+        // REMOVEMOS:
+        // - A função loadFilmeDetails()
+        // - A chamada à API do TMDB
+        // - Toda a lógica de playVideoAndFullscreen() e o listener de clique
+        
     </script>
 </body>
 </html>

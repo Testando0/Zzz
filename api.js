@@ -5377,12 +5377,12 @@ router.get('/chatgpt5', async (req, res) => {
 });
 
 
-router.get('/lady', async (req, res) => {
+router.get('/kuromi', async (req, res) => {
   const texto = req.query.texto;
 
   if (!texto) {
     return res.status(400).json({
-      erro: 'Parâmetro texto não fornecido. Use /lady?texto=Sua pergunta'
+      erro: 'Parâmetro texto não fornecido. Use /kuromi?texto=Sua pergunta'
     });
   }
 
@@ -5397,7 +5397,7 @@ router.get('/lady', async (req, res) => {
   }
 });
 
-router.get('/lady2', async (req, res) => {
+router.get('/kuromi2', async (req, res) => {
   const { texto } = req.query;
 
   if (!texto) {

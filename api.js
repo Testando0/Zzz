@@ -304,7 +304,7 @@ router.get('/lista-de-desejos', async (req, res) => {
 
     console.log(`\n🔹 Gerando lista de desejos para ID: ${id} na região: ${region}`);
 
-    const apiUrl = `https://freefireapis.squareweb.app/api/wishlist?id=${id}&region=${region}`;
+    const apiUrl = `https://freefireapis.shardweb.app/api/wishlist?id=${id}&region=${region}`;
     const { data: apiData } = await axios.get(apiUrl);
 
     if (!apiData.success || !apiData.wishlistBasicInfo || !apiData.wishlistBasicInfo.Items) {
@@ -982,7 +982,7 @@ router.get('/linkmp4-8', async (req, res) => {
   if (!ytUrl) return res.status(400).send('URL do YouTube é obrigatório');
 
   try {
-    const response = await axios.get(`https://api.vreden.my.id/api/v1/download/youtube/video?url=${ytUrl}&quality=360`);
+    const response = await axios.get(`https://api.vreden.my.id/api/v1/download/youtube/video?url=${encodeURIComponent(ytUrl)}&quality=360`);
     const downloadUrl = response.data.result.download.url;
     res.redirect(downloadUrl);
   } catch (error) {
@@ -1024,7 +1024,7 @@ router.get('/linkmp3-8', async (req, res) => {
   if (!ytUrl) return res.status(400).send('URL do YouTube é obrigatório');
 
   try {
-    const response = await axios.get(`https://api.vreden.my.id/api/v1/download/youtube/audio?url=${ytUrl}&quality=128`);
+    const response = await axios.get(`https://api.vreden.my.id/api/v1/download/youtube/audio?url=${encodeURIComponent(ytUrl)}&quality=128`);
     const downloadUrl = response.data.result.download.url;
     res.redirect(downloadUrl);
   } catch (error) {
@@ -3855,7 +3855,7 @@ router.get('/likesff2', async (req, res) => {
   const getUserInfo = async () => {
     try {
       const { data } = await axios.get(
-        `https://freefireapis.squareweb.app/api/info_player?uid=${id}&region=${region}&clothes=false`
+        `https://freefireapis.shardweb.app/api/info_player?uid=${id}&region=${region}&clothes=false`
       );
 
       return {
@@ -3948,7 +3948,7 @@ router.get('/likesff3', async (req, res) => {
   const getUserInfo = async () => {
     try {
       const { data } = await axios.get(
-        `https://freefireapis.squareweb.app/api/info_player?uid=${id}&region=${region}&clothes=false`
+        `https://freefireapis.shardweb.app/api/info_player?uid=${id}&region=${region}&clothes=false`
       );
 
       return {
@@ -5292,6 +5292,20 @@ router.get('/ia2', async (req, res) => {
   }
 });
 
+router.get(/^\/ai\/(.+)/, async (req, res) => {
+  const model = req.params[0]; // Exemplo: "gpt/5"
+  const text = req.query.text || "";
+
+  try {
+    const response = await fetch(`https://api.nekolabs.my.id/ai/${model}?text=${encodeURIComponent(text)}`);
+    const data = await response.json();
+    res.json(data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, error: "Erro ao acessar Neko Labs" });
+  }
+});
+
 router.get('/chatgpt', async (req, res) => {
   const texto = req.query.texto;
 
@@ -5363,12 +5377,12 @@ router.get('/chatgpt5', async (req, res) => {
 });
 
 
-router.get('/kuromi', async (req, res) => {
+router.get('/lady', async (req, res) => {
   const texto = req.query.texto;
 
   if (!texto) {
     return res.status(400).json({
-      erro: 'Parâmetro texto não fornecido. Use /kuromi?texto=Sua pergunta'
+      erro: 'Parâmetro texto não fornecido. Use /lady?texto=Sua pergunta'
     });
   }
 
@@ -5383,7 +5397,7 @@ router.get('/kuromi', async (req, res) => {
   }
 });
 
-router.get('/kuromi2', async (req, res) => {
+router.get('/lady2', async (req, res) => {
   const { texto } = req.query;
 
   if (!texto) {
@@ -13439,7 +13453,7 @@ const downloadFile = async (url, filePath, res) => {
 
 router.get('/igstalker', async (req, res) => {
   const conta = req.query.conta;
-
+  
   try {
     const response = await axios.get(`https://api.vreden.my.id/api/v1/stalker/instagram?username=${conta}`);
     
@@ -13483,7 +13497,7 @@ router.get('/pin/video', (req, res) => {
 
 const apiId = 21844566;
 const apiHash = 'ff82e94bfed22534a083c3aee236761a';
-const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTkBu3wvsU0mRSoQTcpdKEycPUbf7ss7/48f9tFIduf2TAHqzsg2z6fCfEnNW1l8KvJCkFt5OWmIcaYLT2Im535+Zw37EEW7YenmDGPwaoc4HRlSW7hTN+IWcYLIbCoRfgaLIaVmK7w2HyofQZ/6++uWufGRj3em5vT2uzaY5erApN4+EHYF7YabYeDcSKLEqLgzjaSDi3N3yEVxTk5IxwmsJiOVnEnB5NDUS9Oy2QxrPWUyQfovtEUFfvMfXtaHjA+PB5HnzRg4I3su9NUwG1HjlT/A/oW3Nw31WYqlQq32wZ+6aMTOTv2H95aoOGK8Rv/pkb9drMfXhk/NEcNDInfY7QA=');
+const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBuxNKUUvkkMp320V4imDVMTB2LSxdVfxwOaUlTkAPAzmmik83jn7PKn9i55UkZQJgfMho5cpah3eZrJMxTs5jIaxZAOWZC3kI6zdGKPBVjgoqPeEHA3NMZuJ5CCl3tbYAcnplG9sbac9ac49gnTm4VVSuHAfo7z5np326TIdllAoxCXCWmUvBvXYQVxWmyS45k9xzqg83kbNv69ykztownLTJienw65/GdX49FOzf8M1ELmjAV6yz2+yG33QT2KNaHl9nGfvDDURNN8+JxUkQACrfn4q3H+c2HYMK0P1ZIDqYNpLdHJa6+0m9Ph03Z/8tFBBfpFXN+D1bUaRL9794PuA=');
 const grupoChatId = -1002208588695;
 
 const rl = readline.createInterface({
@@ -13564,14 +13578,29 @@ async function consultar(tipo, entrada) {
     try {
         const res = await fetch("https://sandroapi.site/api/consulta", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { 
+                "Content-Type": "application/json",
+                "x-api-key": "SANDRO_PX2025" // chave do HTML
+            },
             body: JSON.stringify({ tipo, entrada })
         });
+
         const data = await res.json();
-        return data;
+
+        // Garante que sempre retorne status e resultado
+        if (!data || typeof data !== "object") {
+            return { status: false, resultado: null, error: "Resposta inválida da API" };
+        }
+
+        return {
+            status: data.status === true,
+            resultado: data.resultado || null,
+            info: data // inclui todo o objeto original se quiser acessar depois
+        };
+
     } catch (err) {
-        console.error(err);
-        return { status: false, error: "Erro ao consultar API" };
+        console.error("Erro ao consultar API:", err);
+        return { status: false, resultado: null, error: "Erro ao consultar API" };
     }
 }
 
@@ -13589,13 +13618,6 @@ router.get('/consulta/cpf/:entrada', async (req, res) => {
     res.json(data);
 });
 
-// Rota GET para nome
-router.get('/consulta/nome/:entrada', async (req, res) => {
-    const { entrada } = req.params;
-    const data = await consultar('nome', entrada);
-    res.json(data);
-});
-
 // Rota GET para placa
 router.get('/consulta/placa/:entrada', async (req, res) => {
     const { entrada } = req.params;
@@ -13604,161 +13626,135 @@ router.get('/consulta/placa/:entrada', async (req, res) => {
 });
 
 
+// Rota GET para nome
+router.get('/consulta/nome/:entrada', async (req, res) => {
+    const { entrada } = req.params;
+    const data = await consultar('nome', entrada);
+    res.json(data);
+});
 
-router.get('/consultarcpf', async (req, res, next) => {
-    let cpf = req.query.cpf;
 
-    if (!cpf) return res.json({ message: "Faltando o parâmetro cpf" });
+router.get('/consultarcpf', async (req, res) => {
+    const cpf = req.query.cpf;
+
+    if (!cpf) return res.json({ status: false, message: "Faltando o parâmetro cpf" });
 
     try {
-        // Requisição à API com o CPF fornecido
-        let url = `https://api.iblgroup.cloud/ibl-premium/cpf1?q=${cpf}`;
-        let response = await axios.get(url);
+        const url = `https://api.iblgroup.cloud/ibl-premium/cpf1?q=${cpf}`;
+        const { data } = await axios.get(url);
 
-        // Verifica se a resposta contém a chave 'message'
-        if (response.data.resultado) {
-            // Formatar a resposta de maneira mais legível
-            let dados = response.data.resultado.split("\n").map(line => line.trim()).filter(line => line !== "");
-            res.json(dados);
-        } else {
-            res.json({ message: "Nenhum dado encontrado para este CPF" });
-        }
+        // Retorna exatamente o que a API devolveu
+        res.json(data);
 
     } catch (error) {
-        console.error(error);  // Log para facilitar a depuração
-        res.json({ message: "Erro ao consultar a API" });
+        console.error(error);
+        res.json({ status: false, message: "Erro ao consultar a API" });
     }
 });
 
 router.get('/cpf3', async (req, res) => {
-    let cpf = req.query.q;
+    const cpf = req.query.q;
 
-    if (!cpf) return res.json({ message: "Faltando o parâmetro cpf" });
+    if (!cpf) return res.json({ status: false, message: "Faltando o parâmetro cpf" });
 
     try {
-        let url = `https://api.iblgroup.cloud/ibl-premium/cpf3?q=${cpf}`;
-        let response = await axios.get(url);
+        const url = `https://api.iblgroup.cloud/ibl-premium/cpf3?q=${cpf}`;
+        const { data } = await axios.get(url);
 
-        if (response.data.resultado) {
-            let dados = response.data.resultado.split("\n").map(linha => linha.trim()).filter(l => l !== "");
-            res.json(dados);
-        } else {
-            res.json({ message: "Nenhum dado encontrado para este CPF" });
-        }
+        // Retorna exatamente o que a API devolveu
+        res.json(data);
 
     } catch (error) {
         console.error(error);
-        res.json({ message: "Erro ao consultar a API" });
+        res.json({ status: false, message: "Erro ao consultar a API" });
     }
 });
 
 router.get('/cpf2', async (req, res) => {
-    let cpf = req.query.q;
+    const cpf = req.query.q;
 
-    if (!cpf) return res.json({ message: "Faltando o parâmetro cpf" });
+    if (!cpf) return res.json({ status: false, message: "Faltando o parâmetro cpf" });
 
     try {
-        let url = `https://api.iblgroup.cloud/ibl-premium/cpf2?q=${cpf}`;
-        let response = await axios.get(url);
+        const url = `https://api.iblgroup.cloud/ibl-premium/cpf2?q=${cpf}`;
+        const { data } = await axios.get(url);
 
-        if (response.data.resultado) {
-            let dados = response.data.resultado.split("\n").map(linha => linha.trim()).filter(l => l !== "");
-            res.json(dados);
-        } else {
-            res.json({ message: "Nenhum dado encontrado para este CPF" });
-        }
+        // Retorna exatamente o que a API devolveu
+        res.json(data);
 
     } catch (error) {
         console.error(error);
-        res.json({ message: "Erro ao consultar a API" });
+        res.json({ status: false, message: "Erro ao consultar a API" });
     }
 });
 
 router.get('/numero', async (req, res) => {
-    let telefone = req.query.q;
-
-    if (!telefone) return res.json({ message: "Faltando o parâmetro telefone" });
+    const telefone = req.query.q;
+    if (!telefone) return res.json({ status: false, message: "Faltando o parâmetro telefone" });
 
     try {
-        let url = `https://api.iblgroup.cloud/ibl-premium/telefone?q=${telefone}`;
-        let response = await axios.get(url);
+        const url = `https://api.iblgroup.cloud/ibl-premium/telefone?q=${encodeURIComponent(telefone)}`;
+        const { data } = await axios.get(url);
 
-        if (response.data.resultado) {
-            let dados = response.data.resultado.split("\n").map(linha => linha.trim()).filter(l => l !== "");
-            res.json(dados);
-        } else {
-            res.json({ message: "Nenhum dado encontrado para este telefone" });
-        }
+        // Retorna exatamente o que a API devolveu
+        res.json(data);
 
     } catch (error) {
         console.error(error);
-        res.json({ message: "Erro ao consultar a API" });
+        res.json({ status: false, message: "Erro ao consultar a API" });
     }
 });
 
 router.get('/placa2', async (req, res) => {
-    let placa = req.query.q;
+    const placa = req.query.q;
 
-    if (!placa) return res.json({ message: "Faltando o parâmetro placa" });
+    if (!placa) return res.json({ status: false, message: "Faltando o parâmetro placa" });
 
     try {
-        let url = `https://api.iblgroup.cloud/ibl-premium/placa?q=${placa}`;
-        let response = await axios.get(url);
+        const url = `https://api.iblgroup.cloud/ibl-premium/placa?q=${placa}`;
+        const { data } = await axios.get(url);
 
-        if (response.data.resultado) {
-            let dados = response.data.resultado.split("\n").map(linha => linha.trim()).filter(l => l !== "");
-            res.json(dados);
-        } else {
-            res.json({ message: "Nenhum dado encontrado para esta placa" });
-        }
+        // Retorna exatamente o que a API devolveu
+        res.json(data);
 
     } catch (error) {
         console.error(error);
-        res.json({ message: "Erro ao consultar a API" });
+        res.json({ status: false, message: "Erro ao consultar a API" });
     }
 });
 
 router.get('/nome-completo', async (req, res) => {
-    let nome = req.query.q;
-
-    if (!nome) return res.json({ message: "Faltando o parâmetro nome" });
+    const nome = req.query.q;
+    if (!nome) return res.json({ status: false, message: "Faltando o parâmetro nome" });
 
     try {
-        let url = `https://api.iblgroup.cloud/ibl-premium/nome?q=${encodeURIComponent(nome)}`;
-        let response = await axios.get(url);
+        const url = `https://api.iblgroup.cloud/ibl-premium/nome?q=${encodeURIComponent(nome)}`;
+        const { data } = await axios.get(url);
 
-        if (response.data.resultado) {
-            let dados = response.data.resultado.split("\n").map(linha => linha.trim()).filter(l => l !== "");
-            res.json(dados);
-        } else {
-            res.json({ message: "Nenhum dado encontrado para este nome" });
-        }
+        // Retorna exatamente o que a API devolveu
+        res.json(data);
 
     } catch (error) {
         console.error(error);
-        res.json({ message: "Erro ao consultar a API" });
+        res.json({ status: false, message: "Erro ao consultar a API" });
     }
 });
 
 router.get('/email', async (req, res) => {
     let email = req.query.q;
 
-    if (!email) return res.json({ message: "Faltando o parâmetro email" });
+    if (!email) return res.json({ status: false, message: "Faltando o parâmetro email" });
 
     try {
         let url = `https://api.iblgroup.cloud/ibl-premium/email?q=${encodeURIComponent(email)}`;
-        let response = await axios.get(url);
+        let { data } = await axios.get(url);
 
-        if (response.data.resultado) {
-            let dados = response.data.resultado.split("\n").map(linha => linha.trim()).filter(l => l !== "");
-            res.json(dados);
-        } else {
-            res.json({ message: "Nenhum dado encontrado para este e-mail" });
-        }
+        // Retorna exatamente o que a API devolveu
+        res.json(data);
 
     } catch (error) {
         console.error(error);
-        res.json({ message: "Erro ao consultar a API" });
+        res.json({ status: false, message: "Erro ao consultar a API" });
     }
 });
 
@@ -13908,7 +13904,7 @@ router.get('/likes', async (req, res) => {
   const getUserInfo = async () => {
     try {
       const { data } = await axios.get(
-        `https://freefireapis.squareweb.app/api/info_player?uid=${id}&region=${region}&clothes=false`
+        `https://freefireapis.shardweb.app/api/info_player?uid=${id}&region=${region}&clothes=false`
       );
 
       return {
@@ -14347,7 +14343,7 @@ router.get('/infoff', async (req, res) => {
     }
 
     try {
-        const response = await axios.get(`https://freefireapis.squareweb.app/api/info_player?uid=${id}&region=br&clothes=true`);
+        const response = await axios.get(`https://freefireapis.shardweb.app/api/info_player?uid=${id}&region=br&clothes=true`);
 
         // Verifica se retornou erro
         if (response.data.error) {
@@ -14418,67 +14414,181 @@ try {
 } catch (err) { console.error('Erro na rota /infoid:', err); return res.json({ status: false, resultado: 'Erro interno do servidor.' }); } });
 
 
-router.get('/visitasff2', async (req, res) => { try { const id = req.query.id; if (!id) { console.log('Parâmetro id ausente na requisição'); return res.json({ status: false, resultado: 'Cadê o parâmetro id?' }); }
-
-console.log(`[VISITAS]: ID = ${id}`);
-
-try {
-  await client.sendMessage(grupoChatId, { message: '/visit' });
-  console.log('Mensagem enviada: /visit');
-
-  const handleResponse = new Promise((resolve, reject) => {
-    let step = 0;
-
-    const eventHandler = async (event) => {
-      try {
-        const message = event.message?.message;
-        console.log('Nova mensagem recebida:', message);
-
-        if (!message) return;
-
-        if (step === 0 && message.includes('Por favor, envie o UID do jogador')) {
-          await client.sendMessage(grupoChatId, { message: id });
-          console.log(`UID enviado: ${id}`);
-          step++;
-        } else if (step === 1 && message.includes('Agora, envie a quantidade de visitas')) {
-          await client.sendMessage(grupoChatId, { message: '300' });
-          console.log('Quantidade de visitas enviada: 300');
-          step++;
-        } else if (step === 2 && message.includes('✅ Sucesso!')) {
-          console.log('Visitas enviadas com sucesso:', message);
-          resolve({ status: true, resultado: message });
-          client.removeEventHandler(eventHandler);
-        }
-      } catch (err) {
-        console.error('Erro ao processar nova mensagem:', err);
-      }
-    };
-
-    client.addEventHandler(eventHandler, new NewMessage({}));
-
-    setTimeout(() => {
-      reject({ status: false, resultado: 'Tempo de espera esgotado' });
-      client.removeEventHandler(eventHandler);
-    }, 30000);
-  });
-
+router.get('/visitasff2', async (req, res) => {
   try {
+    const id = req.query.id;
+    if (!id) {
+      console.log('Parâmetro id ausente na requisição');
+      return res.json({ status: false, resultado: 'Cadê o parâmetro id?' });
+    }
+
+    console.log(`[VISITAS]: ID = ${id}`);
+
+    // Envia o comando inicial
+    await client.sendMessage(grupoChatId, { message: '/visit BR' });
+    console.log('Mensagem enviada: /visit BR');
+
+    // Função que aguarda as mensagens e processa
+    const handleResponse = new Promise((resolve, reject) => {
+      let step = 0;
+
+      const eventHandler = async (event) => {
+        try {
+          const message = event.message?.message;
+          if (!message) return;
+
+          console.log('Nova mensagem recebida:', message);
+
+          if (step === 0 && message.includes('Por favor, envie o UID do jogador')) {
+            await client.sendMessage(grupoChatId, { message: id });
+            console.log(`UID enviado: ${id}`);
+            step++;
+          } else if (step === 1 && message.includes('Agora, envie a quantidade de visitas')) {
+            await client.sendMessage(grupoChatId, { message: '300' });
+            console.log('Quantidade de visitas enviada: 300');
+            step++;
+          } else if (step === 2 && message.includes('✅ Sucesso!')) {
+            console.log('Visitas enviadas com sucesso:', message);
+            resolve({ status: true, resultado: message });
+            client.removeEventHandler(eventHandler);
+          }
+        } catch (err) {
+          console.error('Erro ao processar nova mensagem:', err);
+        }
+      };
+
+      // Adiciona o handler para novas mensagens
+      client.addEventHandler(eventHandler, new NewMessage({}));
+
+      // Timeout para caso não receba resposta
+      setTimeout(() => {
+        client.removeEventHandler(eventHandler);
+        reject({ status: false, resultado: 'Tempo de espera esgotado' });
+      }, 30000); // 30 segundos
+    });
+
+    // Aguarda o resultado do fluxo
     const resultado = await handleResponse;
     console.log('Resposta recebida antes do timeout:', resultado);
     return res.json(resultado);
-  } catch (error) {
-    console.error('Erro ao receber a resposta:', error);
-    return res.json({ status: false, resultado: 'Não foi possível registrar as visitas.' });
-  }
-} catch (e) {
-  console.error('Erro ao enviar mensagens ou processar resposta:', e);
-  if (!res.headersSent) {
-    return res.json({ status: false, resultado: 'Erro ao tentar registrar as visitas.' });
-  }
-}
 
-} catch (err) { console.error('Erro na rota /visitasid:', err); return res.json({ status: false, resultado: 'Erro interno do servidor.' }); } });
+  } catch (err) {
+    console.error('Erro na rota /visitasff2:', err);
+    if (!res.headersSent) {
+      return res.json({ status: false, resultado: 'Erro interno do servidor.' });
+    }
+  }
+});
 
+router.get('/crashff', async (req, res) => {
+  try {
+    const squadId = req.query.squad; // parâmetro do squad
+    if (!squadId) {
+      console.log('Parâmetro squad ausente na requisição');
+      return res.json({ status: false, resultado: 'Cadê o parâmetro squad?' });
+    }
+
+    console.log(`[CRASH]: Squad = ${squadId}`);
+
+    // Envia o comando de crash
+    await client.sendMessage(grupoChatId, { message: `/crash ${squadId}` });
+    console.log(`Mensagem enviada: /crash ${squadId}`);
+
+    // Função que aguarda a mensagem de sucesso
+    const handleResponse = new Promise((resolve, reject) => {
+      const eventHandler = async (event) => {
+        try {
+          const message = event.message?.message;
+          if (!message) return;
+
+          console.log('Nova mensagem recebida:', message);
+
+          // Procura a mensagem de sucesso
+          if (message.includes('✅ CRASH FINALIZADO!')) {
+            console.log('Crash concluído com sucesso:', message);
+            resolve({ status: true, resultado: message });
+            client.removeEventHandler(eventHandler);
+          }
+        } catch (err) {
+          console.error('Erro ao processar nova mensagem:', err);
+        }
+      };
+
+      client.addEventHandler(eventHandler, new NewMessage({}));
+
+      // Timeout caso não receba resposta
+      setTimeout(() => {
+        client.removeEventHandler(eventHandler);
+        reject({ status: false, resultado: 'Tempo de espera esgotado' });
+      }, 30000); // 30 segundos
+    });
+
+    const resultado = await handleResponse;
+    console.log('Resposta recebida antes do timeout:', resultado);
+    return res.json(resultado);
+
+  } catch (err) {
+    console.error('Erro na rota /crashff:', err);
+    if (!res.headersSent) {
+      return res.json({ status: false, resultado: 'Erro interno do servidor.' });
+    }
+  }
+});
+
+router.get('/spamff', async (req, res) => {
+  try {
+    const id = req.query.id;
+    if (!id) {
+      console.log('Parâmetro id ausente na requisição');
+      return res.json({ status: false, resultado: 'Cadê o parâmetro id?' });
+    }
+
+    console.log(`[SPAM]: ID = ${id}`);
+
+    // Envia o comando inicial
+    await client.sendMessage(grupoChatId, { message: `/spam BR ${id}` });
+    console.log(`Mensagem enviada: /spam BR ${id}`);
+
+    // Função que aguarda as mensagens e processa
+    const handleResponse = new Promise((resolve, reject) => {
+      const eventHandler = async (event) => {
+        try {
+          const message = event.message?.message;
+          if (!message) return;
+
+          console.log('Nova mensagem recebida:', message);
+
+          // Procura a mensagem de sucesso
+          if (message.includes('✅ SPAM DE AMIGOS ENVIADO COM SUCESSO!')) {
+            console.log('Spam enviado com sucesso:', message);
+            resolve({ status: true, resultado: message });
+            client.removeEventHandler(eventHandler);
+          }
+        } catch (err) {
+          console.error('Erro ao processar nova mensagem:', err);
+        }
+      };
+
+      client.addEventHandler(eventHandler, new NewMessage({}));
+
+      // Timeout para caso não receba resposta
+      setTimeout(() => {
+        client.removeEventHandler(eventHandler);
+        reject({ status: false, resultado: 'Tempo de espera esgotado' });
+      }, 30000); // 30 segundos
+    });
+
+    const resultado = await handleResponse;
+    console.log('Resposta recebida antes do timeout:', resultado);
+    return res.json(resultado);
+
+  } catch (err) {
+    console.error('Erro na rota /spamff:', err);
+    if (!res.headersSent) {
+      return res.json({ status: false, resultado: 'Erro interno do servidor.' });
+    }
+  }
+});
 
 
 // Rota /infoff
@@ -14735,7 +14845,7 @@ router.get('/printsite', async (req, res) => {
         const { url } = req.query;
         if (!url) return res.json({ status: false, message: 'Faltando parâmetro url' });
 
-        const printsiteLink = `https://api.bronxyshost.com.br/api-bronxys/print_de_site?url=${encodeURIComponent(url)}&apikey=tiomaker8930`;
+        const printsiteLink = `https://api.bronxyshost.com.br/api-bronxys/print_de_site?url=${encodeURIComponent(url)}&apikey=KEY-TEMPORARIA-TELEGRAM-ALEATORY`;
         const response = await axios.get(printsiteLink, { responseType: 'arraybuffer' });
 
         res.set('Content-Type', 'image/png'); // Ajuste o tipo conforme o formato da imagem

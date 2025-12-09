@@ -5571,7 +5571,7 @@ router.get('/ai-gemini', async (req, res) => {
   }
 
   try {
-    const response = await axios.get(`https://api.giftedtech.web.id/api/ai/geminiai?apikey=gifted&q=${texto}`);
+    const response = await axios.get(`https://api.giftedtech.co.ke/api/ai/geminiai?apikey=gifted&q=${texto}`);
 
     if (response.data && response.data.result) {
       res.json({ resposta: response.data.result });
@@ -5592,7 +5592,7 @@ router.get('/ai-geminipro', async (req, res) => {
   }
 
   try {
-    const apiUrl = `https://api.giftedtech.web.id/api/ai/geminiaipro?apikey=gifted&q=${encodeURIComponent(texto)}`;
+    const apiUrl = `https://api.giftedtech.co.ke/api/ai/geminiaipro?apikey=gifted&q=${encodeURIComponent(texto)}`;
     const { data } = await axios.get(apiUrl);
 
     if (data && data.result) {
@@ -5613,7 +5613,7 @@ router.get('/ai-gpt', async (req, res) => {
   }
 
   try {
-    const apiUrl = `https://api.giftedtech.web.id/api/ai/gpt?apikey=gifted&q=${encodeURIComponent(texto)}`;
+    const apiUrl = `https://api.giftedtech.co.ke/api/ai/gpt?apikey=gifted&q=${encodeURIComponent(texto)}`;
     const { data } = await axios.get(apiUrl);
 
     if (data && data.result) {
@@ -5635,7 +5635,7 @@ router.get('/ai-gpt3.5-turbo', async (req, res) => {
   }
 
   try {
-    const apiUrl = `https://api.giftedtech.web.id/api/ai/gpt-turbo?apikey=gifted&q=${encodeURIComponent(texto)}`;
+    const apiUrl = `https://api.giftedtech.co.ke/api/ai/gpt-turbo?apikey=gifted&q=${encodeURIComponent(texto)}`;
     const { data } = await axios.get(apiUrl);
 
     if (data && data.result) {
@@ -7762,7 +7762,7 @@ router.get('/printsite', async (req, res) => {
   }
 
   try {
-    const response = await axios.get(`https://api.giftedtech.web.id/api/tools/ssweb?apikey=gifted&url=${encodeURIComponent(url)}`);
+    const response = await axios.get(`https://api.giftedtech.co.ke/api/tools/ssweb?apikey=gifted&url=${encodeURIComponent(url)}`);
 
     if (response.data && response.data.result) {
       // Redireciona diretamente para a URL da imagem
@@ -7785,7 +7785,7 @@ router.get('/print-celular', async (req, res) => {
   }
 
   try {
-    const response = await axios.get(`https://api.giftedtech.web.id/api/tools/ssphone?apikey=gifted&url=${encodeURIComponent(url)}`);
+    const response = await axios.get(`https://api.giftedtech.co.ke/api/tools/ssphone?apikey=gifted&url=${encodeURIComponent(url)}`);
 
     if (response.data && response.data.result) {
       // Redireciona diretamente para a URL da imagem
@@ -7808,7 +7808,7 @@ router.get('/print-pc', async (req, res) => {
   }
 
   try {
-    const response = await axios.get(`https://api.giftedtech.web.id/api/tools/sspc?apikey=gifted&url=${encodeURIComponent(url)}`);
+    const response = await axios.get(`https://api.giftedtech.co.ke/api/tools/sspc?apikey=gifted&url=${encodeURIComponent(url)}`);
 
     if (response.data && response.data.result) {
       // Redireciona diretamente para a URL da imagem
@@ -7831,7 +7831,7 @@ router.get('/print-tablet', async (req, res) => {
   }
 
   try {
-    const response = await axios.get(`https://api.giftedtech.web.id/api/tools/sstab?apikey=gifted&url=${encodeURIComponent(url)}`);
+    const response = await axios.get(`https://api.giftedtech.co.ke/api/tools/sstab?apikey=gifted&url=${encodeURIComponent(url)}`);
 
     if (response.data && response.data.result) {
       // Redireciona diretamente para a URL da imagem
@@ -7855,7 +7855,7 @@ router.get('/ai-gpt4', async (req, res) => {
   }
 
   try {
-    const apiUrl = `https://api.giftedtech.web.id/api/ai/gpt4?apikey=gifted&q=${encodeURIComponent(texto)}`;
+    const apiUrl = `https://api.giftedtech.co.ke/api/ai/gpt4?apikey=gifted&q=${encodeURIComponent(texto)}`;
     const { data } = await axios.get(apiUrl);
 
     if (data && data.result) {
@@ -7876,7 +7876,7 @@ router.get('/ai-gpt4v2', async (req, res) => {
   }
 
   try {
-    const apiUrl = `https://api.giftedtech.web.id/api/ai/gpt4v2?apikey=gifted&q=${encodeURIComponent(texto)}`;
+    const apiUrl = `https://api.giftedtech.co.ke/api/ai/gpt4v2?apikey=gifted&q=${encodeURIComponent(texto)}`;
     const { data } = await axios.get(apiUrl);
 
     if (data && data.result) {
@@ -7920,7 +7920,7 @@ router.get('/ai-gpt4-o', async (req, res) => {
   }
 
   try {
-    const apiUrl = `https://api.giftedtech.web.id/api/ai/gpt4-o?apikey=gifted&q=${encodeURIComponent(texto)}`;
+    const apiUrl = `https://api.giftedtech.co.ke/api/ai/gpt4-o?apikey=gifted&q=${encodeURIComponent(texto)}`;
     const { data } = await axios.get(apiUrl);
 
     if (data && data.result) {
@@ -8090,7 +8090,7 @@ router.get('/ai-llama', async (req, res) => {
   }
 
   try {
-    const apiUrl = `https://api.giftedtech.web.id/api/ai/llamaai?apikey=gifted&q=${encodeURIComponent(texto)}`;
+    const apiUrl = `https://api.giftedtech.co.ke/api/ai/llamaai?apikey=gifted&q=${encodeURIComponent(texto)}`;
     const { data } = await axios.get(apiUrl);
 
     if (data && data.result) {
@@ -8111,7 +8111,7 @@ router.get('/ai-blackbox', async (req, res) => {
   }
 
   try {
-    const apiUrl = `https://api.giftedtech.web.id/api/ai/blackbox?apikey=gifted&q=${encodeURIComponent(texto)}`;
+    const apiUrl = `https://api.giftedtech.co.ke/api/ai/blackbox?apikey=gifted&q=${encodeURIComponent(texto)}`;
     const { data } = await axios.get(apiUrl);
 
     if (data && data.result) {
@@ -8132,7 +8132,7 @@ router.get('/ai-lumin', async (req, res) => {
   }
 
   try {
-    const apiUrl = `https://api.giftedtech.web.id/api/ai/luminai?apikey=gifted&query=${encodeURIComponent(query)}`;
+    const apiUrl = `https://api.giftedtech.co.ke/api/ai/luminai?apikey=gifted&query=${encodeURIComponent(query)}`;
     const { data } = await axios.get(apiUrl);
 
     if (data && data.result) {
@@ -8174,7 +8174,7 @@ router.get('/ai-letmegpt', async (req, res) => {
   }
 
   try {
-    const apiUrl = `https://api.giftedtech.web.id/api/ai/letmegpt?apikey=gifted&query=${encodeURIComponent(query)}`;
+    const apiUrl = `https://api.giftedtech.co.ke/api/ai/letmegpt?apikey=gifted&query=${encodeURIComponent(query)}`;
     const { data } = await axios.get(apiUrl);
 
     if (data && data.result) {
@@ -8195,7 +8195,7 @@ router.get('/ai-wwdgpt', async (req, res) => {
   }
 
   try {
-    const apiUrl = `https://api.giftedtech.web.id/api/ai/wwdgpt?apikey=gifted&prompt=${encodeURIComponent(prompt)}`;
+    const apiUrl = `https://api.giftedtech.co.ke/api/ai/wwdgpt?apikey=gifted&prompt=${encodeURIComponent(prompt)}`;
     const { data } = await axios.get(apiUrl);
 
     if (data && data.result) {
@@ -8243,7 +8243,7 @@ router.get('/ai-imagine', async (req, res) => {
 
     try {
         const response = await axios.get(
-            `https://api.giftedtech.web.id/api/ai/text2img?apikey=gifted&prompt=${encodeURIComponent(texto)}`,
+            `https://api.giftedtech.co.ke/api/ai/text2img?apikey=gifted&prompt=${encodeURIComponent(texto)}`,
             { responseType: 'arraybuffer' } // Para obter a imagem como buffer
         );
 
@@ -8279,7 +8279,7 @@ router.get('/ai-sd', async (req, res) => {
 
     try {
         const response = await axios.get(
-            `https://api.giftedtech.web.id/api/ai/sd?apikey=gifted&prompt=${encodeURIComponent(prompt)}`,
+            `https://api.giftedtech.co.ke/api/ai/sd?apikey=gifted&prompt=${encodeURIComponent(prompt)}`,
             { responseType: 'arraybuffer' } // Para obter a imagem como buffer
         );
 
@@ -8344,7 +8344,7 @@ router.get('/ai-imgsys', async (req, res) => {
     try {
         // Fazendo a solicitação para a nova API externa
         const response = await axios.get(
-            `https://api.giftedtech.web.id/api/ai/deepimg?apikey=gifted&prompt=${encodeURIComponent(texto)}`
+            `https://api.giftedtech.co.ke/api/ai/deepimg?apikey=gifted&prompt=${encodeURIComponent(texto)}`
         );
 
         // Verificando a resposta
@@ -8370,7 +8370,7 @@ router.get('/ai-fluximg', async (req, res) => {
 
     try {
         // Montando a URL diretamente
-        const url = `https://api.giftedtech.web.id/api/ai/fluximg?apikey=gifted&prompt=${encodeURIComponent(texto)}`;
+        const url = `https://api.giftedtech.co.ke/api/ai/fluximg?apikey=gifted&prompt=${encodeURIComponent(texto)}`;
         const response = await axios.get(url);
 
         if (response.data && response.data.success) {
@@ -10864,7 +10864,7 @@ router.get('/linkmp3-v4', async (req, res) => {
     }
 
     try {
-        const apiUrl = `https://api.giftedtech.web.id/api/download/dlmp3q?apikey=gifted&quality=128&url=${encodeURIComponent(audioUrl)}`;
+        const apiUrl = `https://api.giftedtech.co.ke/api/download/dlmp3q?apikey=gifted&quality=128&url=${encodeURIComponent(audioUrl)}`;
 
         // Requisição à API para baixar o áudio
         const response = await axios.get(apiUrl);
@@ -10893,7 +10893,7 @@ router.get('/linkmp46', async (req, res) => {
     }
 
     try {
-        const apiUrl = `https://api.giftedtech.web.id/api/download/dlmp4q?apikey=gifted&quality=128&url=${encodeURIComponent(videoUrl)}`;
+        const apiUrl = `https://api.giftedtech.co.ke/api/download/dlmp4q?apikey=gifted&quality=128&url=${encodeURIComponent(videoUrl)}`;
 
         // Requisição à API para baixar o vídeo
         const response = await axios.get(apiUrl);
@@ -10932,7 +10932,7 @@ router.get('/musica2', async (req, res) => {
 
         // Pegar o primeiro vídeo da lista de resultados
         const videoId = searchResults.videos[0].videoId; // Obtém o ID do vídeo
-        const apiUrl = `https://api.giftedtech.web.id/api/download/dlmp3q?apikey=gifted&quality=128&url=https://youtu.be/${videoId}`;
+        const apiUrl = `https://api.giftedtech.co.ke/api/download/dlmp3q?apikey=gifted&quality=128&url=https://youtu.be/${videoId}`;
 
         // Requisição à API para baixar o áudio
         const response = await axios.get(apiUrl);
@@ -10970,7 +10970,7 @@ router.get('/clipe2', async (req, res) => {
 
         // Pegar o primeiro vídeo da lista de resultados
         const videoId = searchResults.videos[0].videoId; // Obtém o ID do vídeo
-        const apiUrl = `https://api.giftedtech.web.id/api/download/dlmp3q?apikey=gifted&quality=128&url=https://youtu.be/${videoId}`;
+        const apiUrl = `https://api.giftedtech.co.ke/api/download/dlmp3q?apikey=gifted&quality=128&url=https://youtu.be/${videoId}`;
 
         // Requisição à API para baixar o vídeo
         const response = await axios.get(apiUrl);
@@ -16134,7 +16134,7 @@ router.get('/ytmp3-v2', async (req, res) => {
     }
 
     try {
-        const apiUrl = `https://api.giftedtech.web.id/api/download/ytmp3?apikey=gifted&url=${encodeURIComponent(audioUrl)}`;
+        const apiUrl = `https://api.giftedtech.co.ke/api/download/ytmp3?apikey=gifted&url=${encodeURIComponent(audioUrl)}`;
 
         // Requisição à API para baixar o áudio
         const response = await axios.get(apiUrl);
@@ -16163,7 +16163,7 @@ router.get('/ytmp4-v2', async (req, res) => {
     }
 
     try {
-        const apiUrl = `https://api.giftedtech.web.id/api/download/ytmp4?apikey=gifted&url=${encodeURIComponent(videoUrl)}`;
+        const apiUrl = `https://api.giftedtech.co.ke/api/download/ytmp4?apikey=gifted&url=${encodeURIComponent(videoUrl)}`;
 
         // Requisição à API para baixar o vídeo
         const response = await axios.get(apiUrl);
@@ -16202,7 +16202,7 @@ router.get('/play4', async (req, res) => {
 
         // Pegar o primeiro vídeo da lista de resultados
         const videoId = searchResults.videos[0].videoId; // Obtém o ID do vídeo
-        const apiUrl = `https://api.giftedtech.web.id/api/download/dlmp3?apikey=gifted&url=https://youtu.be/${videoId}`;
+        const apiUrl = `https://api.giftedtech.co.ke/api/download/dlmp3?apikey=gifted&url=https://youtu.be/${videoId}`;
 
         // Requisição à API para baixar o áudio
         const response = await axios.get(apiUrl);
@@ -16240,7 +16240,7 @@ router.get('/playvideo4', async (req, res) => {
 
         // Pegar o primeiro vídeo da lista de resultados
         const videoId = searchResults.videos[0].videoId; // Obtém o ID do vídeo
-        const apiUrl = `https://api.giftedtech.web.id/api/download/dlmp4?apikey=gifted&url=https://youtu.be/${videoId}`;
+        const apiUrl = `https://api.giftedtech.co.ke/api/download/dlmp4?apikey=gifted&url=https://youtu.be/${videoId}`;
 
         // Requisição à API para baixar o vídeo
         const response = await axios.get(apiUrl);

@@ -4897,57 +4897,48 @@ router.get('/dalle', async (req, res) => {
   }
 });
 
-// Rota de Geração de Imagem Nível DALL-E (Flux + Llama 3.1 70B)
 router.get('/bunix', async (req, res) => {
     const { prompt } = req.query;
+    if (!prompt) return res.status(400).json({ status: false, message: "Prompt vazio." });
 
-    if (!prompt) {
-        return res.status(400).json({ status: false, message: "Envie o prompt!" });
-    }
-
-    // Configurações Cloudflare
     const ACCOUNT_ID = "648085ab1193eeacc92d058d278a0d83";
     const API_TOKEN = "EZnH74dXipNmuwQOtCAcW1oLQzJ5oKbTnpgBqJUI";
 
     try {
-        console.log(`[Gerador Pro] Processando pedido: ${prompt}`);
-
-        // --- PASSO 1: EXPANSÃO DE PROMPT (O Cérebro) ---
-        // Usamos o modelo 70B para garantir que ele entenda a separação de objetos e fidelidade
-        const promptExpansion = await axios.post(
+        // PASSO 1: LLAMA 3.1 70B - O ARQUITETO ESPACIAL
+        // Aqui forçamos a IA a descrever a conexão física para o modelo de imagem não se perder.
+        const brainResponse = await axios.post(
             `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/ai/run/@cf/meta/llama-3.1-70b-instruct`,
             {
                 messages: [
                     {
                         role: "system",
-                        content: `You are a professional DALL-E 3 prompt engineer. 
-                        Your goal is to take a simple prompt and expand it into a high-fidelity, professional visual description.
+                        content: `You are a spatial reasoning expert for AI image generation. 
+                        Your job is to take a prompt and describe the EXACT physical interaction.
                         RULES:
-                        1. Strict Entity Separation: If the user asks for a "blue cat on a red dragon", ensure you describe them as separate entities to avoid color bleeding.
-                        2. Ultra-Realism: Include technical specs: "photorealistic, 8k resolution, cinematic lighting, shot on 35mm lens, f/1.8, highly detailed textures".
-                        3. Composition: Describe the scene background, lighting, and atmosphere.
-                        4. NO FLUFF: Output ONLY the expanded English prompt, nothing else.`
+                        1. If the user says "flying on", describe the cat as 'physically mounted and sitting firmly on the dragon's back between the wings'.
+                        2. Explicitly state: 'The cat is NOT flying next to it, the cat is ON TOP of the dragon'.
+                        3. Force color isolation: 'The cat is purely blue, the dragon is purely red, no color mixing'.
+                        4. Style: Cinematic, ultra-realistic photography, 8k.
+                        5. Output ONLY the technical English prompt.`
                     },
-                    {
-                        role: "user",
-                        content: `Expand this prompt for maximum quality: ${prompt}`
-                    }
+                    { role: "user", content: prompt }
                 ]
             },
             { headers: { "Authorization": `Bearer ${API_TOKEN}` } }
         );
 
-        const finalPrompt = promptExpansion.data.result.response;
-        console.log(`[Gerador Pro] Prompt Expandido: ${finalPrompt}`);
+        const highPrecisionPrompt = brainResponse.data.result.response;
+        console.log("Prompt de Alta Precisão:", highPrecisionPrompt);
 
-        // --- PASSO 2: GERAÇÃO DA IMAGEM (O Artista) ---
+        // PASSO 2: FLUX-1-DEV (O modelo mais potente da Cloudflare para precisão)
         const imageResponse = await axios.post(
-            `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/ai/run/@cf/black-forest-labs/flux-1-schnell`,
+            `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/ai/run/@cf/black-forest-labs/flux-1-dev`,
             {
-                prompt: finalPrompt,
-                num_steps: 8, // Ideal para o modelo Schnell manter nitidez extrema
-                height: 1024,
-                width: 1024
+                prompt: highPrecisionPrompt,
+                // Aumentamos os steps para o máximo de detalhamento anatômico
+                num_steps: 25, 
+                guidance: 9.0 // Alta fidelidade ao texto (impede a IA de "inventar")
             },
             {
                 headers: { 
@@ -4958,28 +4949,23 @@ router.get('/bunix', async (req, res) => {
             }
         );
 
-        // --- PASSO 3: ENTREGA DO RESULTADO ---
+        // Processamento do retorno
         try {
-            const dataString = imageResponse.data.toString();
-            const json = JSON.parse(dataString);
-            
+            const json = JSON.parse(imageResponse.data.toString());
             if (json.result && json.result.image) {
-                const buffer = Buffer.from(json.result.image, 'base64');
                 res.set('Content-Type', 'image/png');
-                return res.send(buffer);
+                return res.send(Buffer.from(json.result.image, 'base64'));
             }
-        } catch (e) {
-            // Se não for JSON, a Cloudflare enviou o binário direto
+        } catch {
             res.set('Content-Type', 'image/png');
             return res.send(imageResponse.data);
         }
 
     } catch (error) {
-        console.error("Erro no Gerador Profissional:", error.message);
-        res.status(500).json({ status: false, error: "Falha na geração de alta fidelidade." });
+        console.error(error);
+        res.status(500).send("Erro de geração.");
     }
 });
-
 
 // V1
 router.get('/image-v1', async (req, res) => {

@@ -4897,91 +4897,86 @@ router.get('/dalle', async (req, res) => {
   }
 });
 
-// Rota de Geração de Imagem com Prompt Engineering Automático (Nível DALL-E)
-router.get('/flux-ultimate', async (req, res) => {
+// Rota de Geração de Imagem Nível DALL-E (Flux + Llama 3.1 70B)
+router.get('/bunix', async (req, res) => {
     const { prompt } = req.query;
 
     if (!prompt) {
-        return res.status(400).json({
-            status: false,
-            message: "Prompt obrigatório. Ex: /flux-ultimate?prompt=um gato azul voando em um dragao vermelho"
-        });
+        return res.status(400).json({ status: false, message: "Envie o prompt!" });
     }
 
-    // ⚠️ SUAS CREDENCIAIS DA CLOUDFLARE ⚠️
-    const CLOUDFLARE_ACCOUNT_ID = "648085ab1193eeacc92d058d278a0d83";
-    const CLOUDFLARE_API_TOKEN = "EZnH74dXipNmuwQOtCAcW1oLQzJ5oKbTnpgBqJUI";
-
-    // Modelos
-    const TEXT_MODEL = "@cf/meta/llama-3-8b-instruct";
-    const IMAGE_MODEL = "@cf/black-forest-labs/flux-1-schnell";
+    // Configurações Cloudflare
+    const ACCOUNT_ID = "648085ab1193eeacc92d058d278a0d83";
+    const API_TOKEN = "EZnH74dXipNmuwQOtCAcW1oLQzJ5oKbTnpgBqJUI";
 
     try {
-        console.log(`[Flux Ultimate] Recebido: "${prompt}"`);
+        console.log(`[Gerador Pro] Processando pedido: ${prompt}`);
 
-        // --- PASSO 1: O "CÉREBRO" (Llama 3) ---
-        // Transforma o pedido simples em um prompt técnico que evita fusões e erros.
-        const promptEngineering = await axios.post(
-            `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/run/${TEXT_MODEL}`,
+        // --- PASSO 1: EXPANSÃO DE PROMPT (O Cérebro) ---
+        // Usamos o modelo 70B para garantir que ele entenda a separação de objetos e fidelidade
+        const promptExpansion = await axios.post(
+            `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/ai/run/@cf/meta/llama-3.1-70b-instruct`,
             {
                 messages: [
                     {
                         role: "system",
-                        content: "You are an expert AI Image Prompt Engineer. Your task is to rewrite the user's description into a highly detailed, descriptive prompt for Flux.1. \n\nRULES:\n1. Translate to English.\n2. Explicitly describe the separation of objects to prevent merging (e.g., 'a distinct blue cat riding on top of a separate red dragon').\n3. Specify anatomical correctness (e.g., 'anatomically correct, one head').\n4. Describe the action vividly (e.g., 'flying high in the clouds').\n5. Keep colors strict to their objects.\n6. Output ONLY the raw prompt, no intro/outro."
+                        content: `You are a professional DALL-E 3 prompt engineer. 
+                        Your goal is to take a simple prompt and expand it into a high-fidelity, professional visual description.
+                        RULES:
+                        1. Strict Entity Separation: If the user asks for a "blue cat on a red dragon", ensure you describe them as separate entities to avoid color bleeding.
+                        2. Ultra-Realism: Include technical specs: "photorealistic, 8k resolution, cinematic lighting, shot on 35mm lens, f/1.8, highly detailed textures".
+                        3. Composition: Describe the scene background, lighting, and atmosphere.
+                        4. NO FLUFF: Output ONLY the expanded English prompt, nothing else.`
                     },
                     {
                         role: "user",
-                        content: `Create a prompt for: ${prompt}`
+                        content: `Expand this prompt for maximum quality: ${prompt}`
                     }
                 ]
             },
-            {
-                headers: { "Authorization": `Bearer ${CLOUDFLARE_API_TOKEN}` }
-            }
+            { headers: { "Authorization": `Bearer ${API_TOKEN}` } }
         );
 
-        // Pega o prompt melhorado
-        const enhancedPrompt = promptEngineering.data.result.response || prompt;
-        console.log(`[Flux Ultimate] Prompt Melhorado: "${enhancedPrompt}"`);
+        const finalPrompt = promptExpansion.data.result.response;
+        console.log(`[Gerador Pro] Prompt Expandido: ${finalPrompt}`);
 
-        // --- PASSO 2: O "PINTOR" (Flux.1) ---
-        // Gera a imagem com o prompt técnico
-        const response = await axios.post(
-            `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/run/${IMAGE_MODEL}`,
+        // --- PASSO 2: GERAÇÃO DA IMAGEM (O Artista) ---
+        const imageResponse = await axios.post(
+            `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/ai/run/@cf/black-forest-labs/flux-1-schnell`,
             {
-                prompt: enhancedPrompt + ", masterpiece, best quality, 8k, sharp focus, distinct entities",
-                num_steps: 8, // Máximo recomendado para Schnell para garantir detalhes
+                prompt: finalPrompt,
+                num_steps: 8, // Ideal para o modelo Schnell manter nitidez extrema
+                height: 1024,
+                width: 1024
             },
             {
-                headers: {
-                    "Authorization": `Bearer ${CLOUDFLARE_API_TOKEN}`,
-                    "Content-Type": "application/json"
+                headers: { 
+                    "Authorization": `Bearer ${API_TOKEN}`,
+                    "Content-Type": "application/json" 
                 },
                 responseType: "arraybuffer"
             }
         );
 
-        // Tratamento da resposta (Buffer ou JSON)
+        // --- PASSO 3: ENTREGA DO RESULTADO ---
         try {
-            const jsonBody = JSON.parse(response.data.toString());
-            if (jsonBody.result && jsonBody.result.image) {
-                const imgBuffer = Buffer.from(jsonBody.result.image, 'base64');
+            const dataString = imageResponse.data.toString();
+            const json = JSON.parse(dataString);
+            
+            if (json.result && json.result.image) {
+                const buffer = Buffer.from(json.result.image, 'base64');
                 res.set('Content-Type', 'image/png');
-                return res.send(imgBuffer);
+                return res.send(buffer);
             }
         } catch (e) {
-            // Se falhar o parse, é a imagem crua (padrão de alguns endpoints)
+            // Se não for JSON, a Cloudflare enviou o binário direto
             res.set('Content-Type', 'image/png');
-            return res.send(response.data);
+            return res.send(imageResponse.data);
         }
 
     } catch (error) {
-        console.error("Erro Flux Ultimate:", error.response ? error.response.data : error.message);
-        res.status(500).json({
-            status: false,
-            message: "Erro ao gerar imagem.",
-            detalhes: error.message
-        });
+        console.error("Erro no Gerador Profissional:", error.message);
+        res.status(500).json({ status: false, error: "Falha na geração de alta fidelidade." });
     }
 });
 

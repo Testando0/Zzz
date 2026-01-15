@@ -4905,22 +4905,20 @@ router.get('/bunix', async (req, res) => {
     const API_TOKEN = "EZnH74dXipNmuwQOtCAcW1oLQzJ5oKbTnpgBqJUI";
 
     try {
-        // PASSO 1: LLAMA 3.1 70B - O ENGENHEIRO DE LÓGICA
-        // Ele vai criar um prompt que separa fisicamente os objetos para evitar misturas.
+        // PASSO 1: LLAMA 3.1 70B (O CÉREBRO)
+        // Forçamos ele a descrever a cena como uma composição ÚNICA
         const brain = await axios.post(
             `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/ai/run/@cf/meta/llama-3.1-70b-instruct`,
             {
                 messages: [
                     {
                         role: "system",
-                        content: `You are a professional Prompt Engineer for SDXL. 
-                        Your task is to describe a scene with 100% anatomical and spatial accuracy.
-                        RULES:
-                        1. If the user says 'on' or 'flying on', describe the first object as 'sitting securely on the second object's back'.
-                        2. Use negative reinforcement in the prompt: 'distinct entities, no merging, no shared limbs'.
-                        3. Isolate colors: 'The cat is vivid blue only, the dragon is deep red only'.
-                        4. Style: 'Cinematic photo, 8k, highly detailed, professional lighting, photorealistic'.
-                        5. Output ONLY the English prompt.`
+                        content: `You are a master of spatial logic for AI image generation. 
+                        REWRITE the user prompt to ensure objects are PERMANENTLY ATTACHED.
+                        - If the user says "on", use: "A distinct blue cat is riding and physically sitting on the red dragon's back".
+                        - Focus on color separation: "Blue fur, red scales, no color blending".
+                        - Quality: "Photorealistic, 8k, cinematic lighting".
+                        - Output ONLY the prompt in English.`
                     },
                     { role: "user", content: prompt }
                 ]
@@ -4928,34 +4926,45 @@ router.get('/bunix', async (req, res) => {
             { headers: { Authorization: `Bearer ${API_TOKEN}` } }
         );
 
-        const engineeredPrompt = brain.data.result.response;
+        const expertPrompt = brain.data.result.response;
 
-        // PASSO 2: STABLE DIFFUSION XL (SDXL) - O MODELO DE ALTA FIDELIDADE
-        // Usamos o SDXL Lightning ou Base para garantir a nitidez que você quer.
-        const imageRes = await axios.post(
-            `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/ai/run/@cf/stabilityai/stable-diffusion-xl-base-1.0`,
+        // PASSO 2: SDXL LIGHTNING (RÁPIDO E INTELIGENTE)
+        // Este modelo não dá "Erro de Geração" porque responde em 5 segundos.
+        const response = await axios.post(
+            `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/ai/run/@cf/bytedance/stable-diffusion-xl-lightning`,
             {
-                prompt: engineeredPrompt,
-                // O SDXL permite definir o que NÃO queremos (ajuda na precisão)
-                negative_prompt: "deformed, merged, two heads, blurry, low quality, mixed colors, extra limbs, wings on cat",
-                num_steps: 30, // Mais passos = mais precisão no desenho
-                guidance: 7.5
+                prompt: expertPrompt,
+                num_steps: 8 // Suficiente para qualidade máxima neste modelo
             },
             {
-                headers: { Authorization: `Bearer ${API_TOKEN}` },
-                responseType: "arraybuffer"
+                headers: { 
+                    Authorization: `Bearer ${API_TOKEN}`,
+                    "Content-Type": "application/json"
+                },
+                responseType: "arraybuffer",
+                timeout: 40000 // Aumenta a tolerância do Render
             }
         );
 
-        // PASSO 3: RETORNO DA IMAGEM
-        res.set('Content-Type', 'image/png');
-        return res.send(imageRes.data);
+        // Validar se o que veio foi imagem ou erro
+        if (response.data.byteLength < 500) {
+             const errorMsg = JSON.parse(response.data.toString());
+             return res.status(500).json({ status: false, error: errorMsg });
+        }
 
-    } catch (err) {
-        console.error("Erro na Geração Profissional:", err.message);
-        res.status(500).send("Erro ao gerar imagem de alta precisão.");
+        res.set('Content-Type', 'image/png');
+        return res.send(response.data);
+
+    } catch (error) {
+        console.error("ERRO:", error.message);
+        res.status(500).json({ 
+            status: false, 
+            message: "Erro...",
+            detalhe: error.message 
+        });
     }
 });
+
 
 // V1
 router.get('/image-v1', async (req, res) => {

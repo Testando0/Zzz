@@ -4905,65 +4905,55 @@ router.get('/bunix', async (req, res) => {
     const API_TOKEN = "EZnH74dXipNmuwQOtCAcW1oLQzJ5oKbTnpgBqJUI";
 
     try {
-        // PASSO 1: LLAMA 3.1 70B - O ARQUITETO ESPACIAL
-        // Aqui forçamos a IA a descrever a conexão física para o modelo de imagem não se perder.
-        const brainResponse = await axios.post(
+        // PASSO 1: LLAMA 3.1 70B - O ENGENHEIRO DE LÓGICA
+        // Ele vai criar um prompt que separa fisicamente os objetos para evitar misturas.
+        const brain = await axios.post(
             `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/ai/run/@cf/meta/llama-3.1-70b-instruct`,
             {
                 messages: [
                     {
                         role: "system",
-                        content: `You are a spatial reasoning expert for AI image generation. 
-                        Your job is to take a prompt and describe the EXACT physical interaction.
+                        content: `You are a professional Prompt Engineer for SDXL. 
+                        Your task is to describe a scene with 100% anatomical and spatial accuracy.
                         RULES:
-                        1. If the user says "flying on", describe the cat as 'physically mounted and sitting firmly on the dragon's back between the wings'.
-                        2. Explicitly state: 'The cat is NOT flying next to it, the cat is ON TOP of the dragon'.
-                        3. Force color isolation: 'The cat is purely blue, the dragon is purely red, no color mixing'.
-                        4. Style: Cinematic, ultra-realistic photography, 8k.
-                        5. Output ONLY the technical English prompt.`
+                        1. If the user says 'on' or 'flying on', describe the first object as 'sitting securely on the second object's back'.
+                        2. Use negative reinforcement in the prompt: 'distinct entities, no merging, no shared limbs'.
+                        3. Isolate colors: 'The cat is vivid blue only, the dragon is deep red only'.
+                        4. Style: 'Cinematic photo, 8k, highly detailed, professional lighting, photorealistic'.
+                        5. Output ONLY the English prompt.`
                     },
                     { role: "user", content: prompt }
                 ]
             },
-            { headers: { "Authorization": `Bearer ${API_TOKEN}` } }
+            { headers: { Authorization: `Bearer ${API_TOKEN}` } }
         );
 
-        const highPrecisionPrompt = brainResponse.data.result.response;
-        console.log("Prompt de Alta Precisão:", highPrecisionPrompt);
+        const engineeredPrompt = brain.data.result.response;
 
-        // PASSO 2: FLUX-1-DEV (O modelo mais potente da Cloudflare para precisão)
-        const imageResponse = await axios.post(
-            `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/ai/run/@cf/black-forest-labs/flux-1-dev`,
+        // PASSO 2: STABLE DIFFUSION XL (SDXL) - O MODELO DE ALTA FIDELIDADE
+        // Usamos o SDXL Lightning ou Base para garantir a nitidez que você quer.
+        const imageRes = await axios.post(
+            `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/ai/run/@cf/stabilityai/stable-diffusion-xl-base-1.0`,
             {
-                prompt: highPrecisionPrompt,
-                // Aumentamos os steps para o máximo de detalhamento anatômico
-                num_steps: 25, 
-                guidance: 9.0 // Alta fidelidade ao texto (impede a IA de "inventar")
+                prompt: engineeredPrompt,
+                // O SDXL permite definir o que NÃO queremos (ajuda na precisão)
+                negative_prompt: "deformed, merged, two heads, blurry, low quality, mixed colors, extra limbs, wings on cat",
+                num_steps: 30, // Mais passos = mais precisão no desenho
+                guidance: 7.5
             },
             {
-                headers: { 
-                    "Authorization": `Bearer ${API_TOKEN}`,
-                    "Content-Type": "application/json" 
-                },
+                headers: { Authorization: `Bearer ${API_TOKEN}` },
                 responseType: "arraybuffer"
             }
         );
 
-        // Processamento do retorno
-        try {
-            const json = JSON.parse(imageResponse.data.toString());
-            if (json.result && json.result.image) {
-                res.set('Content-Type', 'image/png');
-                return res.send(Buffer.from(json.result.image, 'base64'));
-            }
-        } catch {
-            res.set('Content-Type', 'image/png');
-            return res.send(imageResponse.data);
-        }
+        // PASSO 3: RETORNO DA IMAGEM
+        res.set('Content-Type', 'image/png');
+        return res.send(imageRes.data);
 
-    } catch (error) {
-        console.error(error);
-        res.status(500).send("Erro de geração.");
+    } catch (err) {
+        console.error("Erro na Geração Profissional:", err.message);
+        res.status(500).send("Erro ao gerar imagem de alta precisão.");
     }
 });
 

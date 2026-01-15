@@ -4897,44 +4897,94 @@ router.get('/dalle', async (req, res) => {
   }
 });
 
-// Rota de Geração de Imagem Ultra-Realista via Cloudflare (Flux.1)
-router.get('/bunix', async (req, res) => {
-const { prompt } = req.query;
-if (!prompt) {
-return res.status(400).json({ 
-status: false, 
-message: "O parâmetro 'prompt' é obrigatório. Ex: /bunix?prompt=um gato azul voando em um dragao vermelho" 
+// Rota de Geração de Imagem com Prompt Engineering Automático (Nível DALL-E)
+router.get('/flux-ultimate', async (req, res) => {
+    const { prompt } = req.query;
+
+    if (!prompt) {
+        return res.status(400).json({
+            status: false,
+            message: "Prompt obrigatório. Ex: /flux-ultimate?prompt=um gato azul voando em um dragao vermelho"
+        });
+    }
+
+    // ⚠️ SUAS CREDENCIAIS DA CLOUDFLARE ⚠️
+    const CLOUDFLARE_ACCOUNT_ID = "648085ab1193eeacc92d058d278a0d83";
+    const CLOUDFLARE_API_TOKEN = "EZnH74dXipNmuwQOtCAcW1oLQzJ5oKbTnpgBqJUI";
+
+    // Modelos
+    const TEXT_MODEL = "@cf/meta/llama-3-8b-instruct";
+    const IMAGE_MODEL = "@cf/black-forest-labs/flux-1-schnell";
+
+    try {
+        console.log(`[Flux Ultimate] Recebido: "${prompt}"`);
+
+        // --- PASSO 1: O "CÉREBRO" (Llama 3) ---
+        // Transforma o pedido simples em um prompt técnico que evita fusões e erros.
+        const promptEngineering = await axios.post(
+            `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/run/${TEXT_MODEL}`,
+            {
+                messages: [
+                    {
+                        role: "system",
+                        content: "You are an expert AI Image Prompt Engineer. Your task is to rewrite the user's description into a highly detailed, descriptive prompt for Flux.1. \n\nRULES:\n1. Translate to English.\n2. Explicitly describe the separation of objects to prevent merging (e.g., 'a distinct blue cat riding on top of a separate red dragon').\n3. Specify anatomical correctness (e.g., 'anatomically correct, one head').\n4. Describe the action vividly (e.g., 'flying high in the clouds').\n5. Keep colors strict to their objects.\n6. Output ONLY the raw prompt, no intro/outro."
+                    },
+                    {
+                        role: "user",
+                        content: `Create a prompt for: ${prompt}`
+                    }
+                ]
+            },
+            {
+                headers: { "Authorization": `Bearer ${CLOUDFLARE_API_TOKEN}` }
+            }
+        );
+
+        // Pega o prompt melhorado
+        const enhancedPrompt = promptEngineering.data.result.response || prompt;
+        console.log(`[Flux Ultimate] Prompt Melhorado: "${enhancedPrompt}"`);
+
+        // --- PASSO 2: O "PINTOR" (Flux.1) ---
+        // Gera a imagem com o prompt técnico
+        const response = await axios.post(
+            `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/run/${IMAGE_MODEL}`,
+            {
+                prompt: enhancedPrompt + ", masterpiece, best quality, 8k, sharp focus, distinct entities",
+                num_steps: 8, // Máximo recomendado para Schnell para garantir detalhes
+            },
+            {
+                headers: {
+                    "Authorization": `Bearer ${CLOUDFLARE_API_TOKEN}`,
+                    "Content-Type": "application/json"
+                },
+                responseType: "arraybuffer"
+            }
+        );
+
+        // Tratamento da resposta (Buffer ou JSON)
+        try {
+            const jsonBody = JSON.parse(response.data.toString());
+            if (jsonBody.result && jsonBody.result.image) {
+                const imgBuffer = Buffer.from(jsonBody.result.image, 'base64');
+                res.set('Content-Type', 'image/png');
+                return res.send(imgBuffer);
+            }
+        } catch (e) {
+            // Se falhar o parse, é a imagem crua (padrão de alguns endpoints)
+            res.set('Content-Type', 'image/png');
+            return res.send(response.data);
+        }
+
+    } catch (error) {
+        console.error("Erro Flux Ultimate:", error.response ? error.response.data : error.message);
+        res.status(500).json({
+            status: false,
+            message: "Erro ao gerar imagem.",
+            detalhes: error.message
+        });
+    }
 });
-}
-const CLOUDFLARE_ACCOUNT_ID = "648085ab1193eeacc92d058d278a0d83";
-const CLOUDFLARE_API_TOKEN = "EZnH74dXipNmuwQOtCAcW1oLQzJ5oKbTnpgBqJUI";
-const MODEL_ID = "@cf/black-forest-labs/flux-1-schnell";
-try {
-const response = await axios.post(`https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/run/${MODEL_ID}`,
-{ 
-prompt: prompt,
-num_steps: 4,
-}, { headers: { "Authorization": `Bearer ${CLOUDFLARE_API_TOKEN}`, "Content-Type": "application/json" }, responseType: "arraybuffer"});
-try {
-const jsonResponse = JSON.parse(response.data.toString());
-if (jsonResponse.result && jsonResponse.result.image) {
-const imgBuffer = Buffer.from(jsonResponse.result.image, 'base64');
-res.set('Content-Type', 'image/png');
-return res.send(imgBuffer);
-}
-} catch (e) {
-res.set('Content-Type', 'image/png');
-return res.send(response.data);
-}
-} catch (error) {
-console.error("Erro na rota Bunix:", error.response ? error.response.data.toString() : error.message);
-res.status(500).json({ 
-status: false, 
-message: "Erro ao gerar imagem na Bunix.",
-detalhes: error.message 
-});
-}
-});
+
 
 // V1
 router.get('/image-v1', async (req, res) => {

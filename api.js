@@ -4897,6 +4897,45 @@ router.get('/dalle', async (req, res) => {
   }
 });
 
+// Rota de Geração de Imagem Ultra-Realista via Cloudflare (Flux.1)
+router.get('/bunix', async (req, res) => {
+const { prompt } = req.query;
+if (!prompt) {
+return res.status(400).json({ 
+status: false, 
+message: "O parâmetro 'prompt' é obrigatório. Ex: /bunix?prompt=um gato azul voando em um dragao vermelho" 
+});
+}
+const CLOUDFLARE_ACCOUNT_ID = "648085ab1193eeacc92d058d278a0d83";
+const CLOUDFLARE_API_TOKEN = "EZnH74dXipNmuwQOtCAcW1oLQzJ5oKbTnpgBqJUI";
+const MODEL_ID = "@cf/black-forest-labs/flux-1-schnell";
+try {
+const response = await axios.post(`https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/run/${MODEL_ID}`,
+{ 
+prompt: prompt,
+num_steps: 4,
+}, { headers: { "Authorization": `Bearer ${CLOUDFLARE_API_TOKEN}`, "Content-Type": "application/json" }, responseType: "arraybuffer"});
+try {
+const jsonResponse = JSON.parse(response.data.toString());
+if (jsonResponse.result && jsonResponse.result.image) {
+const imgBuffer = Buffer.from(jsonResponse.result.image, 'base64');
+res.set('Content-Type', 'image/png');
+return res.send(imgBuffer);
+}
+} catch (e) {
+res.set('Content-Type', 'image/png');
+return res.send(response.data);
+}
+} catch (error) {
+console.error("Erro na rota Bunix:", error.response ? error.response.data.toString() : error.message);
+res.status(500).json({ 
+status: false, 
+message: "Erro ao gerar imagem na Bunix.",
+detalhes: error.message 
+});
+}
+});
+
 // V1
 router.get('/image-v1', async (req, res) => {
   const { texto } = req.query;

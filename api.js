@@ -4905,65 +4905,53 @@ router.get('/bunix', async (req, res) => {
     const API_TOKEN = "EZnH74dXipNmuwQOtCAcW1oLQzJ5oKbTnpgBqJUI";
 
     try {
-        // PASSO 1: LLAMA 3.1 70B (O CÉREBRO)
-        // Forçamos ele a descrever a cena como uma composição ÚNICA
+        // PASSO 1: LLAMA-3.1-70B (O Único capaz de separar os objetos)
         const brain = await axios.post(
             `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/ai/run/@cf/meta/llama-3.1-70b-instruct`,
             {
-                messages: [
-                    {
-                        role: "system",
-                        content: `You are a master of spatial logic for AI image generation. 
-                        REWRITE the user prompt to ensure objects are PERMANENTLY ATTACHED.
-                        - If the user says "on", use: "A distinct blue cat is riding and physically sitting on the red dragon's back".
-                        - Focus on color separation: "Blue fur, red scales, no color blending".
-                        - Quality: "Photorealistic, 8k, cinematic lighting".
-                        - Output ONLY the prompt in English.`
-                    },
-                    { role: "user", content: prompt }
-                ]
+                messages: [{
+                    role: "system",
+                    content: `Act as a Prompt Architect. Rewrite the user request into a precise spatial description. 
+                    - Separate subjects: "A vibrant cobalt blue cat" and "a massive crimson red dragon".
+                    - Force Position: "The blue cat is physically mounted on top of the red dragon's back, between its wings."
+                    - Prevent Merging: "The blue cat and the red dragon are two distinct anatomical entities. No shared limbs. No color bleeding."
+                    - Quality: "Photorealistic, 8k, cinematic, sharp focus."
+                    Output ONLY the English prompt.`
+                }, { role: "user", content: prompt }]
             },
             { headers: { Authorization: `Bearer ${API_TOKEN}` } }
         );
 
-        const expertPrompt = brain.data.result.response;
+        const technicalPrompt = brain.data.result.response;
 
-        // PASSO 2: SDXL LIGHTNING (RÁPIDO E INTELIGENTE)
-        // Este modelo não dá "Erro de Geração" porque responde em 5 segundos.
-        const response = await axios.post(
-            `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/ai/run/@cf/bytedance/stable-diffusion-xl-lightning`,
+        // PASSO 2: FLUX-1-DEV (O topo da linha, ignoramos os modelos 'schnell' ou 'lightning')
+        const imageRes = await axios.post(
+            `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/ai/run/@cf/black-forest-labs/flux-1-dev`,
             {
-                prompt: expertPrompt,
-                num_steps: 8 // Suficiente para qualidade máxima neste modelo
+                prompt: technicalPrompt,
+                num_steps: 28, // Precisão máxima para anatomia
+                guidance: 8.5,  // Obediência estrita ao prompt
+                width: 1024,
+                height: 1024
             },
             {
-                headers: { 
-                    Authorization: `Bearer ${API_TOKEN}`,
-                    "Content-Type": "application/json"
-                },
+                headers: { Authorization: `Bearer ${API_TOKEN}` },
                 responseType: "arraybuffer",
-                timeout: 40000 // Aumenta a tolerância do Render
+                timeout: 100000 // O Flux-Dev demora para processar a perfeição, o Render precisa esperar
             }
         );
 
-        // Validar se o que veio foi imagem ou erro
-        if (response.data.byteLength < 500) {
-             const errorMsg = JSON.parse(response.data.toString());
-             return res.status(500).json({ status: false, error: errorMsg });
-        }
+        if (imageRes.data.byteLength < 5000) throw new Error("Erro no processamento da imagem.");
 
         res.set('Content-Type', 'image/png');
-        return res.send(response.data);
+        return res.send(imageRes.data);
 
-    } catch (error) {
-        console.error("ERRO:", error.message);
-        res.status(500).json({ 
-            status: false, 
-            message: "Erro...",
-            detalhe: error.message 
-        });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ status: false, msg: "Erro de processamento pesado." });
     }
 });
+
 
 
 // V1

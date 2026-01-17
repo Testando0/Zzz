@@ -600,180 +600,168 @@ router.get('/boneco', async (req, res) => {
   }
 });
 
+async function getAny4kLink(videoUrl, tipo) {
+  console.log(`[${tipo}] Processando URL:`, videoUrl);
 
-// ==================================================================
-// 🛠️ INTEGRAÇÃO ANY4K (API OFICIAL) - RENOMEADO
-// ==================================================================
+  const deviceId = uuidv4().replace(/-/g, "");
+  
+  // 1. CHECAGEM: Obtém metadados e formatos disponíveis
+  console.log(`[${tipo}] Buscando metadados (API check)...`);
+  const { data: checkData } = await axios.post(
+    "https://api.any4k.com/v1/dlp/check",
+    {
+      url: videoUrl,
+      lang: "pt",
+      country: "BR",
+      platform: "Web",
+      deviceId: deviceId
+    },
+    { headers: { "Content-Type": "application/json" } }
+  );
 
-/**
- * Função principal para comunicar com a API Any4K
- * Retorna objeto com link direto, título e thumbnail
- */
-async function getAny4kData(videoUrl, tipo) {
-    try {
-        console.log(`\n🚀 [Any4K API] Processando: ${videoUrl}`);
+  if (checkData.err_code !== 0 || !checkData.data) {
+    throw new Error(`Erro na API Check: ${checkData.err_msg || 'Dados inválidos'}`);
+  }
 
-        // 1. OBTER METADADOS
-        const checkPayload = {
-            url: videoUrl,
-            lang: "pt",
-            country: "BR",
-            platform: "Web"
-        };
+  const videoData = checkData.data;
+  console.log(`[${tipo}] Título encontrado:`, videoData.title);
 
-        const { data: metaData } = await axios.post(
-            "https://api.any4k.com/v1/dlp/check",
-            checkPayload,
-            { headers: { 'Content-Type': 'application/json' } }
-        );
+  // 2. SELEÇÃO DO ARQUIVO
+  let targetFile = null;
 
-        if (!metaData || !metaData.data) {
-            throw new Error("API Any4K não retornou dados do vídeo.");
-        }
-
-        const dados = metaData.data;
-        // Detecta se é áudio baseando-se no tipo solicitado
-        const isAudio = tipo.includes("audio") || tipo.includes("mp3") || tipo.includes("musica");
-
-        // 2. SELECIONAR FORMATO
-        let listaArquivos = isAudio ? dados.raw_audio : dados.raw_video;
-
-        if (!listaArquivos || !listaArquivos.length) {
-            listaArquivos = dados.download || [];
-        }
-
-        // Filtros de segurança
-        if (isAudio) {
-            listaArquivos = listaArquivos.filter(f => f.ext === 'm4a' || f.ext === 'mp3' || f.acodec !== 'none');
-        } else {
-            listaArquivos = listaArquivos.filter(f => f.ext === 'mp4');
-        }
-
-        if (!listaArquivos.length) throw new Error("Nenhum formato compatível encontrado na API.");
-
-        // Pega a melhor qualidade disponível
-        const arquivo = listaArquivos[0];
-        console.log(`✅ Formato escolhido: ${arquivo.res_text || arquivo.ext} (ID: ${arquivo.id})`);
-
-        // 3. GERAR DOWNLOAD
-        const downloadPayload = {
-            url: videoUrl,
-            format: arquivo.id,
-            lang: "pt",
-            country: "BR"
-        };
-
-        const { data: apiRes } = await axios.post(
-            "https://api.any4k.com/v1/dlp/download",
-            downloadPayload,
-            { headers: { "Content-Type": "application/json" } }
-        );
-
-        if (apiRes && apiRes.id) {
-            return {
-                status: true,
-                titulo: dados.title,
-                canal: dados.uploader || "Desconhecido",
-                thumb: dados.thumbnail,
-                duracao: dados.duration,
-                tamanho: arquivo.filesize || 0,
-                qualidade: arquivo.res_text || (isAudio ? "128kbps" : "HD"),
-                formato: arquivo.ext,
-                download: `https://api.any4k.com/v1/file/o?i=${apiRes.id}`
-            };
-        } 
-        
-        throw new Error("A API não retornou o ID do arquivo.");
-
-    } catch (err) {
-        console.error(`❌ [Erro Any4K]: ${err.message}`);
-        throw err;
+  // Se for música ou linkmp3, pega apenas áudio
+  if (tipo.includes("play-audio") || tipo === "playlink") {
+    // Tenta pegar m4a ou mp3 com maior bitrate
+    if (videoData.raw_audio && videoData.raw_audio.length > 0) {
+        // Pega o primeiro (geralmente melhor qualidade) ou filtra por m4a/mp3
+        targetFile = videoData.raw_audio.find(f => f.ext === 'm4a' || f.ext === 'mp3') || videoData.raw_audio[0];
     }
+  } else {
+    // Se for clipe ou linkmp4, pega vídeo COM áudio
+    // A lista 'download' geralmente tem vídeo mixado (ex: 720p com som). 
+    // A lista 'raw_video' geralmente é 1080p+ mas SEM SOM (dash).
+    if (videoData.download && videoData.download.length > 0) {
+        // Prioriza mp4
+        targetFile = videoData.download.find(f => f.ext === 'mp4') || videoData.download[0];
+    }
+  }
+
+  if (!targetFile) {
+    throw new Error("Nenhum formato compatível encontrado para este vídeo.");
+  }
+
+  console.log(`[${tipo}] Formato selecionado: ${targetFile.ext} | ID: ${targetFile.id} | Tamanho: ${targetFile.filesize}`);
+
+  // 3. DOWNLOAD: Solicita o link final
+  const { data: downloadData } = await axios.post(
+    "https://api.any4k.com/v1/dlp/download",
+    {
+      url: videoUrl,
+      format: targetFile.id, // O ID do formato escolhido acima
+      lang: "pt",
+      country: "BR",
+      platform: "Web",
+      deviceId: deviceId,
+      sysVer: "1.0.0",
+      appVer: "1.0.0",
+      bundleId: "com.any4k.api"
+    },
+    { headers: { "Content-Type": "application/json" } }
+  );
+
+  if (downloadData.err_code !== 0) {
+    throw new Error(`Erro na API Download: ${downloadData.err_msg}`);
+  }
+
+  // 4. RETORNO DO LINK
+  // O endpoint retorna um ID que deve ser anexado à URL de arquivo
+  const fileUrl = `https://api.any4k.com/v1/file/o?i=${downloadData.data.id}`; // Note que as vezes vem em data.id ou data.data.id, ajustei baseado no padrão comum
+  
+  // Correção baseada no log do seu código original que usava downloadData.id direto. 
+  // Se a API retornar { data: { id: "..." } }, use downloadData.data.id. 
+  // Se retornar { id: "..." } na raiz (menos comum em APIs padronizadas), use downloadData.id.
+  // Vou usar um fallback seguro:
+  const finalId = downloadData.data ? downloadData.data.id : downloadData.id;
+  
+  console.log(`[${tipo}] Link gerado com sucesso.`);
+  return `https://api.any4k.com/v1/file/o?i=${finalId}`;
 }
 
-// ==================================================================
-// 🚦 ROTAS EXPRESS (NOVOS NOMES)
-// ==================================================================
+// ===================
+// ROTAS
+// ===================
 
-// 1. Pesquisa e baixa ÁUDIO (Antigo /musica)
+// 1. musica?name=
 router.get("/play-audio", async (req, res) => {
-    const name = req.query.name;
-    if (!name) return res.status(400).json({ error: "Informe o parâmetro ?name=" });
+  const name = req.query.name;
+  if (!name) return res.status(400).send("Informe ?name=");
 
-    try {
-        console.log(`[Play-Audio] Buscando: ${name}`);
-        const r = await ytSearch(name); // Usa yt-search já importado no seu código
-        
-        if (!r || !r.videos.length) {
-            return res.status(404).json({ error: "Vídeo não encontrado no YouTube." });
-        }
+  try {
+    console.log("[musica] Buscando:", name);
+    const r = await ytSearch(name);
+    const video = r.videos.length ? r.videos[0] : null;
+    if (!video) return res.status(404).send("Nenhum vídeo encontrado no YouTube");
 
-        const video = r.videos[0];
-        const resultado = await getAny4kData(video.url, "audio");
-        
-        return res.json({
-            status: true,
-            criador: criador,
-            resultado: {
-                ...resultado,
-                url_original: video.url
-            }
-        });
+    console.log("[musica] Vídeo encontrado:", video.title);
+    const link = await getAny4kLink(video.url, "musica");
 
-    } catch (err) {
-        return res.status(500).json({ error: "Erro ao processar áudio.", details: err.message });
-    }
+    return res.redirect(link);
+  } catch (err) {
+    console.error("[musica] Erro:", err.message);
+    return res.status(500).json({ erro: err.message });
+  }
 });
 
-// 2. Pesquisa e baixa VÍDEO (Antigo /clipe)
+// 2. clipe?name=
 router.get("/play-video", async (req, res) => {
-    const name = req.query.name;
-    if (!name) return res.status(400).json({ error: "Informe o parâmetro ?name=" });
+  const name = req.query.name;
+  if (!name) return res.status(400).send("Informe ?name=");
 
-    try {
-        console.log(`[Play-Video] Buscando: ${name}`);
-        const r = await ytSearch(name);
-        
-        if (!r || !r.videos.length) {
-            return res.status(404).json({ error: "Vídeo não encontrado." });
-        }
+  try {
+    console.log("[clipe] Buscando:", name);
+    const r = await ytSearch(name);
+    const video = r.videos.length ? r.videos[0] : null;
+    if (!video) return res.status(404).send("Nenhum vídeo encontrado no YouTube");
 
-        const video = r.videos[0];
-        const resultado = await getAny4kData(video.url, "video");
-        
-        return res.json({
-            status: true,
-            criador: criador,
-            resultado: {
-                ...resultado,
-                url_original: video.url
-            }
-        });
+    console.log("[clipe] Vídeo encontrado:", video.title);
+    const link = await getAny4kLink(video.url, "clipe");
 
-    } catch (err) {
-        return res.status(500).json({ error: "Erro ao processar vídeo.", details: err.message });
-    }
+    return res.redirect(link);
+  } catch (err) {
+    console.error("[clipe] Erro:", err.message);
+    return res.status(500).json({ erro: err.message });
+  }
 });
 
-// 3. Link direto (Opcional: mantive para uso direto por URL)
-router.get("/play-link", async (req, res) => {
-    const url = req.query.url;
-    const type = req.query.type || "video"; // padrao video, pode passar ?type=audio
-    
-    if (!url) return res.status(400).json({ error: "Informe o parâmetro ?url=" });
+// 3. linkmp3?url=
+router.get("/linkmp3", async (req, res) => {
+  const url = req.query.url;
+  if (!url) return res.status(400).send("Informe ?url=");
 
-    try {
-        const resultado = await getAny4kData(url, type);
-        return res.json({
-            status: true,
-            criador: criador,
-            resultado
-        });
-    } catch (err) {
-        return res.status(500).json({ error: "Erro ao processar link.", details: err.message });
-    }
+  try {
+    console.log("[playlink] URL recebida:", url);
+    const link = await getAny4kLink(url, "playlink");
+    return res.redirect(link);
+  } catch (err) {
+    console.error("[playlink] Erro:", err.message);
+    return res.status(500).json({ erro: err.message });
+  }
 });
-;
+
+// 4. linkmp4?url=
+router.get("/linkmp4", async (req, res) => {
+  const url = req.query.url;
+  if (!url) return res.status(400).send("Informe ?url=");
+
+  try {
+    console.log("[clipelink] URL recebida:", url);
+    const link = await getAny4kLink(url, "clipelink");
+    return res.redirect(link);
+  } catch (err) {
+    console.error("[clipelink] Erro:", err.message);
+    return res.status(500).json({ erro: err.message });
+  }
+});
 
 async function generateAudio(res, voiceId, text) {
   if (!text) return res.status(400).json({ erro: "Texto ausente" });
@@ -2608,7 +2596,7 @@ router.get('/video', async (req, res) => {
   }
 });
 
-router.get('/play_audio', async (req, res) => {
+router.get('/play-audio', async (req, res) => {
   const { query } = req.query;
   if (!query) return res.status(400).json({ error: 'Parâmetro "query" não fornecido' });
 
@@ -2621,7 +2609,7 @@ router.get('/play_audio', async (req, res) => {
   }
 });
 
-router.get('/play_video', async (req, res) => {
+router.get('/play-video', async (req, res) => {
   const { query } = req.query;
   if (!query) return res.status(400).json({ error: 'Parâmetro "query" não fornecido' });
 
@@ -4932,6 +4920,63 @@ router.get('/dalle', async (req, res) => {
     res.status(500).send('Error while generating AI image.');
   }
 });
+
+router.get('/bunix', async (req, res) => {
+    const { prompt } = req.query;
+    if (!prompt) return res.status(400).json({ status: false, message: "Prompt vazio." });
+
+    const ACCOUNT_ID = "648085ab1193eeacc92d058d278a0d83";
+    const API_TOKEN = "EZnH74dXipNmuwQOtCAcW1oLQzJ5oKbTnpgBqJUI";
+
+    try {
+        // PASSO 1: LLAMA-3.1-70B (O Único capaz de separar os objetos)
+        const brain = await axios.post(
+            `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/ai/run/@cf/meta/llama-3.1-70b-instruct`,
+            {
+                messages: [{
+                    role: "system",
+                    content: `Act as a Prompt Architect. Rewrite the user request into a precise spatial description. 
+                    - Separate subjects: "A vibrant cobalt blue cat" and "a massive crimson red dragon".
+                    - Force Position: "The blue cat is physically mounted on top of the red dragon's back, between its wings."
+                    - Prevent Merging: "The blue cat and the red dragon are two distinct anatomical entities. No shared limbs. No color bleeding."
+                    - Quality: "Photorealistic, 8k, cinematic, sharp focus."
+                    Output ONLY the English prompt.`
+                }, { role: "user", content: prompt }]
+            },
+            { headers: { Authorization: `Bearer ${API_TOKEN}` } }
+        );
+
+        const technicalPrompt = brain.data.result.response;
+
+        // PASSO 2: FLUX-1-DEV (O topo da linha, ignoramos os modelos 'schnell' ou 'lightning')
+        const imageRes = await axios.post(
+            `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/ai/run/@cf/black-forest-labs/flux-1-dev`,
+            {
+                prompt: technicalPrompt,
+                num_steps: 28, // Precisão máxima para anatomia
+                guidance: 8.5,  // Obediência estrita ao prompt
+                width: 1024,
+                height: 1024
+            },
+            {
+                headers: { Authorization: `Bearer ${API_TOKEN}` },
+                responseType: "arraybuffer",
+                timeout: 100000 // O Flux-Dev demora para processar a perfeição, o Render precisa esperar
+            }
+        );
+
+        if (imageRes.data.byteLength < 5000) throw new Error("Erro no processamento da imagem.");
+
+        res.set('Content-Type', 'image/png');
+        return res.send(imageRes.data);
+
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ status: false, msg: "Erro de processamento pesado." });
+    }
+});
+
+
 
 // V1
 router.get('/image-v1', async (req, res) => {

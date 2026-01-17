@@ -601,142 +601,194 @@ router.get('/boneco', async (req, res) => {
 });
 
 
+// ==================================================================
+// FUNÇÕES AUXILIARES
+// ==================================================================
+
+// Função robusta para extrair ID do YouTube (suporta youtu.be, shorts, etc)
+function getYouTubeVideoId(url) {
+  const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+  const match = url.match(regex);
+  return match ? match[1] : null;
+}
+
 async function getAny4kLink(videoUrl, tipo) {
-  console.log(`[${tipo}] Video URL:`, videoUrl);
-
-  const videoId = new URL(videoUrl).searchParams.get("v");
-  console.log(`[${tipo}] Video ID:`, videoId);
-
-  const { data: html } = await axios.get(`https://any4k.com/pt/download/youtube/${videoId}`);
-  console.log(`[${tipo}] HTML baixado, tamanho:`, html.length);
-
-  const match = html.match(/window\.__NUXT__=(.*)<\/script>/);
-  if (!match) throw new Error("Não foi possível extrair dados do site");
-  console.log(`[${tipo}] Match encontrado, comprimento:`, match[1].length);
-
-  const sandbox = {};
-  vm.createContext(sandbox);
   try {
-    vm.runInContext(`result = ${match[1]}`, sandbox);
-  } catch (err) {
-    console.error(`[${tipo}] Erro ao executar sandbox:`, err.message);
-    throw err;
-  }
+    console.log(`[${tipo}] Processando URL:`, videoUrl);
 
-  const data = sandbox.result.data[Object.keys(sandbox.result.data)[0]].data;
-  console.log(`[${tipo}] JS executado no sandbox`);
+    const videoId = getYouTubeVideoId(videoUrl);
+    if (!videoId) throw new Error("ID do vídeo inválido ou não encontrado.");
+    
+    console.log(`[${tipo}] Video ID extraído:`, videoId);
 
-  const arquivos = tipo.includes("musica") || tipo === "playlink" ? data.raw_audio : data.raw_video;
-  if (!arquivos || !arquivos.length) throw new Error("Nenhum arquivo encontrado");
-  console.log(`[${tipo}] Arquivos encontrados:`, arquivos.map(a => a.ext));
+    // Headers para simular um navegador real e evitar bloqueio
+    const headers = {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Referer': 'https://any4k.com/',
+      'Origin': 'https://any4k.com'
+    };
 
-  const arquivo = arquivos[0]; // primeiro arquivo
-  const deviceId = uuidv4().replace(/-/g, "");
+    // 1. Obter o HTML da página de download
+    const { data: html } = await axios.get(`https://any4k.com/pt/download/youtube/${videoId}`, { headers });
+    
+    // 2. Extrair o objeto Nuxt (Melhoria na Regex)
+    const match = html.match(/window\.__NUXT__=(.*?);<\/script>/);
+    if (!match) throw new Error("Não foi possível extrair os dados do Nuxt (estrutura do site mudou?).");
 
-  const { data: downloadData } = await axios.post(
-    "https://api.any4k.com/v1/dlp/download",
-    {
-      url: videoUrl,
-      format: arquivo.id,
+    // 3. Executar o JS extraído em Sandbox para obter o objeto seguro
+    const sandbox = {};
+    vm.createContext(sandbox);
+    try {
+      vm.runInContext(`result = ${match[1]}`, sandbox);
+    } catch (err) {
+      throw new Error(`Erro ao interpretar dados do site: ${err.message}`);
+    }
+
+    // Navegar até os dados do vídeo dentro do objeto Nuxt
+    const nuxtData = sandbox.result;
+    const dataKeys = Object.keys(nuxtData.data);
+    const videoData = nuxtData.data[dataKeys[0]]?.data;
+
+    if (!videoData) throw new Error("Dados do vídeo não encontrados no objeto extraído.");
+
+    // 4. Selecionar o formato (Audio ou Video)
+    const isAudio = tipo.includes("musica") || tipo === "playlink" || tipo.includes("mp3");
+    
+    // Tenta pegar raw, se não tiver, tenta formats gerais
+    let arquivos = isAudio ? videoData.raw_audio : videoData.raw_video;
+    
+    if (!arquivos || !arquivos.length) {
+       // Fallback se não encontrar raw
+       console.log(`[${tipo}] Formato RAW não encontrado, buscando formatos gerais...`);
+       arquivos = videoData.formats || [];
+    }
+
+    if (!arquivos || !arquivos.length) throw new Error("Nenhum formato de arquivo disponível para download.");
+
+    // Pega o primeiro arquivo disponível (geralmente a melhor qualidade)
+    const arquivo = arquivos[0]; 
+    const formatId = arquivo.id || arquivo.format_id;
+
+    // 5. Solicitar o processamento/download à API
+    const deviceId = uuidv4().replace(/-/g, "");
+
+    const payload = {
+      url: `https://www.youtube.com/watch?v=${videoId}`,
+      format: formatId,
       lang: "pt",
       country: "BR",
       platform: "Web",
-      deviceId,
+      deviceId: deviceId,
       sysVer: "1.0.0",
       appVer: "1.0.0",
       bundleId: "com.any4k.api"
-    },
-    { headers: { "Content-Type": "application/json" } }
-  );
+    };
 
-  if (downloadData.err_code !== 0) throw new Error("Falha na API Any4K");
-  console.log(`[${tipo}] Resposta da API Any4K:`, downloadData);
+    const { data: downloadData } = await axios.post(
+      "https://api.any4k.com/v1/dlp/download",
+      payload,
+      { headers: { ...headers, "Content-Type": "application/json" } }
+    );
 
-  const fileUrl = `https://api.any4k.com/v1/file/o?i=${downloadData.id}`;
-  console.log(`[${tipo}] Redirecionando para:`, fileUrl);
+    if (downloadData.err_code !== 0) {
+      throw new Error(`Erro API Any4K: ${downloadData.err_msg || 'Desconhecido'}`);
+    }
 
-  return fileUrl;
+    const fileUrl = `https://api.any4k.com/v1/file/o?i=${downloadData.id}`;
+    console.log(`[${tipo}] Link gerado com sucesso:`, fileUrl);
+
+    return fileUrl;
+
+  } catch (err) {
+    console.error(`[${tipo}] Erro Fatal:`, err.message);
+    throw err;
+  }
 }
 
-// ===================
-// 1. musica?name=
-// ===================
+// ==================================================================
+// ROTAS DO EXPRESS
+// ==================================================================
+
+// 1. Pesquisa e baixa MÚSICA (MP3)
 router.get("/musica", async (req, res) => {
   const name = req.query.name;
-  if (!name) return res.status(400).send("Informe ?name=");
+  if (!name) return res.status(400).json({ error: "Informe o parâmetro ?name=" });
 
   try {
     console.log("[musica] Buscando:", name);
     const r = await ytSearch(name);
-    const video = r.videos.length ? r.videos[0] : null;
-    if (!video) return res.status(404).send("Nenhum vídeo encontrado");
+    
+    if (!r || !r.videos.length) {
+        return res.status(404).json({ error: "Nenhum vídeo encontrado no YouTube." });
+    }
 
-    console.log("[musica] Vídeo encontrado:", video.title, video.url);
+    const video = r.videos[0];
+    console.log("[musica] Encontrado:", video.title);
+    
     const link = await getAny4kLink(video.url, "musica");
-
+    
+    // Redireciona para o download direto
     return res.redirect(link);
+
   } catch (err) {
-    console.error("[musica] Erro:", err.message);
-    return res.status(500).send("Erro interno: " + err.message);
+    return res.status(500).json({ 
+        error: "Erro ao processar download.", 
+        details: err.message 
+    });
   }
 });
 
-// ===================
-// 2. clipe?name=
-// ===================
+// 2. Pesquisa e baixa VÍDEO (MP4)
 router.get("/clipe", async (req, res) => {
   const name = req.query.name;
-  if (!name) return res.status(400).send("Informe ?name=");
+  if (!name) return res.status(400).json({ error: "Informe o parâmetro ?name=" });
 
   try {
     console.log("[clipe] Buscando:", name);
     const r = await ytSearch(name);
-    const video = r.videos.length ? r.videos[0] : null;
-    if (!video) return res.status(404).send("Nenhum vídeo encontrado");
+    
+    if (!r || !r.videos.length) {
+        return res.status(404).json({ error: "Nenhum vídeo encontrado." });
+    }
 
-    console.log("[clipe] Vídeo encontrado:", video.title, video.url);
+    const video = r.videos[0];
+    console.log("[clipe] Encontrado:", video.title);
+
     const link = await getAny4kLink(video.url, "clipe");
-
+    
     return res.redirect(link);
+
   } catch (err) {
-    console.error("[clipe] Erro:", err.message);
-    return res.status(500).send("Erro interno: " + err.message);
+    return res.status(500).json({ error: "Erro interno.", details: err.message });
   }
 });
 
-// ===================
-// 3. playlink?url=
-// ===================
+// 3. Baixa MÚSICA por Link direto
 router.get("/linkmp3", async (req, res) => {
   const url = req.query.url;
-  if (!url) return res.status(400).send("Informe ?url=");
+  if (!url) return res.status(400).json({ error: "Informe o parâmetro ?url=" });
 
   try {
-    console.log("[playlink] URL recebida:", url);
     const link = await getAny4kLink(url, "playlink");
     return res.redirect(link);
   } catch (err) {
-    console.error("[playlink] Erro:", err.message);
-    return res.status(500).send("Erro interno: " + err.message);
+    return res.status(500).json({ error: "Erro ao processar link.", details: err.message });
   }
 });
 
-// ===================
-// 4. linkmp4?url=
-// ===================
+// 4. Baixa VÍDEO por Link direto
 router.get("/linkmp4", async (req, res) => {
   const url = req.query.url;
-  if (!url) return res.status(400).send("Informe ?url=");
+  if (!url) return res.status(400).json({ error: "Informe o parâmetro ?url=" });
 
   try {
-    console.log("[clipelink] URL recebida:", url);
     const link = await getAny4kLink(url, "clipelink");
     return res.redirect(link);
   } catch (err) {
-    console.error("[clipelink] Erro:", err.message);
-    return res.status(500).send("Erro interno: " + err.message);
+    return res.status(500).json({ error: "Erro ao processar link.", details: err.message });
   }
 });
+
 
 
 async function generateAudio(res, voiceId, text) {
@@ -4896,63 +4948,6 @@ router.get('/dalle', async (req, res) => {
     res.status(500).send('Error while generating AI image.');
   }
 });
-
-router.get('/bunix', async (req, res) => {
-    const { prompt } = req.query;
-    if (!prompt) return res.status(400).json({ status: false, message: "Prompt vazio." });
-
-    const ACCOUNT_ID = "648085ab1193eeacc92d058d278a0d83";
-    const API_TOKEN = "EZnH74dXipNmuwQOtCAcW1oLQzJ5oKbTnpgBqJUI";
-
-    try {
-        // PASSO 1: LLAMA-3.1-70B (O Único capaz de separar os objetos)
-        const brain = await axios.post(
-            `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/ai/run/@cf/meta/llama-3.1-70b-instruct`,
-            {
-                messages: [{
-                    role: "system",
-                    content: `Act as a Prompt Architect. Rewrite the user request into a precise spatial description. 
-                    - Separate subjects: "A vibrant cobalt blue cat" and "a massive crimson red dragon".
-                    - Force Position: "The blue cat is physically mounted on top of the red dragon's back, between its wings."
-                    - Prevent Merging: "The blue cat and the red dragon are two distinct anatomical entities. No shared limbs. No color bleeding."
-                    - Quality: "Photorealistic, 8k, cinematic, sharp focus."
-                    Output ONLY the English prompt.`
-                }, { role: "user", content: prompt }]
-            },
-            { headers: { Authorization: `Bearer ${API_TOKEN}` } }
-        );
-
-        const technicalPrompt = brain.data.result.response;
-
-        // PASSO 2: FLUX-1-DEV (O topo da linha, ignoramos os modelos 'schnell' ou 'lightning')
-        const imageRes = await axios.post(
-            `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/ai/run/@cf/black-forest-labs/flux-1-dev`,
-            {
-                prompt: technicalPrompt,
-                num_steps: 28, // Precisão máxima para anatomia
-                guidance: 8.5,  // Obediência estrita ao prompt
-                width: 1024,
-                height: 1024
-            },
-            {
-                headers: { Authorization: `Bearer ${API_TOKEN}` },
-                responseType: "arraybuffer",
-                timeout: 100000 // O Flux-Dev demora para processar a perfeição, o Render precisa esperar
-            }
-        );
-
-        if (imageRes.data.byteLength < 5000) throw new Error("Erro no processamento da imagem.");
-
-        res.set('Content-Type', 'image/png');
-        return res.send(imageRes.data);
-
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).json({ status: false, msg: "Erro de processamento pesado." });
-    }
-});
-
-
 
 // V1
 router.get('/image-v1', async (req, res) => {

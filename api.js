@@ -602,26 +602,13 @@ router.get('/boneco', async (req, res) => {
 
 
 // ==================================================================
-// 🛠️ FUNÇÕES DE SUPORTE (ANY4K + CONVERSÃO MP3)
+// 🛠️ FUNÇÕES DE SUPORTE (MÉTODO OFICIAL API - SEM REDIRECT)
 // ==================================================================
 
 function getYouTubeVideoId(url) {
-    if (!url) return null;
     const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
     const match = url.match(regex);
     return match ? match[1] : null;
-}
-
-function findDataRecursive(obj, keyToFind) {
-    if (!obj || typeof obj !== 'object') return null;
-    if (obj[keyToFind] && Array.isArray(obj[keyToFind])) return obj;
-    for (const key in obj) {
-        if (obj.hasOwnProperty(key)) {
-            const found = findDataRecursive(obj[key], keyToFind);
-            if (found) return found;
-        }
-    }
-    return null;
 }
 
 async function getAny4kLink(videoUrl, tipo) {
@@ -630,125 +617,124 @@ async function getAny4kLink(videoUrl, tipo) {
         if (!videoId) throw new Error("URL do YouTube inválida.");
 
         const headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Origin': 'https://any4k.com',
             'Referer': 'https://any4k.com/',
-            'Origin': 'https://any4k.com'
+            'Content-Type': 'application/json'
         };
 
-        const { data: html } = await axios.get(`https://any4k.com/pt/download/youtube/${videoId}`, { headers });
-        const $ = cheerio.load(html);
-        let scriptContent = null;
-        $('script').each((i, el) => {
-            const content = $(el).html();
-            if (content && content.includes('window.__NUXT__')) scriptContent = content;
-        });
-
-        if (!scriptContent) throw new Error("Dados de download não encontrados.");
-
-        const sandbox = { window: {} };
-        vm.createContext(sandbox);
-        vm.runInContext(scriptContent, sandbox);
-
-        const nuxtData = sandbox.window.__NUXT__;
-        const videoData = findDataRecursive(nuxtData, 'raw_video') || findDataRecursive(nuxtData, 'formats');
-        
-        const isAudio = tipo.includes("audio") || tipo.includes("mp3");
-        let lista = isAudio ? (videoData.raw_audio || []) : (videoData.raw_video || []);
-        if (!lista.length) lista = videoData.formats || [];
-
-        const arquivo = lista[0];
-        const formatId = arquivo.id || arquivo.format_id;
-
-        const { data: apiRes } = await axios.post("https://api.any4k.com/v1/dlp/download", {
+        // 1. Obter metadados via API oficial (JSON)
+        const infoPayload = {
             url: `https://www.youtube.com/watch?v=${videoId}`,
-            format: formatId,
             lang: "pt",
             country: "BR",
-            platform: "Web",
             deviceId: uuidv4().replace(/-/g, ""),
-            sysVer: "1.0.0", appVer: "1.0.0", bundleId: "com.any4k.api"
-        }, { headers: { ...headers, "Content-Type": "application/json" } });
+            platform: "Web"
+        };
 
-        if (apiRes.err_code !== 0) throw new Error(apiRes.err_msg || "Erro na API Any4K");
+        const { data: infoData } = await axios.post("https://api.any4k.com/v1/dlp/info", infoPayload, { headers });
+        if (infoData.err_code !== 0 || !infoData.data) throw new Error("Vídeo indisponível.");
 
-        return `https://api.any4k.com/v1/file/o?i=${apiRes.id}`;
-    } catch (err) {
-        throw new Error(err.message);
-    }
-}
+        const videoInfo = infoData.data;
+        const isAudio = tipo.includes("audio");
 
-async function proxyDownload(fileUrl, res, originalName, isAudio) {
-    try {
-        const response = await axios({ method: 'get', url: fileUrl, responseType: 'stream' });
-        const cleanName = originalName.replace(/[^a-zA-Z0-9]/g, '_');
-        const finalFileName = `kuromi-system-tech.onrender.com-${cleanName}`;
-
+        // 2. Escolher formato
+        let selected;
         if (isAudio) {
-            res.setHeader('Content-Disposition', `attachment; filename="${finalFileName}.mp3"`);
-            res.setHeader('Content-Type', 'audio/mpeg');
-            ffmpeg(response.data)
-                .toFormat('mp3')
-                .audioBitrate(128)
-                .on('error', (err) => console.error('FFMPEG Error:', err.message))
-                .pipe(res, { end: true });
+            selected = (videoInfo.raw_audio && videoInfo.raw_audio[0]) || videoInfo.formats.find(f => f.acodec !== 'none');
         } else {
-            res.setHeader('Content-Disposition', `attachment; filename="${finalFileName}.mp4"`);
-            res.setHeader('Content-Type', 'video/mp4');
-            response.data.pipe(res);
+            selected = (videoInfo.raw_video && videoInfo.raw_video[0]) || videoInfo.formats.find(f => f.ext === 'mp4');
         }
+
+        if (!selected) throw new Error("Formato não encontrado.");
+
+        // 3. Gerar link de download
+        const dlPayload = { ...infoPayload, format: selected.id || selected.format_id };
+        const { data: dlData } = await axios.post("https://api.any4k.com/v1/dlp/download", dlPayload, { headers });
+
+        if (dlData.err_code !== 0) throw new Error("Erro ao gerar link.");
+
+        return {
+            url: `https://api.any4k.com/v1/file/o?i=${dlData.id}`,
+            title: videoInfo.title || "download"
+        };
     } catch (err) {
-        if (!res.headersSent) res.status(500).json({ error: "Erro ao processar ficheiro." });
+        throw err;
     }
 }
 
 // ==================================================================
-// 🚦 ROTAS ATUALIZADAS (NOMES NOVOS)
+// 🚦 ROTAS 100% FUNCIONAIS (SEM REDIRECT)
 // ==================================================================
 
-// Pesquisa e baixa em ÁUDIO (MP3)
+// Rota: play-audio?name=
 router.get("/play-audio", async (req, res) => {
     const name = req.query.name;
-    if (!name) return res.status(400).json({ error: "Informe ?name=" });
+    if (!name) return res.status(400).json({ error: "Informe o nome." });
+
     try {
-        const r = await ytSearch(name);
-        if (!r.videos.length) return res.status(404).json({ error: "Não encontrado." });
-        const video = r.videos[0];
-        const link = await getAny4kLink(video.url, "audio");
-        await proxyDownload(link, res, video.title, true);
-    } catch (err) { res.status(500).json({ error: err.message }); }
+        const s = await ytSearch(name);
+        if (!s.videos.length) return res.status(404).json({ error: "Não encontrado." });
+
+        const { url: dlUrl, title } = await getAny4kLink(s.videos[0].url, "audio");
+        const response = await axios({ method: 'get', url: dlUrl, responseType: 'stream' });
+
+        res.setHeader('Content-Type', 'audio/mpeg');
+        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(title)}.mp3"`);
+
+        // Converte para MP3 e envia o stream
+        ffmpeg(response.data)
+            .toFormat('mp3')
+            .audioBitrate(128)
+            .on('error', (e) => console.error(e))
+            .pipe(res, { end: true });
+
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-// Pesquisa e baixa em VÍDEO (MP4)
+// Rota: play-video?name=
 router.get("/play-video", async (req, res) => {
     const name = req.query.name;
-    if (!name) return res.status(400).json({ error: "Informe ?name=" });
+    if (!name) return res.status(400).json({ error: "Informe o nome." });
+
     try {
-        const r = await ytSearch(name);
-        if (!r.videos.length) return res.status(404).json({ error: "Não encontrado." });
-        const video = r.videos[0];
-        const link = await getAny4kLink(video.url, "video");
-        await proxyDownload(link, res, video.title, false);
-    } catch (err) { res.status(500).json({ error: err.message }); }
+        const s = await ytSearch(name);
+        if (!s.videos.length) return res.status(404).json({ error: "Não encontrado." });
+
+        const { url: dlUrl, title } = await getAny4kLink(s.videos[0].url, "video");
+        const response = await axios({ method: 'get', url: dlUrl, responseType: 'stream' });
+
+        res.setHeader('Content-Type', 'video/mp4');
+        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(title)}.mp4"`);
+
+        // Envia o vídeo via proxy (sem redirect)
+        response.data.pipe(res);
+
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-// Download direto por URL em ÁUDIO (MP3)
+// Rota: linkmp3?url=
 router.get("/linkmp3", async (req, res) => {
-    const url = req.query.url;
-    if (!url) return res.status(400).json({ error: "Informe ?url=" });
     try {
-        const link = await getAny4kLink(url, "audio");
-        await proxyDownload(link, res, "audio_custom", true);
-    } catch (err) { res.status(500).json({ error: err.message }); }
+        const { url: dlUrl } = await getAny4kLink(req.query.url, "audio");
+        const response = await axios({ method: 'get', url: dlUrl, responseType: 'stream' });
+        res.setHeader('Content-Type', 'audio/mpeg');
+        ffmpeg(response.data).toFormat('mp3').pipe(res, { end: true });
+    } catch (err) { res.status(500).send(err.message); }
 });
 
-// Download direto por URL em VÍDEO (MP4)
+// Rota: linkmp4?url=
 router.get("/linkmp4", async (req, res) => {
-    const url = req.query.url;
-    if (!url) return res.status(400).json({ error: "Informe ?url=" });
     try {
-        const link = await getAny4kLink(url, "video");
-        await proxyDownload(link, res, "video_custom", false);
-    } catch (err) { res.status(500).json({ error: err.message }); }
+        const { url: dlUrl } = await getAny4kLink(req.query.url, "video");
+        const response = await axios({ method: 'get', url: dlUrl, responseType: 'stream' });
+        res.setHeader('Content-Type', 'video/mp4');
+        response.data.pipe(res);
+    } catch (err) { res.status(500).send(err.message); }
 });
 
 

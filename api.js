@@ -699,7 +699,7 @@ router.get("/play-audio", async (req, res) => {
         const r = await ytSearch(name);
         const video = r.videos[0];
         const link = await getAny4kLink(video.url, "musica");
-        await proxyDownload(link, res, `${video.title}.mp3`);
+        await proxyDownload(link, res, `${video.title}.m4a`);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

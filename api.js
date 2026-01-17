@@ -602,222 +602,92 @@ router.get('/boneco', async (req, res) => {
 
 
 // ==================================================================
-// 🛠️ FUNÇÕES AUXILIARES OTIMIZADAS
+// 🛠️ FUNÇÃO DE PROXY PARA MUDAR O NOME DO ARQUIVO
 // ==================================================================
-
-// 1. Extração de ID Robusta (Suporta Shorts, Live, Youtu.be, etc)
-function getYouTubeVideoId(url) {
-    if (!url) return null;
-    const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
-    const match = url.match(regex);
-    return match ? match[1] : null;
-}
-
-// 2. Busca Recursiva (Encontra os dados mesmo se o JSON mudar de lugar)
-function findDataRecursive(obj, keyToFind) {
-    if (!obj || typeof obj !== 'object') return null;
-    
-    if (obj[keyToFind] && Array.isArray(obj[keyToFind])) {
-        return obj; // Encontrou o objeto que contém a chave (ex: raw_video)
-    }
-
-    for (const key in obj) {
-        if (obj.hasOwnProperty(key)) {
-            const found = findDataRecursive(obj[key], keyToFind);
-            if (found) return found;
-        }
-    }
-    return null;
-}
-
-// 3. Função Principal Any4K
-async function getAny4kLink(videoUrl, tipo) {
+async function proxyDownload(fileUrl, res, originalName) {
     try {
-        console.log(`\n🚀 [Any4K] Iniciando: ${videoUrl} (${tipo})`);
-
-        const videoId = getYouTubeVideoId(videoUrl);
-        if (!videoId) throw new Error("ID do YouTube inválido.");
-
-        // Headers idênticos a um PC real para evitar bloqueio
-        const headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-            'Referer': 'https://any4k.com/',
-            'Origin': 'https://any4k.com',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-            'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7'
-        };
-
-        // 1. Baixar o HTML
-        const { data: html } = await axios.get(`https://any4k.com/pt/download/youtube/${videoId}`, { headers });
-
-        // 2. Extração segura usando Cheerio (Melhor que Regex)
-        const $ = cheerio.load(html);
-        let scriptContent = null;
-
-        // Procura em todos os scripts o que tem a variável do Nuxt
-        $('script').each((i, el) => {
-            const content = $(el).html();
-            if (content && (content.includes('window.__NUXT__') || content.includes('__NUXT__'))) {
-                scriptContent = content;
-            }
+        const response = await axios({
+            method: 'get',
+            url: fileUrl,
+            responseType: 'stream'
         });
 
-        if (!scriptContent) throw new Error("Script de dados (Nuxt) não encontrado no HTML.");
+        // Limpa o nome original e adiciona o seu prefixo
+        // Exemplo: kuromi-system-tech.onrender.com-Musica.mp3
+        const newFileName = `kuromi-system-tech.onrender.com-${originalName.replace(/\s+/g, '_')}`;
 
-        // 3. Executar o script em Sandbox para pegar o JSON
-        const sandbox = { window: {} };
-        vm.createContext(sandbox);
-        try {
-            // Ajusta o script para rodar no node se necessário
-            scriptContent = scriptContent.replace('window.__NUXT__', 'window.__NUXT__'); 
-            vm.runInContext(scriptContent, sandbox);
-        } catch (e) {
-            // Se falhar execução direta, tenta limpar
-            const match = scriptContent.match(/window\.__NUXT__=(.*?);/);
-            if (match) {
-                vm.runInContext(`window.__NUXT__=${match[1]}`, sandbox);
-            }
-        }
+        // Define os headers para forçar o download com o novo nome
+        res.setHeader('Content-Disposition', `attachment; filename="${newFileName}"`);
+        res.setHeader('Content-Type', response.headers['content-type']);
 
-        const nuxtData = sandbox.window.__NUXT__;
-        if (!nuxtData) throw new Error("Falha ao processar objeto Nuxt.");
-
-        // 4. Localizar os dados de vídeo/áudio dinamicamente
-        const videoData = findDataRecursive(nuxtData, 'raw_video') || findDataRecursive(nuxtData, 'formats');
-        
-        if (!videoData) throw new Error("Dados do vídeo não encontrados dentro do objeto.");
-
-        // 5. Selecionar formato
-        const isAudio = tipo.includes("musica") || tipo === "playlink" || tipo.includes("mp3");
-        let listaArquivos = isAudio ? videoData.raw_audio : videoData.raw_video;
-
-        // Fallback: se não tiver raw, usa formats gerais
-        if (!listaArquivos || !listaArquivos.length) {
-            console.log("⚠️ [Any4K] Usando lista de formatos genéricos.");
-            listaArquivos = videoData.formats || [];
-        }
-
-        // Filtra para garantir que o formato é válido
-        if (isAudio) {
-            // Tenta pegar m4a ou mp3
-            listaArquivos = listaArquivos.filter(f => f.ext === 'm4a' || f.ext === 'mp3' || f.acodec !== 'none');
-        } else {
-            // Tenta pegar mp4 com vídeo
-            listaArquivos = listaArquivos.filter(f => f.ext === 'mp4' && f.vcodec !== 'none');
-        }
-
-        if (!listaArquivos.length) throw new Error(`Nenhum formato compatível encontrado para ${isAudio ? 'áudio' : 'vídeo'}.`);
-
-        // Pega a melhor qualidade (normalmente o primeiro ou ordena por tamanho/bitrate)
-        const arquivo = listaArquivos[0]; 
-        const formatId = arquivo.id || arquivo.format_id || arquivo.format;
-
-        console.log(`✅ [Any4K] Formato selecionado: ${formatId} (${arquivo.ext})`);
-
-        // 6. Solicitar Link de Download
-        const deviceId = uuidv4().replace(/-/g, "");
-        const payload = {
-            url: `https://www.youtube.com/watch?v=${videoId}`,
-            format: formatId,
-            lang: "pt",
-            country: "BR",
-            platform: "Web",
-            deviceId: deviceId,
-            sysVer: "1.0.0",
-            appVer: "1.0.0",
-            bundleId: "com.any4k.api"
-        };
-
-        const { data: apiRes } = await axios.post(
-            "https://api.any4k.com/v1/dlp/download",
-            payload,
-            { headers: { ...headers, "Content-Type": "application/json" } }
-        );
-
-        if (apiRes.err_code !== 0) {
-            throw new Error(`API recusou o pedido: ${apiRes.err_msg || 'Erro desconhecido'}`);
-        }
-
-        // 7. Retorna o link pronto
-        return `https://api.any4k.com/v1/file/o?i=${apiRes.id}`;
-
+        // Faz o pipe do stream diretamente para a resposta do cliente
+        response.data.pipe(res);
     } catch (err) {
-        console.error(`❌ [Any4K Error]: ${err.message}`);
-        throw err;
+        console.error("Erro no Proxy de Download:", err.message);
+        res.status(500).json({ error: "Erro ao processar o arquivo para download." });
     }
 }
 
 // ==================================================================
-// 🚦 ROTAS EXPRESS (COPIAR E COLAR)
+// 🚦 ROTAS EXPRESS ATUALIZADAS (COM PROXY DE NOME)
 // ==================================================================
 
-// 1. Pesquisa e baixa MÚSICA (MP3)
-router.get("/musica", async (req, res) => {
+router.get("/play-audio", async (req, res) => {
     const name = req.query.name;
     if (!name) return res.status(400).json({ error: "Informe o parâmetro ?name=" });
 
     try {
-        console.log(`[Musica] Buscando: ${name}`);
         const r = await ytSearch(name);
-        
-        if (!r || !r.videos.length) {
-            return res.status(404).json({ error: "Vídeo não encontrado no YouTube." });
-        }
+        if (!r || !r.videos.length) return res.status(404).json({ error: "Vídeo não encontrado." });
 
         const video = r.videos[0];
         const link = await getAny4kLink(video.url, "musica");
         
-        return res.redirect(link);
+        // Em vez de redirect, usamos o proxy com o título do vídeo
+        await proxyDownload(link, res, `${video.title}.m4a`);
     } catch (err) {
-        return res.status(500).json({ error: "Erro ao processar download.", details: err.message });
+        res.status(500).json({ error: err.message });
     }
 });
 
-// 2. Pesquisa e baixa VÍDEO (MP4)
-router.get("/clipe", async (req, res) => {
+router.get("/play-video", async (req, res) => {
     const name = req.query.name;
     if (!name) return res.status(400).json({ error: "Informe o parâmetro ?name=" });
 
     try {
-        console.log(`[Clipe] Buscando: ${name}`);
         const r = await ytSearch(name);
-        
-        if (!r || !r.videos.length) {
-            return res.status(404).json({ error: "Vídeo não encontrado." });
-        }
+        if (!r || !r.videos.length) return res.status(404).json({ error: "Vídeo não encontrado." });
 
         const video = r.videos[0];
         const link = await getAny4kLink(video.url, "clipe");
         
-        return res.redirect(link);
+        await proxyDownload(link, res, `${video.title}.mp4`);
     } catch (err) {
-        return res.status(500).json({ error: "Erro ao processar download.", details: err.message });
+        res.status(500).json({ error: err.message });
     }
 });
 
-// 3. Link direto MP3
 router.get("/linkmp3", async (req, res) => {
     const url = req.query.url;
     if (!url) return res.status(400).json({ error: "Informe o parâmetro ?url=" });
 
     try {
         const link = await getAny4kLink(url, "playlink");
-        return res.redirect(link);
+        await proxyDownload(link, res, `audio_download.m4a`);
     } catch (err) {
-        return res.status(500).json({ error: "Erro ao processar link.", details: err.message });
+        res.status(500).json({ error: err.message });
     }
 });
 
-// 4. Link direto MP4
 router.get("/linkmp4", async (req, res) => {
     const url = req.query.url;
     if (!url) return res.status(400).json({ error: "Informe o parâmetro ?url=" });
 
     try {
         const link = await getAny4kLink(url, "clipelink");
-        return res.redirect(link);
+        await proxyDownload(link, res, `video_download.mp4`);
     } catch (err) {
-        return res.status(500).json({ error: "Erro ao processar link.", details: err.message });
+        res.status(500).json({ error: err.message });
     }
 });
 
@@ -2654,7 +2524,7 @@ router.get('/video', async (req, res) => {
   }
 });
 
-router.get('/play-audio', async (req, res) => {
+router.get('/play_audio', async (req, res) => {
   const { query } = req.query;
   if (!query) return res.status(400).json({ error: 'Parâmetro "query" não fornecido' });
 
@@ -2667,7 +2537,7 @@ router.get('/play-audio', async (req, res) => {
   }
 });
 
-router.get('/play-video', async (req, res) => {
+router.get('/play_video', async (req, res) => {
   const { query } = req.query;
   if (!query) return res.status(400).json({ error: 'Parâmetro "query" não fornecido' });
 

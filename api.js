@@ -763,79 +763,76 @@ router.get("/linkmp4", async (req, res) => {
   }
 });
 
-// 🎵 Rota de Baixar Áudio pelo Nome
-// Uso: /play?nome=nome da musica
+// ======================================================
+// ROTAS DE DOWNLOAD (PESQUISA + STREAMING)
+// ======================================================
+
+// Rota de Áudio: /play?nome=musica
 router.get('/yt-audio', async (req, res) => {
     const { nome } = req.query;
-
-    if (!nome) {
-        return res.status(400).json({ status: false, criador: 'Redzin', error: '⚠️ Digite o nome da música. Ex: /play?nome=mc poze' });
-    }
+    if (!nome) return res.status(400).json({ error: 'Falta o nome da música.' });
 
     try {
-        // 1. Pesquisa o vídeo pelo nome
-        const r = await search(nome);
-        
-        if (!r || !r.videos || r.videos.length === 0) {
-            return res.status(404).json({ status: false, error: '❌ Nada encontrado para esse nome.' });
-        }
+        // Faz a pesquisa
+        const resultado = await search(nome);
+        const video = resultado.videos[0];
+        if (!video) return res.status(404).json({ error: 'Nenhum vídeo encontrado.' });
 
-        // Pega o primeiro resultado da busca
-        const video = r.videos[0];
-        const tituloFormatado = video.title.replace(/[^\w\s]/gi, ''); // Limpa caracteres estranhos
+        const titulo = video.title.replace(/[^\w\s]/gi, '');
 
-        // 2. Configura o envio do arquivo
-        res.setHeader('Content-Disposition', `attachment; filename="${tituloFormatado}.mp3"`);
+        // Configura os Headers para Download
+        res.setHeader('Content-Disposition', `attachment; filename="${titulo}.mp3"`);
         res.setHeader('Content-Type', 'audio/mpeg');
 
-        // 3. Baixa e envia ao mesmo tempo (Sem salvar no disco)
-        yt(video.url, { quality: 'highestaudio', filter: 'audioonly' })
-            .pipe(res)
-            .on('error', (err) => {
-                console.error('Erro no áudio:', err);
-                if (!res.headersSent) res.status(500).json({ error: 'Erro ao processar áudio.' });
-            });
+        // Stream direto com opções de request para evitar bloqueio
+        yt(video.url, {
+            filter: 'audioonly',
+            quality: 'highestaudio',
+            requestOptions: {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
+                }
+            }
+        }).pipe(res).on('error', (err) => {
+            console.error(err);
+            if (!res.headersSent) res.status(500).send('Erro ao baixar áudio.');
+        });
 
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ status: false, error: error.message });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
     }
 });
 
-// 🎬 Rota de Baixar Vídeo pelo Nome
-// Uso: /video?nome=nome do video
+// Rota de Vídeo: /video?nome=video
 router.get('/yt-video', async (req, res) => {
     const { nome } = req.query;
-
-    if (!nome) {
-        return res.status(400).json({ status: false, criador: 'Redzin', error: '⚠️ Digite o nome do vídeo. Ex: /video?nome=meme' });
-    }
+    if (!nome) return res.status(400).json({ error: 'Falta o nome do vídeo.' });
 
     try {
-        // 1. Pesquisa o vídeo pelo nome
-        const r = await search(nome);
-        
-        if (!r || !r.videos || r.videos.length === 0) {
-            return res.status(404).json({ status: false, error: '❌ Nada encontrado para esse nome.' });
-        }
+        const resultado = await search(nome);
+        const video = resultado.videos[0];
+        if (!video) return res.status(404).json({ error: 'Vídeo não encontrado.' });
 
-        const video = r.videos[0];
-        const tituloFormatado = video.title.replace(/[^\w\s]/gi, '');
+        const titulo = video.title.replace(/[^\w\s]/gi, '');
 
-        res.setHeader('Content-Disposition', `attachment; filename="${tituloFormatado}.mp4"`);
+        res.setHeader('Content-Disposition', `attachment; filename="${titulo}.mp4"`);
         res.setHeader('Content-Type', 'video/mp4');
 
-        // Baixa em qualidade 360p/480p (Quality 18 é a mais segura para não travar)
-        yt(video.url, { quality: '18' })
-            .pipe(res)
-            .on('error', (err) => {
-                console.error('Erro no vídeo:', err);
-                if (!res.headersSent) res.status(500).json({ error: 'Erro ao processar vídeo.' });
-            });
+        // Qualidade 18 é a mais estável para evitar erros de cifra do YouTube
+        yt(video.url, {
+            quality: '18',
+            requestOptions: {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
+                }
+            }
+        }).pipe(res).on('error', (err) => {
+            console.error(err);
+            if (!res.headersSent) res.status(500).send('Erro ao baixar vídeo.');
+        });
 
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ status: false, error: error.message });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
     }
 });
 

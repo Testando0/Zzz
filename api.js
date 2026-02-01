@@ -763,34 +763,37 @@ router.get("/linkmp4", async (req, res) => {
   }
 });
 
-// Rota para Baixar Áudio (MP3)
+// 🎵 Rota de Baixar Áudio pelo Nome
+// Uso: /play?nome=nome da musica
 router.get('/yt-audio', async (req, res) => {
-    const { url } = req.query;
+    const { nome } = req.query;
 
-    if (!url) {
-        return res.status(400).json({ status: false, error: 'Envie o parâmetro ?url=' });
+    if (!nome) {
+        return res.status(400).json({ status: false, criador: 'Redzin', error: '⚠️ Digite o nome da música. Ex: /play?nome=mc poze' });
     }
 
     try {
-        // Valida se é um link do YouTube válido
-        if (!yt.validateURL(url)) {
-            return res.status(400).json({ status: false, error: 'URL do YouTube inválida.' });
+        // 1. Pesquisa o vídeo pelo nome
+        const r = await search(nome);
+        
+        if (!r || !r.videos || r.videos.length === 0) {
+            return res.status(404).json({ status: false, error: '❌ Nada encontrado para esse nome.' });
         }
 
-        // Pega informações básicas para o nome do arquivo
-        const info = await yt.getBasicInfo(url);
-        const title = info.videoDetails.title.replace(/[^\w\s]/gi, ''); // Remove caracteres especiais
+        // Pega o primeiro resultado da busca
+        const video = r.videos[0];
+        const tituloFormatado = video.title.replace(/[^\w\s]/gi, ''); // Limpa caracteres estranhos
 
-        // Configura os headers para o navegador entender que é um download
-        res.setHeader('Content-Disposition', `attachment; filename="${title}.mp3"`);
+        // 2. Configura o envio do arquivo
+        res.setHeader('Content-Disposition', `attachment; filename="${tituloFormatado}.mp3"`);
         res.setHeader('Content-Type', 'audio/mpeg');
 
-        // Faz o streaming direto para o usuário (Audio Only)
-        yt(url, { quality: 'highestaudio', filter: 'audioonly' })
+        // 3. Baixa e envia ao mesmo tempo (Sem salvar no disco)
+        yt(video.url, { quality: 'highestaudio', filter: 'audioonly' })
             .pipe(res)
             .on('error', (err) => {
-                console.error('Erro no stream de áudio:', err);
-                if (!res.headersSent) res.status(500).json({ error: 'Erro ao processar stream.' });
+                console.error('Erro no áudio:', err);
+                if (!res.headersSent) res.status(500).json({ error: 'Erro ao processar áudio.' });
             });
 
     } catch (error) {
@@ -799,31 +802,35 @@ router.get('/yt-audio', async (req, res) => {
     }
 });
 
-// Rota para Baixar Vídeo (MP4)
+// 🎬 Rota de Baixar Vídeo pelo Nome
+// Uso: /video?nome=nome do video
 router.get('/yt-video', async (req, res) => {
-    const { url } = req.query;
+    const { nome } = req.query;
 
-    if (!url) {
-        return res.status(400).json({ status: false, error: 'Envie o parâmetro ?url=' });
+    if (!nome) {
+        return res.status(400).json({ status: false, criador: 'Redzin', error: '⚠️ Digite o nome do vídeo. Ex: /video?nome=meme' });
     }
 
     try {
-        if (!yt.validateURL(url)) {
-            return res.status(400).json({ status: false, error: 'URL do YouTube inválida.' });
+        // 1. Pesquisa o vídeo pelo nome
+        const r = await search(nome);
+        
+        if (!r || !r.videos || r.videos.length === 0) {
+            return res.status(404).json({ status: false, error: '❌ Nada encontrado para esse nome.' });
         }
 
-        const info = await yt.getBasicInfo(url);
-        const title = info.videoDetails.title.replace(/[^\w\s]/gi, '');
+        const video = r.videos[0];
+        const tituloFormatado = video.title.replace(/[^\w\s]/gi, '');
 
-        res.setHeader('Content-Disposition', `attachment; filename="${title}.mp4"`);
+        res.setHeader('Content-Disposition', `attachment; filename="${tituloFormatado}.mp4"`);
         res.setHeader('Content-Type', 'video/mp4');
 
-        // Faz o streaming direto (Vídeo com Áudio - Quality 18 é geralmente 360p com áudio garantido)
-        yt(url, { quality: '18' }) 
+        // Baixa em qualidade 360p/480p (Quality 18 é a mais segura para não travar)
+        yt(video.url, { quality: '18' })
             .pipe(res)
             .on('error', (err) => {
-                console.error('Erro no stream de vídeo:', err);
-                if (!res.headersSent) res.status(500).json({ error: 'Erro ao processar stream.' });
+                console.error('Erro no vídeo:', err);
+                if (!res.headersSent) res.status(500).json({ error: 'Erro ao processar vídeo.' });
             });
 
     } catch (error) {

@@ -20,7 +20,6 @@ const ytSearch = require('yt-search');
 const { v4: uuidv4 } = require("uuid");
 const vm = require("vm");
 const fetch = require("node-fetch");
-const { Buffer } = require('buffer');
 const puppeteer = require("puppeteer-core");
 const chromium = require("@sparticuz/chromium");
 const chatCopilot = require('unofficial-copilot-api/src/copilot.js');
@@ -69,104 +68,6 @@ function userAgent() {
   ];
 
   return `Mozilla/5.0 (${oos[Math.floor(Math.random() * oos.length)]}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${Math.floor(Math.random() * 3) + 87}.0.${Math.floor(Math.random() * 190) + 4100}.${Math.floor(Math.random() * 50) + 140} Safari/537.36`;
-}
-
-const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36";
-
-/**
- * Decodifica o conteúdo ofuscado da página, extraindo dinamicamente o offset.
- * @param {string} htmlContent - Conteúdo bruto baixado via axios.
- * @returns {string} - O HTML decodificado.
- */
-function decodePageContent(htmlContent) {
-  // Extrai o offset dinamicamente da função de decodificação
-  // Procura por padrão: parseInt(atob(value).replace(/\D/g,'')) - NUMERO
-  const offsetMatch = htmlContent.match(/parseInt\(atob\([^)]+\)\.replace\([^)]+\)\)\s*-\s*(\d+)/);
-  const OFFSET = offsetMatch ? parseInt(offsetMatch[1]) : 51726442; // fallback para valor conhecido
-
-  console.log(`🔑 Offset extraído: ${OFFSET}`);
-
-  // Tenta extrair o array de strings ofuscadas
-  const arrayRegex = /var\s+\w+\s*=\s*(\[.*?\]);/gs;
-  let targetArray = null;
-  let match;
-
-  // Itera sobre todos os arrays de variáveis encontrados
-  while ((match = arrayRegex.exec(htmlContent)) !== null) {
-    const arrayContent = match[1];
-    // Verifica se o array contém strings que parecem ser base64 (pelo menos 10 caracteres de base64)
-    if (arrayContent.match(/"[A-Za-z0-9+/=]{10,}"/)) {
-      targetArray = match;
-      break;
-    }
-  }
-
-  if (!targetArray) {
-    console.log("❌ Nenhum array ofuscado encontrado");
-    return "";
-  }
-
-  // Captura apenas o conteúdo dentro dos colchetes
-  const arrayContent = targetArray[1];
-
-  // Extrai todas as strings codificadas dentro de aspas
-  const matches = [...arrayContent.matchAll(/"([A-Za-z0-9+/=]+)"/g)];
-  if (matches.length === 0) {
-    console.log("❌ Nenhuma string codificada encontrada");
-    return "";
-  }
-
-  console.log(`📊 Total de strings codificadas: ${matches.length}`);
-
-  let decoded = '';
-
-  for (const m of matches) {
-    const value = m[1];
-    try {
-      // Decodifica base64
-      const base64Decoded = Buffer.from(value, 'base64').toString('utf8');
-      // Remove tudo que não é número
-      const numeric = base64Decoded.replace(/\D/g, '');
-      // Converte e subtrai o offset
-      const code = parseInt(numeric) - OFFSET;
-      // Adiciona o caractere resultante
-      decoded += String.fromCharCode(code);
-    } catch {
-      // ignora strings inválidas
-    }
-  }
-
-  // Decodifica entidades e caracteres escapados
-  try {
-    return decodeURIComponent(escape(decoded));
-  } catch {
-    return decoded;
-  }
-}
-
-/**
- * Extrai o título da página, tentando múltiplas fontes
- */
-function extractTitle(htmlContent, $) {
-  // Tenta extrair do HTML original (antes da ofuscação)
-  const titleMatch = htmlContent.match(/<title>([^<]+)<\/title>/i);
-  if (titleMatch && titleMatch[1]) {
-    return titleMatch[1]
-      .replace(/\s*-\s*Ao Vivo.*$/i, "")
-      .replace(/\s*-\s*Multicanais.*$/i, "")
-      .trim();
-  }
-
-  // Fallback: tenta extrair do HTML decodificado
-  const decodedTitle = $("title").text()?.trim() || $("h1").first().text()?.trim();
-  if (decodedTitle) {
-    return decodedTitle
-      .replace(/\s*-\s*Ao Vivo.*$/i, "")
-      .replace(/\s*-\s*Multicanais.*$/i, "")
-      .trim();
-  }
-
-  return "Título não encontrado";
 }
 
 
@@ -699,48 +600,68 @@ router.get('/boneco', async (req, res) => {
   }
 });
 
-
 async function getAny4kLink(videoUrl, tipo) {
-  console.log(`[${tipo}] Video URL:`, videoUrl);
+  console.log(`[${tipo}] Processando URL:`, videoUrl);
 
-  const videoId = new URL(videoUrl).searchParams.get("v");
-  console.log(`[${tipo}] Video ID:`, videoId);
+  const deviceId = uuidv4().replace(/-/g, "");
+  
+  // 1. CHECAGEM: Obtém metadados e formatos disponíveis
+  console.log(`[${tipo}] Buscando metadados (API check)...`);
+  const { data: checkData } = await axios.post(
+    "https://api.any4k.com/v1/dlp/check",
+    {
+      url: videoUrl,
+      lang: "pt",
+      country: "BR",
+      platform: "Web",
+      deviceId: deviceId
+    },
+    { headers: { "Content-Type": "application/json" } }
+  );
 
-  const { data: html } = await axios.get(`https://any4k.com/pt/download/youtube/${videoId}`);
-  console.log(`[${tipo}] HTML baixado, tamanho:`, html.length);
-
-  const match = html.match(/window\.__NUXT__=(.*)<\/script>/);
-  if (!match) throw new Error("Não foi possível extrair dados do site");
-  console.log(`[${tipo}] Match encontrado, comprimento:`, match[1].length);
-
-  const sandbox = {};
-  vm.createContext(sandbox);
-  try {
-    vm.runInContext(`result = ${match[1]}`, sandbox);
-  } catch (err) {
-    console.error(`[${tipo}] Erro ao executar sandbox:`, err.message);
-    throw err;
+  if (checkData.err_code !== 0 || !checkData.data) {
+    throw new Error(`Erro na API Check: ${checkData.err_msg || 'Dados inválidos'}`);
   }
 
-  const data = sandbox.result.data[Object.keys(sandbox.result.data)[0]].data;
-  console.log(`[${tipo}] JS executado no sandbox`);
+  const videoData = checkData.data;
+  console.log(`[${tipo}] Título encontrado:`, videoData.title);
 
-  const arquivos = tipo.includes("musica") || tipo === "playlink" ? data.raw_audio : data.raw_video;
-  if (!arquivos || !arquivos.length) throw new Error("Nenhum arquivo encontrado");
-  console.log(`[${tipo}] Arquivos encontrados:`, arquivos.map(a => a.ext));
+  // 2. SELEÇÃO DO ARQUIVO
+  let targetFile = null;
 
-  const arquivo = arquivos[0]; // primeiro arquivo
-  const deviceId = uuidv4().replace(/-/g, "");
+  // Se for música ou linkmp3, pega apenas áudio
+  if (tipo.includes("play-audio") || tipo === "playlink") {
+    // Tenta pegar m4a ou mp3 com maior bitrate
+    if (videoData.raw_audio && videoData.raw_audio.length > 0) {
+        // Pega o primeiro (geralmente melhor qualidade) ou filtra por m4a/mp3
+        targetFile = videoData.raw_audio.find(f => f.ext === 'm4a' || f.ext === 'mp3') || videoData.raw_audio[0];
+    }
+  } else {
+    // Se for clipe ou linkmp4, pega vídeo COM áudio
+    // A lista 'download' geralmente tem vídeo mixado (ex: 720p com som). 
+    // A lista 'raw_video' geralmente é 1080p+ mas SEM SOM (dash).
+    if (videoData.download && videoData.download.length > 0) {
+        // Prioriza mp4
+        targetFile = videoData.download.find(f => f.ext === 'mp4') || videoData.download[0];
+    }
+  }
 
+  if (!targetFile) {
+    throw new Error("Nenhum formato compatível encontrado para este vídeo.");
+  }
+
+  console.log(`[${tipo}] Formato selecionado: ${targetFile.ext} | ID: ${targetFile.id} | Tamanho: ${targetFile.filesize}`);
+
+  // 3. DOWNLOAD: Solicita o link final
   const { data: downloadData } = await axios.post(
     "https://api.any4k.com/v1/dlp/download",
     {
       url: videoUrl,
-      format: arquivo.id,
+      format: targetFile.id, // O ID do formato escolhido acima
       lang: "pt",
       country: "BR",
       platform: "Web",
-      deviceId,
+      deviceId: deviceId,
       sysVer: "1.0.0",
       appVer: "1.0.0",
       bundleId: "com.any4k.api"
@@ -748,19 +669,30 @@ async function getAny4kLink(videoUrl, tipo) {
     { headers: { "Content-Type": "application/json" } }
   );
 
-  if (downloadData.err_code !== 0) throw new Error("Falha na API Any4K");
-  console.log(`[${tipo}] Resposta da API Any4K:`, downloadData);
+  if (downloadData.err_code !== 0) {
+    throw new Error(`Erro na API Download: ${downloadData.err_msg}`);
+  }
 
-  const fileUrl = `https://api.any4k.com/v1/file/o?i=${downloadData.id}`;
-  console.log(`[${tipo}] Redirecionando para:`, fileUrl);
-
-  return fileUrl;
+  // 4. RETORNO DO LINK
+  // O endpoint retorna um ID que deve ser anexado à URL de arquivo
+  const fileUrl = `https://api.any4k.com/v1/file/o?i=${downloadData.data.id}`; // Note que as vezes vem em data.id ou data.data.id, ajustei baseado no padrão comum
+  
+  // Correção baseada no log do seu código original que usava downloadData.id direto. 
+  // Se a API retornar { data: { id: "..." } }, use downloadData.data.id. 
+  // Se retornar { id: "..." } na raiz (menos comum em APIs padronizadas), use downloadData.id.
+  // Vou usar um fallback seguro:
+  const finalId = downloadData.data ? downloadData.data.id : downloadData.id;
+  
+  console.log(`[${tipo}] Link gerado com sucesso.`);
+  return `https://api.any4k.com/v1/file/o?i=${finalId}`;
 }
 
 // ===================
-// 1. musica?name=
+// ROTAS
 // ===================
-router.get("/musica", async (req, res) => {
+
+// 1. musica?name=
+router.get("/play-audio", async (req, res) => {
   const name = req.query.name;
   if (!name) return res.status(400).send("Informe ?name=");
 
@@ -768,22 +700,20 @@ router.get("/musica", async (req, res) => {
     console.log("[musica] Buscando:", name);
     const r = await ytSearch(name);
     const video = r.videos.length ? r.videos[0] : null;
-    if (!video) return res.status(404).send("Nenhum vídeo encontrado");
+    if (!video) return res.status(404).send("Nenhum vídeo encontrado no YouTube");
 
-    console.log("[musica] Vídeo encontrado:", video.title, video.url);
+    console.log("[musica] Vídeo encontrado:", video.title);
     const link = await getAny4kLink(video.url, "musica");
 
     return res.redirect(link);
   } catch (err) {
     console.error("[musica] Erro:", err.message);
-    return res.status(500).send("Erro interno: " + err.message);
+    return res.status(500).json({ erro: err.message });
   }
 });
 
-// ===================
 // 2. clipe?name=
-// ===================
-router.get("/clipe", async (req, res) => {
+router.get("/play-video", async (req, res) => {
   const name = req.query.name;
   if (!name) return res.status(400).send("Informe ?name=");
 
@@ -791,21 +721,19 @@ router.get("/clipe", async (req, res) => {
     console.log("[clipe] Buscando:", name);
     const r = await ytSearch(name);
     const video = r.videos.length ? r.videos[0] : null;
-    if (!video) return res.status(404).send("Nenhum vídeo encontrado");
+    if (!video) return res.status(404).send("Nenhum vídeo encontrado no YouTube");
 
-    console.log("[clipe] Vídeo encontrado:", video.title, video.url);
+    console.log("[clipe] Vídeo encontrado:", video.title);
     const link = await getAny4kLink(video.url, "clipe");
 
     return res.redirect(link);
   } catch (err) {
     console.error("[clipe] Erro:", err.message);
-    return res.status(500).send("Erro interno: " + err.message);
+    return res.status(500).json({ erro: err.message });
   }
 });
 
-// ===================
-// 3. playlink?url=
-// ===================
+// 3. linkmp3?url=
 router.get("/linkmp3", async (req, res) => {
   const url = req.query.url;
   if (!url) return res.status(400).send("Informe ?url=");
@@ -816,13 +744,11 @@ router.get("/linkmp3", async (req, res) => {
     return res.redirect(link);
   } catch (err) {
     console.error("[playlink] Erro:", err.message);
-    return res.status(500).send("Erro interno: " + err.message);
+    return res.status(500).json({ erro: err.message });
   }
 });
 
-// ===================
 // 4. linkmp4?url=
-// ===================
 router.get("/linkmp4", async (req, res) => {
   const url = req.query.url;
   if (!url) return res.status(400).send("Informe ?url=");
@@ -833,10 +759,78 @@ router.get("/linkmp4", async (req, res) => {
     return res.redirect(link);
   } catch (err) {
     console.error("[clipelink] Erro:", err.message);
-    return res.status(500).send("Erro interno: " + err.message);
+    return res.status(500).json({ erro: err.message });
   }
 });
 
+// Rota para Baixar Áudio (MP3)
+router.get('/yt-audio', async (req, res) => {
+    const { url } = req.query;
+
+    if (!url) {
+        return res.status(400).json({ status: false, error: 'Envie o parâmetro ?url=' });
+    }
+
+    try {
+        // Valida se é um link do YouTube válido
+        if (!yt.validateURL(url)) {
+            return res.status(400).json({ status: false, error: 'URL do YouTube inválida.' });
+        }
+
+        // Pega informações básicas para o nome do arquivo
+        const info = await yt.getBasicInfo(url);
+        const title = info.videoDetails.title.replace(/[^\w\s]/gi, ''); // Remove caracteres especiais
+
+        // Configura os headers para o navegador entender que é um download
+        res.setHeader('Content-Disposition', `attachment; filename="${title}.mp3"`);
+        res.setHeader('Content-Type', 'audio/mpeg');
+
+        // Faz o streaming direto para o usuário (Audio Only)
+        yt(url, { quality: 'highestaudio', filter: 'audioonly' })
+            .pipe(res)
+            .on('error', (err) => {
+                console.error('Erro no stream de áudio:', err);
+                if (!res.headersSent) res.status(500).json({ error: 'Erro ao processar stream.' });
+            });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ status: false, error: error.message });
+    }
+});
+
+// Rota para Baixar Vídeo (MP4)
+router.get('/yt-video', async (req, res) => {
+    const { url } = req.query;
+
+    if (!url) {
+        return res.status(400).json({ status: false, error: 'Envie o parâmetro ?url=' });
+    }
+
+    try {
+        if (!yt.validateURL(url)) {
+            return res.status(400).json({ status: false, error: 'URL do YouTube inválida.' });
+        }
+
+        const info = await yt.getBasicInfo(url);
+        const title = info.videoDetails.title.replace(/[^\w\s]/gi, '');
+
+        res.setHeader('Content-Disposition', `attachment; filename="${title}.mp4"`);
+        res.setHeader('Content-Type', 'video/mp4');
+
+        // Faz o streaming direto (Vídeo com Áudio - Quality 18 é geralmente 360p com áudio garantido)
+        yt(url, { quality: '18' }) 
+            .pipe(res)
+            .on('error', (err) => {
+                console.error('Erro no stream de vídeo:', err);
+                if (!res.headersSent) res.status(500).json({ error: 'Erro ao processar stream.' });
+            });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ status: false, error: error.message });
+    }
+});
 
 async function generateAudio(res, voiceId, text) {
   if (!text) return res.status(400).json({ erro: "Texto ausente" });
@@ -1081,7 +1075,7 @@ router.get('/linkmp4-8', async (req, res) => {
   if (!ytUrl) return res.status(400).send('URL do YouTube é obrigatório');
 
   try {
-    const response = await axios.get(`https://api.vreden.my.id/api/ytmp4?url=${encodeURIComponent(ytUrl)}`);
+    const response = await axios.get(`https://api.vreden.my.id/api/v1/download/youtube/video?url=${encodeURIComponent(ytUrl)}&quality=360`);
     const downloadUrl = response.data.result.download.url;
     res.redirect(downloadUrl);
   } catch (error) {
@@ -1095,7 +1089,7 @@ router.get('/musica8', async (req, res) => {
   if (!name) return res.status(400).send('Parâmetro "name" é obrigatório');
 
   try {
-    const response = await axios.get(`https://api.vreden.my.id/api/ytplaymp3?query=${encodeURIComponent(name)}`);
+    const response = await axios.get(`https://api.vreden.my.id/api/v1/download/play/audio?query=${encodeURIComponent(name)}`);
     const downloadUrl = response.data.result.download.url;
     res.redirect(downloadUrl);
   } catch (error) {
@@ -1109,7 +1103,7 @@ router.get('/clipe8', async (req, res) => {
   if (!name) return res.status(400).send('Parâmetro "name" é obrigatório');
 
   try {
-    const response = await axios.get(`https://api.vreden.my.id/api/ytplaymp4?query=${encodeURIComponent(name)}`);
+    const response = await axios.get(`https://api.vreden.my.id/api/v1/download/play/video?query=${encodeURIComponent(name)}`);
     const downloadUrl = response.data.result.download.url;
     res.redirect(downloadUrl);
   } catch (error) {
@@ -1123,7 +1117,7 @@ router.get('/linkmp3-8', async (req, res) => {
   if (!ytUrl) return res.status(400).send('URL do YouTube é obrigatório');
 
   try {
-    const response = await axios.get(`https://api.vreden.my.id/api/ytmp3?url=${encodeURIComponent(ytUrl)}`);
+    const response = await axios.get(`https://api.vreden.my.id/api/v1/download/youtube/audio?url=${encodeURIComponent(ytUrl)}&quality=128`);
     const downloadUrl = response.data.result.download.url;
     res.redirect(downloadUrl);
   } catch (error) {
@@ -1518,29 +1512,23 @@ router.get('/igstalk', async (req, res) => {
 })
 
 router.get('/futeproxy', async (req, res) => {
-    try {
-    const agent = new https.Agent({
-      rejectUnauthorized: false,
-    });
-
-    const response = await axios.get("https://futemaxbr.io/proxy.php", {
+  try {
+ 
+    const agent = new https.Agent({  
+  rejectUnauthorized: false  // ⚠️ ignora certificados inválidos
+});
+    const response = await axios.get('https://futemaxhd.io/proxy.php', {
       httpsAgent: agent,
       headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8",
-        "Referer": "https://futemaxbr.io/",
-        "Origin": "https://futemaxbr.io",
-        "Connection": "keep-alive",
-        "Upgrade-Insecure-Requests": "1",
-      },
+        'User-Agent': 'Mozilla/5.0',
+        'Referer': 'https://futemaxhd.io/',
+        'Accept': 'application/json'
+      }
     });
-
-    res.send(response.data);
+    res.json(response.data);
   } catch (err) {
     console.error(err.response?.status || err.code, err.message);
-    res.status(500).json({ error: "Erro ao acessar proxy" });
+    res.status(500).json({ error: 'Erro ao acessar proxy' });
   }
 });
 
@@ -1679,56 +1667,6 @@ router.get('/multicanais', async (req, res) => {
       jogos: [],
       error: 'Erro ao acessar a API real-games.php do Multicanais'
     });
-  }
-});
-
-router.get("/futemax", async (req, res) => {
-  const { link } = req.query;
-  if (!link) return res.status(400).json({ error: "Parâmetro 'link' é obrigatório" });
-
-  try {
-    const { data } = await axios.get(link, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0 Safari/537.36",
-      },
-    });
-
-    const $ = cheerio.load(data);
-
-    // título principal
-    const titulo = $("h1").first().text().trim() || null;
-    const subtitulo = $("h2").first().text().trim() || null;
-
-    // data da publicação
-    const dataPub = $(".date-pub").text().trim() || null;
-
-    // links das opções (iframes)
-    const iframes = [];
-    $("a.channel-btn").each((i, el) => {
-      const url = $(el).attr("data-url");
-      const opcao = $(el).text().trim();
-      if (url) iframes.push({ opcao, url });
-    });
-
-    // resumo da descrição (parágrafos)
-    const descricao = $(".ct-p p")
-      .map((i, el) => $(el).text().trim())
-      .get()
-      .filter((p) => p.length > 0);
-
-    res.json({
-      status: "sucesso",
-      titulo,
-      subtitulo,
-      data: dataPub,
-      descricao,
-      total_opcoes: iframes.length,
-      iframes,
-    });
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).json({ error: "Erro ao processar página Futemax" });
   }
 });
 
@@ -1906,37 +1844,30 @@ router.get('/fut/:slug', async (req, res) => {
   try {
     // Monta a URL base do Multicanais SEM barra final
     let fullUrl = `https://multicanaisk.com/assistir/${slug}`;
-    fullUrl = fullUrl.replace(/\/+$/, ''); // remove barra no final
+    // Remove barra no final se houver
+    fullUrl = fullUrl.replace(/\/+$/, '');
 
     console.log('➡️  [fut] slug recebido:', slug);
     console.log('🔗  fullUrl (sem barra final):', fullUrl);
 
-    // Nova API com padrão atualizado
+    // Chamada da sua rota local /futopcoes passando a URL sem barra final
     const apiURL = `https://kuromi-system-tech.onrender.com/api/futopcoes?url=${encodeURIComponent(fullUrl)}`;
     console.log('🌐  GET', apiURL);
 
     const { data } = await axios.get(apiURL);
-
-    // Verifica se o status é success e se há data
-    if (data.status !== 'success' || !data.data) {
-      return res.status(500).send('⚠️ Erro: resposta inesperada da API.');
-    }
-
-    const info = data.data;
-
     console.log('✅  /futopcoes retornou', {
-      titulo: info.titulo,
-      playersCount: info.players?.length || 0,
+      titulo: data.titulo,
+      playersCount: data.players?.length || 0,
     });
 
-    // Monta o HTML final
+    // Monta o HTML com players e iframe
     res.send(`
       <!DOCTYPE html>
       <html lang="pt-BR">
       <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>${info.titulo || 'Transmissão ao Vivo'}</title>
+        <title>${data.titulo || 'Transmissão ao Vivo'}</title>
         <style>
           body {
             background: #000;
@@ -1982,20 +1913,20 @@ router.get('/fut/:slug', async (req, res) => {
         </style>
       </head>
       <body>
-        <h1>${info.titulo || 'Transmissão ao Vivo'}</h1>
-        ${info.campeonato ? `<div class="info">${info.campeonato}</div>` : ''}
-        ${info.dataHora ? `<div class="desc">${info.dataHora}</div>` : ''}
+        <h1>${data.titulo || 'Transmissão ao Vivo'}</h1>
+        ${data.campeonato ? `<div class="info">${data.campeonato}</div>` : ''}
+        ${data.dataHora ? `<div class="desc">${data.dataHora}</div>` : ''}
 
         <div class="buttons">
           ${
-            info.players && info.players.length
-              ? info.players.map(p => `<button onclick="setIframe('${p.link}')">${p.nome}</button>`).join('')
-              : `<button onclick="setIframe('${info.iframeLink}')">PLAYER PRINCIPAL</button>`
+            data.players && data.players.length
+              ? data.players.map(p => `<button onclick="setIframe('${p.link}')">${p.nome}</button>`).join('')
+              : `<button onclick="setIframe('${data.iframeLink}')">PLAYER PRINCIPAL</button>`
           }
         </div>
 
         <iframe id="player" src="${
-          info.players && info.players.length ? info.players[0].link : info.iframeLink || ''
+          data.players && data.players.length ? data.players[0].link : data.iframeLink || ''
         }" allowfullscreen></iframe>
 
         <script>
@@ -2013,89 +1944,97 @@ router.get('/fut/:slug', async (req, res) => {
   }
 });
 
-// --- Rota Final e Testada ---
+
 router.get("/futopcoes", async (req, res) => {
   const { url } = req.query;
+
   if (!url) {
-    return res.status(400).json({ error: 'Parâmetro "url" é obrigatório.' });
+    return res.status(400).json({ error: "Parâmetro \"url\" é obrigatório." });
   }
 
   try {
-    console.log(`\n🔍 Processando: ${url}`);
-    
-    const response = await axios.get(url, { 
-      headers: { "User-Agent": USER_AGENT }, 
-      timeout: 15000 
+    const response = await axios.get(url, {
+      headers: { "User-Agent": "Mozilla/5.0" }
     });
+
+    const $ = cheerio.load(response.data);
+
+    // Extrair título do meta tag ou title
+    let titulo = $("meta[property=\"og:title\"]").attr("content") || 
+                 $("title").text().trim() || 
+                 $("h1").first().text().trim() || "";
     
-    const decodedHtml = decodePageContent(response.data);
-    if (!decodedHtml) {
-      throw new Error("A decodificação resultou em um conteúdo vazio.");
-    }
+    // Limpar o título removendo " - Ao Vivo - Multicanais" se existir
+    titulo = titulo.replace(/\s*-\s*Ao Vivo.*$/i, "").trim();
 
-    console.log(`✅ HTML decodificado com sucesso (${decodedHtml.length} caracteres)`);
+    // Extrair imagem do meta tag Open Graph
+    const imagem = $("meta[property=\"og:image\"]").attr("content") || null;
 
-    const $ = cheerio.load(decodedHtml);
+    // Extrair campeonato
+    const campeonato = $(".info-item i.fa-trophy")
+      .parent()
+      .find("span")
+      .text()
+      .trim() || 
+      $(".info-item i.fa-trophy")
+      .parent()
+      .text()
+      .replace(/\s+/g, " ")
+      .trim();
 
-    // Extrai título do HTML original (não ofuscado)
-    const titulo = extractTitle(response.data, $);
-    
-    const imagem = $("meta[property='og:image']").attr("content") || null;
-    const campeonato = $(".info-item:has(i.fa-trophy) span").text()?.trim() || "Não informado";
-    const dataHora = $(".info-item:has(i.fa-calendar) span").text()?.trim() || "Não informado";
+    // Extrair data e hora
+    const dataHora = $(".info-item i.fa-calendar")
+      .parent()
+      .find("span")
+      .text()
+      .trim() ||
+      $(".info-item i.fa-calendar")
+      .parent()
+      .text()
+      .replace(/\s+/g, " ")
+      .trim();
+
+    // Extrair link do iframe principal
     const iframeLink = $("#player-iframe").attr("src") || $("iframe").first().attr("src") || null;
 
+    // Extrair links dos players
     const players = [];
     
-    // Tenta capturar botões com onclick="changeStream(...)"
-    $(".stream-btn[onclick], button[onclick*='changeStream']").each((i, el) => {
+    // Buscar por todos os botões dentro de .stream-controls
+    $(".stream-controls button").each((i, el) => {
       const onclickAttr = $(el).attr("onclick") || "";
-      const urlMatch = onclickAttr.match(/changeStream\(['"]([^'"]+)['"]/);
-      if (urlMatch && urlMatch[1]) {
+      const nomeCompleto = $(el).text().trim();
+      
+      // Extrair o link usando regex simples
+      const match = onclickAttr.match(/https?:\/\/[^'",\s]+/);
+      
+      if (match && match[0]) {
+        // Limpar o nome removendo ícones
+        let nome = nomeCompleto.replace(/^\s*\S+\s+/, "").trim();
+        
         players.push({
-          nome: $(el).text().replace(/<[^>]*>/g, '').trim() || `Player ${i + 1}`,
-          link: urlMatch[1],
+          nome: nome,
+          link: match[0]
         });
       }
     });
 
-    // Fallback: tenta capturar botões com data-embed
-    if (players.length === 0) {
-      $(".stream-btn[data-embed], button[data-embed]").each((i, el) => {
-        const embedUrl = $(el).attr("data-embed");
-        if (embedUrl) {
-          players.push({
-            nome: $(el).text().replace(/<[^>]*>/g, '').trim() || `Player ${i + 1}`,
-            link: embedUrl,
-          });
-        }
-      });
-    }
-
-    // Fallback antigo: location.href
-    if (players.length === 0) {
-      $("button[onclick*='location.href']").each((i, el) => {
-        const onclickAttr = $(el).attr("onclick") || "";
-        const urlMatch = onclickAttr.match(/location\.href='([^']+)'/);
-        if (urlMatch && urlMatch[1]) {
-          players.push({
-            nome: $(el).text().replace(/.*<\/i>/, '').trim() || `Player ${i + 1}`,
-            link: urlMatch[1],
-          });
-        }
-      });
-    }
-
-    console.log(`📺 Dados extraídos: ${players.length} players encontrados`);
-
+    // Retornar todas as informações
     res.json({
-      status: "success",
-      data: { titulo, imagem, campeonato, dataHora, iframeLink, players },
+      titulo: titulo,
+      imagem: imagem,
+      campeonato: campeonato,
+      dataHora: dataHora,
+      iframeLink: iframeLink,
+      players: players
     });
 
   } catch (error) {
-    console.error(`❌ Erro em "${url}":`, error.message);
-    res.status(500).json({ error: "Falha ao processar a página.", details: error.message });
+    console.error("❌ Erro ao processar URL:", error.message);
+    res.status(500).json({ 
+      error: "Erro interno do servidor",
+      details: error.message 
+    });
   }
 });
 
@@ -2330,141 +2269,6 @@ router.get("/events", async (req, res) => {
   }
 });
 
-router.get('/jogosdasemana', async (req, res) => {
-  const DAY_MAP = {
-  MONDAY: 'Segunda-feira',
-  TUESDAY: 'Terça-feira',
-  WEDNESDAY: 'Quarta-feira',
-  THURSDAY: 'Quinta-feira',
-  FRIDAY: 'Sexta-feira',
-  SATURDAY: 'Sábado',
-  SUNDAY: 'Domingo'
-};
-  const URL = 'https://sportsonline.sn/prog.txt';
-  console.log(`\n🌐 Fazendo requisição para ${URL}...`);
-
-  try {
-    const { data } = await axios.get(URL, { responseType: 'text', timeout: 15000 });
-    console.log(`✅ Requisição concluída. Tamanho recebido: ${data.length} bytes\n`);
-
-    const linhas = data.split(/\r?\n/).map(l => l.replace(/\t/g, ' ').trimRight());
-    console.log(`📊 Linhas totais (incluindo vazias): ${linhas.length}`);
-
-    const resultado = {};
-    let diaAtual = null;
-    let canalAtual = null; // fallback quando uma linha só contém um URL (canal)
-    let ignoradas = 0;
-    let totalJogos = 0;
-    let totalLinks = 0;
-
-    // Helper: limpa a string de separadores extras
-    const limpaPartida = s => s.replace(/^\s*[-–—]+\s*/, '')
-                                .replace(/\s*[-–—]+\s*$/, '')
-                                .replace(/\s{2,}/g, ' ')
-                                .replace(/^\|+/, '').replace(/\|+$/,'').trim();
-
-    for (let i = 0; i < linhas.length; i++) {
-      const raw = (linhas[i] || '').trim();
-      if (!raw) continue; // pular vazias
-
-      // Detecta cabeçalho de dia (exato ou em maiúsculas)
-      const upper = raw.toUpperCase();
-      if (DAY_MAP[upper]) {
-        diaAtual = DAY_MAP[upper];
-        resultado[diaAtual] = resultado[diaAtual] || [];
-        console.log(`\n🏷️  Dia detectado: ${diaAtual} (linha ${i + 1})`);
-        canalAtual = null; // reset canal atual quando muda dia
-        continue;
-      }
-
-      // Se a linha for somente um URL, marca como canalAtual (fallback)
-      const urlsNaLinha = [...raw.matchAll(/https?:\/\/[^\s|]+/g)].map(m => m[0]);
-      const temHora = !!raw.match(/\b\d{1,2}:\d{2}\b/);
-
-      if (!temHora && urlsNaLinha.length === 1 && raw.replace(urlsNaLinha[0], '').trim().length === 0) {
-        canalAtual = urlsNaLinha[0];
-        console.log(`🔗 Canal/fallback detectado (linha ${i + 1}): ${canalAtual}`);
-        continue;
-      }
-
-      // Ignora se linha é um cabeçalho de seção tipo "HD1 ENGLISH" ou "BR1 BRAZILIAN"
-      if (/^[A-Z0-9\s&@\/'()\-]+$/.test(raw) && raw.length < 40 && !temHora && urlsNaLinha.length === 0) {
-        console.log(`⚪ Linha de seção ignorada (provável legenda/idioma): "${raw}"`);
-        ignoradas++;
-        continue;
-      }
-
-      // Tenta extrair jogo: hora + partida + links
-      const horaMatch = raw.match(/\b\d{1,2}:\d{2}\b/);
-      const partidasLinks = urlsNaLinha.length > 0 ? urlsNaLinha : (canalAtual ? [canalAtual] : []);
-      // Monta partida: remove hora e urls, remove pipe ou barras redundantes
-      let partida = raw;
-      if (horaMatch) partida = partida.replace(horaMatch[0], '');
-      // remove todas as urls
-      partida = partida.replace(/https?:\/\/[^\s|]+/g, '');
-      // remove barras/pipes/traços repetidos
-      partida = partida.replace(/\|\s*/g, ' ').replace(/-{2,}/g, ' ').trim();
-      partida = limpaPartida(partida);
-
-      if (horaMatch && partida && partidasLinks.length > 0) {
-        const jogo = {
-          hora: horaMatch[0],
-          partida,
-          links: [...new Set(partidasLinks)]
-        };
-
-        // se nenhum dia detectado antes, coloca em "Outros"
-        const bucket = diaAtual || 'Outros';
-        resultado[bucket] = resultado[bucket] || [];
-        resultado[bucket].push(jogo);
-
-        totalJogos++;
-        totalLinks += jogo.links.length;
-        console.log(`⚽ [linha ${i + 1}] ${horaMatch[0]} — ${partida} → ${jogo.links.join(', ')}`);
-      } else {
-        // Linha pode conter informação útil (ex.: "WEDNESDAY" com sotaque) ou ser ignorada
-        // Se tiver hora e partida mas sem link, tenta usar canalAtual como fallback
-        if (horaMatch && partida && canalAtual) {
-          const jogo = {
-            hora: horaMatch[0],
-            partida,
-            links: [canalAtual]
-          };
-          const bucket = diaAtual || 'Outros';
-          resultado[bucket] = resultado[bucket] || [];
-          resultado[bucket].push(jogo);
-
-          totalJogos++;
-          totalLinks++;
-          console.log(`⚽ (fallback canal) [linha ${i + 1}] ${horaMatch[0]} — ${partida} → ${canalAtual}`);
-        } else {
-          console.log(`⚠️ Linha ignorada (não é jogo): "${raw}"`);
-          ignoradas++;
-        }
-      }
-    }
-
-    console.log(`\n📋 Resumo final:`);
-    console.log(`🏷️ Dias (chaves): ${Object.keys(resultado).length}`);
-    console.log(`⚽ Total de jogos: ${totalJogos}`);
-    console.log(`🔗 Total de links coletados: ${totalLinks}`);
-    console.log(`🚫 Linhas ignoradas: ${ignoradas}\n`);
-
-    return res.json({
-      status: true,
-      totalDias: Object.keys(resultado).length,
-      totalJogos,
-      totalLinks,
-      ignoradas,
-      data: resultado
-    });
-
-  } catch (err) {
-    console.error('❌ Erro ao buscar/processar prog.txt:', err.message);
-    return res.status(500).json({ status: false, erro: err.message });
-  }
-});
-
 
 
 
@@ -2688,60 +2492,6 @@ router.get('/embedcanais', async (req, res) => {
 });
 
 
-router.get('/embedcanais2', async (req, res) => {
-  const URL = 'https://embedcanais.com/';
-  console.log(`\n🌐 Fazendo scraping de ${URL}...\n`);
-
-  try {
-    const { data } = await axios.get(URL, {
-      headers: { 'User-Agent': 'Mozilla/5.0' }
-    });
-    console.log('✅ Página carregada com sucesso.\n');
-
-    const $ = cheerio.load(data);
-    const resultado = {};
-    let categoriaAtual = 'Outros';
-
-    $('main.grid').children().each((i, el) => {
-      const tag = $(el).get(0).tagName;
-
-      if (tag === 'h2') {
-        // Detecta nova categoria
-        categoriaAtual = $(el).text().trim() || 'Outros';
-        resultado[categoriaAtual] = [];
-        console.log(`🏷️ Categoria detectada: ${categoriaAtual}`);
-      } else if (tag === 'div' && $(el).hasClass('card')) {
-        const link = $(el).find('a.thumb').attr('href');
-        const nome = $(el).find('a.thumb').attr('aria-label') || 'Canal Desconhecido';
-        const img = $(el).find('img').attr('src');
-        const fullImg = img?.startsWith('http') ? img : `https://embedcanais.com/${img}`;
-
-        resultado[categoriaAtual].push({
-          nome,
-          url: link,
-          img: fullImg
-        });
-
-        console.log(`📺 Canal adicionado: ${nome} → ${link}`);
-      }
-    });
-
-    res.json({
-      status: true,
-      totalCategorias: Object.keys(resultado).length,
-      totalCanais: Object.values(resultado).flat().length,
-      data: resultado
-    });
-
-  } catch (e) {
-    console.error(`❌ Erro ao processar embedcanais: ${e.message}`);
-    res.status(500).json({
-      status: false,
-      erro: 'Falha ao buscar os canais do site.'
-    });
-  }
-});
-
 
     router.get('/canal/:slug', async (req, res) => {
   const slug = req.params.slug;
@@ -2950,7 +2700,7 @@ router.get('/play', async (req, res) => {
   }
 
   try {
-    const response = await axios.get(`https://api.vreden.my.id/api/ytplaymp3?query=${encodeURIComponent(name)}`);
+    const response = await axios.get(`https://api.vreden.my.id/api/v1/download/play/audio?query=${encodeURIComponent(name)}`);
     const downloadUrl = response.data.result.download.url;
 
     if (downloadUrl) {
@@ -2971,7 +2721,7 @@ router.get('/playvideo', async (req, res) => {
   }
 
   try {
-    const response = await axios.get(`https://api.vreden.my.id/api/ytplaymp4?query=${encodeURIComponent(name)}`);
+    const response = await axios.get(`https://api.vreden.my.id/api/v1/download/play/video?query=${encodeURIComponent(name)}`);
     const downloadUrl = response.data.result.download.url;
 
     if (downloadUrl) {
@@ -2993,7 +2743,7 @@ router.get('/ytmp3', async (req, res) => {
   }
 
   try {
-    const response = await axios.get(`https://api.vreden.my.id/api/ytmp3?url=${url}`);
+    const response = await axios.get(`https://api.vreden.my.id/api/v1/download/youtube/audio?url=${url}&quality=128`);
     const downloadUrl = response.data.result.download.url;
 
     if (downloadUrl) {
@@ -3016,7 +2766,7 @@ router.get('/ytmp4', async (req, res) => {
   }
 
   try {
-    const response = await axios.get(`https://api.vreden.my.id/api/ytmp4?url=${url}`);
+    const response = await axios.get(`https://api.vreden.my.id/api/v1/download/youtube/video?url=${url}&quality=360`);
     const downloadUrl = response.data.result.download.url;
 
     if (downloadUrl) {
@@ -3192,10 +2942,10 @@ router.get('/play2', async (req, res) => {
 
 router.get('/threads', async (req, res) => { try { const { url } = req.query; if (!url) return res.status(400).json({ error: 'URL is required' });
 
-const response = await axios.get(`https://api.vreden.my.id/api/download/threads?url=${encodeURIComponent(url)}`);
+const response = await axios.get(`https://api.vreden.my.id/api/v1/download/threads?url=${encodeURIComponent(url)}`);
     
     const data = response.data;
-    data.creator = 'come primas';
+    data.creator = 'Redzin';
     
     res.json(data);
 } catch (error) {
@@ -3211,7 +2961,7 @@ router.get('/facebook', async (req, res) => {
   if (!url) return res.status(400).json({ error: 'URL não fornecida' });
 
   try {
-    const response = await axios.get(`https://api.vreden.my.id/api/fbdl?url=${encodeURIComponent(url)}`);
+    const response = await axios.get(`https://api.vreden.my.id/api/v1/download/facebook?url=${encodeURIComponent(url)}`);
     res.json(response.data);
   } catch (err) {
     res.status(500).json({ error: 'Erro ao buscar dados do Facebook', details: err.message });
@@ -3223,7 +2973,7 @@ router.get('/drive', async (req, res) => {
   if (!url) return res.status(400).json({ error: 'URL não fornecida' });
 
   try {
-    const response = await axios.get(`https://api.vreden.my.id/api/drive?url=${encodeURIComponent(url)}`);
+    const response = await axios.get(`https://api.vreden.my.id/api/v1/download/gdrive?url=${encodeURIComponent(url)}`);
     res.json(response.data);
   } catch (err) {
     res.status(500).json({ error: 'Erro ao buscar dados do Drive', details: err.message });
@@ -3248,10 +2998,10 @@ router.get('/capcut', async (req, res) => {
         const { url } = req.query;
         if (!url) return res.status(400).json({ error: 'URL is required' });
 
-        const response = await axios.get(`https://api.vreden.my.id/api/capcutdl?url=${encodeURIComponent(url)}`);
+        const response = await axios.get(`https://api.vreden.my.id/api/v1/download/capcut?url=${encodeURIComponent(url)}`);
         
         const data = response.data;
-        data.creator = 'come primas';
+        data.creator = 'Redzin';
         
         res.json(data);
     } catch (error) {
@@ -4160,119 +3910,6 @@ router.get('/likeff', async (req, res) => {
     }
 });
 
-const idDoGrupoDeLikes6 = -1002984864003; // Novo grupo
-
-router.get('/likesff6', async (req, res) => {
-  const id = req.query.id;
-  const region = req.query.region || 'br';
-
-  if (!id) {
-    console.log('❌ Parâmetro id ausente');
-    return res.json({ status: false, resultado: 'Cadê o parâmetro id?' });
-  }
-
-  console.log(`📩 Enviando likes para ID = ${id}`);
-
-  const getUserInfo = async () => {
-    try {
-      const { data } = await axios.get(
-        `https://freefireapis.shardweb.app/api/info_player?uid=${id}&region=${region}&clothes=false`
-      );
-
-      return {
-        liked: data.basicInfo?.liked || 0,
-        nickname: data.basicInfo?.nickname || 'Desconhecido',
-        level: data.basicInfo?.level || 0,
-        avatar: data.basicInfo?.avatars?.webp || '',
-        skin: data.profileInfo?.clothesImage || ''
-      };
-    } catch (err) {
-      console.error('❌ Erro na nova API:', err.message);
-      return null;
-    }
-  };
-
-  const infoAntes = await getUserInfo();
-  if (!infoAntes) {
-    return res.json({
-      status: false,
-      resultado: 'Erro ao consultar informações do jogador antes do envio.'
-    });
-  }
-
-  try {
-    // 📩 Envia o comando de like no grupo
-    const sent = await client.sendMessage(idDoGrupoDeLikes6, {
-      message: `/like ${id}`
-    });
-    console.log(`✅ Mensagem enviada: /like ${region} ${id}`);
-
-    // 🕒 Apaga automaticamente após 5 minutos (300000 ms)
-    setTimeout(async () => {
-      try {
-        await client.deleteMessages(idDoGrupoDeLikes6, [sent.id], { revoke: true });
-        console.log("🗑️ Mensagem apagada automaticamente após 5 minutos");
-      } catch (err) {
-        console.error("❌ Erro ao apagar mensagem:", err.message);
-      }
-    }, 300000);
-
-    let infoDepois = null;
-
-    for (let i = 0; i < 10; i++) {
-      await new Promise(resolve => setTimeout(resolve, 3000)); // espera 3s antes de consultar novamente
-      infoDepois = await getUserInfo();
-
-      if (!infoDepois) {
-        return res.json({
-          status: false,
-          resultado: 'Erro ao consultar informações após envio.'
-        });
-      }
-
-      if (infoDepois.liked > infoAntes.liked) break;
-    }
-
-    return res.json({
-      status: true,
-      resultado: {
-        likesAntes: infoAntes.liked,
-        likesDepois: infoDepois.liked,
-        likesGanhos: infoDepois.liked - infoAntes.liked,
-        nick: infoDepois.nickname,
-        nivel: infoDepois.level,
-        avatar: infoDepois.avatar,
-        skin: infoDepois.skin,
-        região: region
-      }
-    });
-  } catch (err) {
-    console.error('❌ Erro na rota /likesff6:', err.message);
-    return res.json({
-      status: false,
-      resultado: 'Erro ao tentar registrar os likes.'
-    });
-  }
-});
-
-router.get("/likesff5", async (req, res) => {
-  const { id } = req.query;
-  if (!id) return res.status(400).json({ error: "id não fornecido" });
-
-  try {
-    const { data } = await axios.get(`https://likesff.online/api/likes?uid=${id}`, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-        "Referer": "https://likesff.online/",
-        "Accept": "application/json"
-      }
-    });
-    res.json(data);
-  } catch (err) {
-    console.error(err.response?.status, err.response?.data);
-    res.status(500).json({ error: "Falha ao buscar dados do likesff" });
-  }
-});
 
 router.get('/likesff', async (req, res) => {
   const { id } = req.query;
@@ -4282,34 +3919,11 @@ router.get('/likesff', async (req, res) => {
   }
 
   try {
-    // API de likes
-    const likesResponse = await axios.get(`https://come-likes-r1du.onrender.com/like?uid=${encodeURIComponent(id)}&server=br`);
-    const likesData = likesResponse.data;
+    const apiUrl = `https://come-likes.onrender.com/like?uid=${encodeURIComponent(id)}&server=br`;
+    const response = await axios.get(apiUrl);
 
-    // API de informações do jogador
-    const infoResponse = await axios.get(`https://freefireapis.shardweb.app/api/info_player?uid=${id}&region=br&clothes=true`);
-    const infoData = infoResponse.data;
-
-    // Monta o JSON final
-    const result = {
-      uid: likesData.uid,
-      jogador: likesData.jogador,
-      likes_enviadas: likesData.likes_enviadas,
-      likes_antes: likesData.likes_antes,
-      likes_depois: likesData.likes_depois,
-      status: likesData.status,
-      level: infoData.basicInfo?.level ?? null,
-      exp: infoData.basicInfo?.exp ?? null,
-      primeLevel: infoData.basicInfo?.primeLevel?.level ?? null,
-      guilda: infoData.clanBasicInfo?.clanName ?? null,
-      pet: infoData.petInfo?.petName ?? null,
-      avatar: infoData.basicInfo?.avatars?.png ?? null,
-      clothesImages: infoData.profileInfo?.clothes?.images ?? [],
-      bio: infoData.socialInfo?.signature ?? null
-    };
-
-    res.json(result);
-
+    // Retorna exatamente o JSON que a API respondeu
+    res.json(response.data);
   } catch (error) {
     res.status(500).json({
       error: 'Erro ao buscar informações de likes.',
@@ -4413,100 +4027,6 @@ router.get('/likesff2', async (req, res) => {
   }
 });
 
-router.get('/emoteff', async (req, res) => {
-  const { player1, player2, player3, equipe_id, emote_id } = req.query;
-
-  if (!player1 || !equipe_id || !emote_id) {
-    return res.json({
-      status: false,
-      resultado: `❌ Parâmetros obrigatórios ausentes!
-
-Use assim:
-/emoteff?player1=12345&equipe_id=777&emote_id=912000004
-/emoteff?player1=12345&player2=67890&equipe_id=777&emote_id=912000004
-/emoteff?player1=12345&player2=67890&player3=11111&equipe_id=777&emote_id=912000004`
-    });
-  }
-
-  console.log(`📩 Enviando emote para: ${player1} ${player2 || ''} ${player3 || ''}`);
-
-  // API para coletar informações antes/depois (se quiser usar)
-  const getUserInfo = async (id) => {
-    try {
-      const { data } = await axios.get(
-        `https://freefireapis.shardweb.app/api/info_player?uid=${id}&region=br&clothes=false`
-      );
-
-      return {
-        nickname: data.basicInfo?.nickname || 'Desconhecido',
-        level: data.basicInfo?.level || 0,
-        avatar: data.basicInfo?.avatars?.webp || ''
-      };
-    } catch (err) {
-      console.error('❌ Erro ao consultar jogador:', err.message);
-      return null;
-    }
-  };
-
-  // Buscar informações do player1 (opcional, só pra exibir bonito)
-  const infoAntes = await getUserInfo(player1);
-
-  try {
-    // Montar comando que será enviado no grupo
-    let comando = `/emote ${player1}`;
-    if (player2) comando += ` ${player2}`;
-    if (player3) comando += ` ${player3}`;
-    comando += ` ${equipe_id} ${emote_id}`;
-
-    // Enviar a mensagem no grupo
-    const sent = await client.sendMessage(grupoChatId, { message: comando });
-    console.log(`🚀 Comando enviado: ${comando}`);
-
-    // Apagar a mensagem automaticamente (opcional)
-    setTimeout(async () => {
-      try {
-        await client.deleteMessages(grupoChatId, [sent.id], { revoke: true });
-        console.log("🗑️ Mensagem apagada automaticamente após 10s");
-      } catch (err) {
-        console.error("❌ Erro ao apagar mensagem:", err.message);
-      }
-    }, 10000);
-
-    // Consultar novamente após 6 segundos (tempo da animação/emote)
-    await new Promise(resolve => setTimeout(resolve, 6000));
-    
-    const infoDepois = await getUserInfo(player1);
-
-    // Montar URL final da imagem do emote
-    const imageUrl = `https://7xhub-api.shardweb.app/api/image/${emote_id}`;
-
-    return res.json({
-      status: true,
-      resultado: {
-        comando,
-        jogador: {
-          id: player1,
-          nick: infoAntes?.nickname || 'N/A',
-          level: infoAntes?.level || 'N/A',
-          avatar: infoAntes?.avatar || ''
-        },
-        equipe_id,
-        emote_id,
-        imagem_do_emote: imageUrl,
-      }
-    });
-
-  } catch (err) {
-    console.error('❌ Erro ao enviar comando de emote:', err.message);
-    return res.json({
-      status: false,
-      resultado: 'Erro ao tentar enviar emote.'
-    });
-  }
-});
-
-
-
 router.get('/likesff3', async (req, res) => {
   const id = req.query.id;
   const region = req.query.region || 'br';
@@ -4548,7 +4068,7 @@ router.get('/likesff3', async (req, res) => {
   try {
     // 📩 Envia a mensagem de like no grupo definido
     const sent = await client.sendMessage(grupoChatId, {
-      message: `/like ${id}`
+      message: `/like ${region} ${id}`
     });
     console.log(`✅ Mensagem enviada: /like ${region} ${id}`);
 
@@ -4599,199 +4119,6 @@ router.get('/likesff3', async (req, res) => {
     });
   }
 });
-
-router.get('/ghostff', async (req, res) => {
-  const equipe_id = req.query.id;
-  const nome = req.query.nome;
-  const region = req.query.region || 'br'; // opcional, caso queira
-
-  if (!equipe_id || !nome) {
-    console.log('❌ Parâmetro id/nome ausente');
-    return res.json({ status: false, resultado: 'Use /ghostff?id=EQUIPE&nome=NOME' });
-  }
-
-  try {
-    const mensagem = `/ghost ${equipe_id} ${nome}`;
-    console.log(`📤 Enviando comando: ${mensagem}`);
-
-    // envia mensagem no chat (ajuste 'grupoChatId' para o chat correto)
-    const sent = await client.sendMessage(grupoChatId, {
-      message: mensagem
-    });
-
-    console.log(`✅ Mensagem enviada: ${mensagem}`);
-
-    // apaga automaticamente após 10 segundos (revoke)
-    setTimeout(async () => {
-      try {
-        await client.deleteMessages(grupoChatId, [sent.id], { revoke: true });
-        console.log('🗑️ Mensagem apagada automaticamente após 10s');
-      } catch (err) {
-        console.error('❌ Erro ao apagar mensagem:', err.message || err);
-      }
-    }, 10000);
-
-    return res.json({
-      status: true,
-      resultado: {
-        comando: mensagem,
-        enviadoPara: grupoChatId,
-        messageId: sent.id,
-        region
-      }
-    });
-  } catch (err) {
-    console.error('❌ Erro na rota /ghostff:', err.message || err);
-    return res.json({
-      status: false,
-      resultado: 'Erro ao tentar enviar o comando /ghost'
-    });
-  }
-});
-
-router.get('/lag-ghost', async (req, res) => {
-  const equipe_id = req.query.id;
-  const nome = req.query.nome;
-  const region = req.query.region || 'br'; // opcional, só para manter consistência
-
-  if (!equipe_id || !nome) {
-    console.log('❌ Parâmetro id/nome ausente');
-    return res.json({
-      status: false,
-      resultado: 'Use /lag-ghost?id=EQUIPE&nome=NOME'
-    });
-  }
-
-  try {
-    const mensagem = `/blrx ${equipe_id} ${nome}`;
-    console.log(`📤 Enviando comando: ${mensagem}`);
-
-    // Envia no grupo do bot (mesma lógica da likesff3)
-    const sent = await client.sendMessage(grupoChatId, { message: mensagem });
-    console.log(`✅ Mensagem enviada: ${mensagem}`);
-
-    // Apaga automaticamente depois de 10 segundos
-    setTimeout(async () => {
-      try {
-        await client.deleteMessages(grupoChatId, [sent.id], { revoke: true });
-        console.log("🗑️ Mensagem /blrx apagada automaticamente após 10s");
-      } catch (err) {
-        console.error("❌ Erro ao apagar mensagem:", err.message);
-      }
-    }, 10000);
-
-    return res.json({
-      status: true,
-      resultado: {
-        comando: mensagem,
-        enviadoPara: grupoChatId,
-        messageId: sent.id,
-        region
-      }
-    });
-
-  } catch (err) {
-    console.error('❌ Erro na rota /lag-ghost:', err.message);
-    return res.json({
-      status: false,
-      resultado: 'Erro ao tentar enviar o comando /blrx'
-    });
-  }
-});
-
-router.get('/likesff4', async (req, res) => {
-  const id = req.query.id;
-  const region = req.query.region || 'br';
-
-  if (!id) {
-    console.log('❌ Parâmetro id ausente');
-    return res.json({ status: false, resultado: 'Cadê o parâmetro id?' });
-  }
-
-  console.log(`📩 Enviando likes para ID = ${id}`);
-
-  const getUserInfo = async () => {
-    try {
-      const { data } = await axios.get(
-        `https://freefireapis.shardweb.app/api/info_player?uid=${id}&region=${region}&clothes=false`
-      );
-
-      return {
-        liked: data.basicInfo?.liked || 0,
-        nickname: data.basicInfo?.nickname || 'Desconhecido',
-        level: data.basicInfo?.level || 0,
-        avatar: data.basicInfo?.avatars?.webp || '',
-        skin: data.profileInfo?.clothesImage || ''
-      };
-    } catch (err) {
-      console.error('❌ Erro na nova API:', err.message);
-      return null;
-    }
-  };
-
-  const infoAntes = await getUserInfo();
-  if (!infoAntes) {
-    return res.json({
-      status: false,
-      resultado: 'Erro ao consultar informações do jogador antes do envio.'
-    });
-  }
-
-  try {
-    // 📩 Envia a mensagem de like no grupo definido
-    const sent = await client.sendMessage(grupoChatId, {
-      message: `/like BR ${id}`
-    });
-    console.log(`✅ Mensagem enviada: /like ${region} ${id}`);
-
-    // ⏳ Apaga automaticamente após 10 segundos
-    setTimeout(async () => {
-      try {
-        await client.deleteMessages(grupoChatId, [sent.id], { revoke: true });
-        console.log("🗑️ Mensagem apagada automaticamente após 10s");
-      } catch (err) {
-        console.error("❌ Erro ao apagar mensagem:", err.message);
-      }
-    }, 10000);
-
-    let infoDepois = null;
-
-    for (let i = 0; i < 10; i++) {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      infoDepois = await getUserInfo();
-
-      if (!infoDepois) {
-        return res.json({
-          status: false,
-          resultado: 'Erro ao consultar informações após envio.'
-        });
-      }
-
-      if (infoDepois.liked > infoAntes.liked) break;
-    }
-
-    return res.json({
-      status: true,
-      resultado: {
-        likesAntes: infoAntes.liked,
-        likesDepois: infoDepois.liked,
-        likesGanhos: infoDepois.liked - infoAntes.liked,
-        nick: infoDepois.nickname,
-        nivel: infoDepois.level,
-        avatar: infoDepois.avatar,
-        skin: infoDepois.skin,
-        região: region
-      }
-    });
-  } catch (err) {
-    console.error('❌ Erro na rota /novoLikes:', err.message);
-    return res.json({
-      status: false,
-      resultado: 'Erro ao tentar registrar os likes.'
-    });
-  }
-});
-
 
 router.get('/instamp4', async (req, res) => {
     const { url: instagramUrl } = req.query;
@@ -5663,6 +4990,63 @@ router.get('/dalle', async (req, res) => {
   }
 });
 
+router.get('/bunix', async (req, res) => {
+    const { prompt } = req.query;
+    if (!prompt) return res.status(400).json({ status: false, message: "Prompt vazio." });
+
+    const ACCOUNT_ID = "648085ab1193eeacc92d058d278a0d83";
+    const API_TOKEN = "EZnH74dXipNmuwQOtCAcW1oLQzJ5oKbTnpgBqJUI";
+
+    try {
+        // PASSO 1: LLAMA-3.1-70B (O Único capaz de separar os objetos)
+        const brain = await axios.post(
+            `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/ai/run/@cf/meta/llama-3.1-70b-instruct`,
+            {
+                messages: [{
+                    role: "system",
+                    content: `Act as a Prompt Architect. Rewrite the user request into a precise spatial description. 
+                    - Separate subjects: "A vibrant cobalt blue cat" and "a massive crimson red dragon".
+                    - Force Position: "The blue cat is physically mounted on top of the red dragon's back, between its wings."
+                    - Prevent Merging: "The blue cat and the red dragon are two distinct anatomical entities. No shared limbs. No color bleeding."
+                    - Quality: "Photorealistic, 8k, cinematic, sharp focus."
+                    Output ONLY the English prompt.`
+                }, { role: "user", content: prompt }]
+            },
+            { headers: { Authorization: `Bearer ${API_TOKEN}` } }
+        );
+
+        const technicalPrompt = brain.data.result.response;
+
+        // PASSO 2: FLUX-1-DEV (O topo da linha, ignoramos os modelos 'schnell' ou 'lightning')
+        const imageRes = await axios.post(
+            `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/ai/run/@cf/black-forest-labs/flux-1-dev`,
+            {
+                prompt: technicalPrompt,
+                num_steps: 28, // Precisão máxima para anatomia
+                guidance: 8.5,  // Obediência estrita ao prompt
+                width: 1024,
+                height: 1024
+            },
+            {
+                headers: { Authorization: `Bearer ${API_TOKEN}` },
+                responseType: "arraybuffer",
+                timeout: 100000 // O Flux-Dev demora para processar a perfeição, o Render precisa esperar
+            }
+        );
+
+        if (imageRes.data.byteLength < 5000) throw new Error("Erro no processamento da imagem.");
+
+        res.set('Content-Type', 'image/png');
+        return res.send(imageRes.data);
+
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ status: false, msg: "Erro de processamento pesado." });
+    }
+});
+
+
+
 // V1
 router.get('/image-v1', async (req, res) => {
   const { texto } = req.query;
@@ -6085,46 +5469,19 @@ router.get('/chatgpt', async (req, res) => {
     const response = await axios.get(`https://api.nekolabs.my.id/ai/gpt/5?text=${encodeURIComponent(texto)}`);
     const data = response.data;
 
-    if (data.success) {
-      res.json({
-        sucesso: true,
-        resposta: data.result,
-        tempo_resposta: data.responseTime
-      });
+    if (data.status) {
+      res.json({ resposta: data.result });
     } else {
-      res.status(400).json({
-        sucesso: false,
-        erro: 'A API retornou uma resposta inválida',
+      res.status(500).json({
+        erro: 'API retornou falha',
         detalhes: data
       });
     }
   } catch (err) {
     res.status(500).json({
-      sucesso: false,
       erro: 'Erro ao consultar API Nekolabs',
       detalhes: err.message
     });
-  }
-});
-
-router.get('/gpt', async (req, res) => {
-  const texto = req.query.texto;
-
-  if (!texto) {
-    return res.status(400).json({ erro: 'Parâmetro texto não fornecido. Use /gpt?texto=Sua pergunta' });
-  }
-
-  try {
-    const response = await axios.get(`https://api.nekolabs.my.id/ai/gpt/5?text=${encodeURIComponent(texto)}`);
-    const data = response.data;
-
-    if (data.success && data.result) {
-      return res.json({ resposta: data.result });
-    }
-
-    res.status(400).json({ erro: 'A API Nekolabs retornou uma resposta inválida.' });
-  } catch (err) {
-    res.status(500).json({ erro: 'Erro ao consultar API Nekolabs', detalhes: err.message });
   }
 });
 
@@ -9988,65 +9345,6 @@ router.get('/operadora', async (req, res) => {
         }
     }
 });
-
-router.get('/pinterest-img', async (req, res) => {
-  try {
-    let { url } = req.query;
-    if (!url) return res.status(400).send('Link não informado');
-
-    const finalUrl = await resolveUrl(url);
-
-    const { data: html } = await axios.get(finalUrl, { headers });
-    const $ = cheerio.load(html);
-
-    // tenta Open Graph primeiro
-    let imageUrl = $('meta[property="og:image"]').attr('content');
-
-    if (!imageUrl) {
-      return res.status(404).send('Imagem não encontrada');
-    }
-
-    // responde direto com a imagem
-    return res.redirect(imageUrl);
-
-  } catch (err) {
-    res.status(500).send('Erro ao buscar imagem');
-  }
-});
-
-router.get('/pinterest-vid', async (req, res) => {
-  try {
-    let { url } = req.query;
-    if (!url) return res.status(400).send('Link não informado');
-
-    const finalUrl = await resolveUrl(url);
-
-    const { data: html } = await axios.get(finalUrl, { headers });
-    const $ = cheerio.load(html);
-
-    let videoUrl = null;
-
-    $('script[type="application/ld+json"]').each((_, el) => {
-      try {
-        const json = JSON.parse($(el).html());
-        if (json['@type'] === 'VideoObject' && json.contentUrl) {
-          videoUrl = json.contentUrl;
-        }
-      } catch {}
-    });
-
-    if (!videoUrl) {
-      return res.status(404).send('Vídeo não encontrado');
-    }
-
-    res.setHeader('Content-Type', 'video/mp4');
-    return res.redirect(videoUrl);
-
-  } catch (err) {
-    res.status(500).send('Erro ao buscar vídeo');
-  }
-});
-
 // Endpoint para baixar imagem do Pinterest
 router.get('/pinimg', async (req, res) => {
     const { url } = req.query;
@@ -11389,7 +10687,7 @@ router.get('/netersg', async (req, res) => {
         res.status(500).json({ status: false, mensagem: "Erro interno ao processar a solicitação." });
     }
 });
-//gerar imagem by Redzin
+//gerar imagem by Redzin 
 
 
 router.get('/gerar-imagem', async (req, res) => {
@@ -14307,7 +13605,7 @@ router.get('/igstalker', async (req, res) => {
   const conta = req.query.conta;
   
   try {
-    const response = await axios.get(`https://api.vreden.my.id/api/instagram/users?query=${conta}`);
+    const response = await axios.get(`https://api.vreden.my.id/api/v1/stalker/instagram?username=${conta}`);
     
     if (response.data.status && response.data.result.users.length > 0) {
       const firstUser = response.data.result.users[0];
@@ -14349,7 +13647,7 @@ router.get('/pin/video', (req, res) => {
 
 const apiId = 21844566;
 const apiHash = 'ff82e94bfed22534a083c3aee236761a';
-const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBu7V4vxyg4xqwvM5NTAA5RzOAtaAvO1cVaysBrLq/Z+vCBfd1e+cmDikNxk2uHWPU/2Wof1BlEpm2yRHSW5qfZGmV8j6FlncNu5GClx10nA6+9M0P2WxFRnLyWfQqC3BHiNA6JsfXQlABbpUsYJGASbx4hxZR/e3fxmxwyZuDP8533cninp6Ufvlm35iwlM/KgpDalot26gA3GYV1mzAkwCo0qllarXSiFGCeGMcsjoBCT2tynl+YO0RJBnUl++wr75fexRIrNF2Yh7Lgvow0tpuqxeIgZM90sgmlwTOSpyVwD7FiSAqMsI1+QnbZ4FqhfzvMm6OH6Il4Wf8Dmgk43UM=');
+const stringSession = new StringSession('1AQAOMTQ5LjE1NC4xNzUuNTcBuxNKUUvkkMp320V4imDVMTB2LSxdVfxwOaUlTkAPAzmmik83jn7PKn9i55UkZQJgfMho5cpah3eZrJMxTs5jIaxZAOWZC3kI6zdGKPBVjgoqPeEHA3NMZuJ5CCl3tbYAcnplG9sbac9ac49gnTm4VVSuHAfo7z5np326TIdllAoxCXCWmUvBvXYQVxWmyS45k9xzqg83kbNv69ykztownLTJienw65/GdX49FOzf8M1ELmjAV6yz2+yG33QT2KNaHl9nGfvDDURNN8+JxUkQACrfn4q3H+c2HYMK0P1ZIDqYNpLdHJa6+0m9Ph03Z/8tFBBfpFXN+D1bUaRL9794PuA=');
 const grupoChatId = -1002208588695;
 
 const rl = readline.createInterface({
@@ -15266,216 +14564,180 @@ try {
 } catch (err) { console.error('Erro na rota /infoid:', err); return res.json({ status: false, resultado: 'Erro interno do servidor.' }); } });
 
 
-// ======== /visitasff2 ========
-
 router.get('/visitasff2', async (req, res) => {
   try {
     const id = req.query.id;
-    if (!id) return res.json({ status: false, resultado: 'Cadê o parâmetro id?' });
+    if (!id) {
+      console.log('Parâmetro id ausente na requisição');
+      return res.json({ status: false, resultado: 'Cadê o parâmetro id?' });
+    }
 
     console.log(`[VISITAS]: ID = ${id}`);
-    await client.sendMessage(grupoChatId, { message: `/visit BR ${id}` });
 
+    // Envia o comando inicial
+    await client.sendMessage(grupoChatId, { message: '/visit BR' });
+    console.log('Mensagem enviada: /visit BR');
+
+    // Função que aguarda as mensagens e processa
     const handleResponse = new Promise((resolve, reject) => {
-      let primeiraMensagem = null;
+      let step = 0;
 
       const eventHandler = async (event) => {
-        const message = event.message?.message;
-        if (!message) return;
-        console.log('Nova mensagem recebida:', message);
+        try {
+          const message = event.message?.message;
+          if (!message) return;
 
-        if (!primeiraMensagem) {
-          primeiraMensagem = message;
-          client.removeEventHandler(eventHandler);
-          resolve({ status: true, resultado: primeiraMensagem });
+          console.log('Nova mensagem recebida:', message);
+
+          if (step === 0 && message.includes('Por favor, envie o UID do jogador')) {
+            await client.sendMessage(grupoChatId, { message: id });
+            console.log(`UID enviado: ${id}`);
+            step++;
+          } else if (step === 1 && message.includes('Agora, envie a quantidade de visitas')) {
+            await client.sendMessage(grupoChatId, { message: '300' });
+            console.log('Quantidade de visitas enviada: 300');
+            step++;
+          } else if (step === 2 && message.includes('✅ Sucesso!')) {
+            console.log('Visitas enviadas com sucesso:', message);
+            resolve({ status: true, resultado: message });
+            client.removeEventHandler(eventHandler);
+          }
+        } catch (err) {
+          console.error('Erro ao processar nova mensagem:', err);
         }
       };
 
+      // Adiciona o handler para novas mensagens
       client.addEventHandler(eventHandler, new NewMessage({}));
 
+      // Timeout para caso não receba resposta
       setTimeout(() => {
         client.removeEventHandler(eventHandler);
         reject({ status: false, resultado: 'Tempo de espera esgotado' });
-      }, 30000);
+      }, 30000); // 30 segundos
     });
 
+    // Aguarda o resultado do fluxo
     const resultado = await handleResponse;
+    console.log('Resposta recebida antes do timeout:', resultado);
     return res.json(resultado);
 
   } catch (err) {
     console.error('Erro na rota /visitasff2:', err);
-    if (!res.headersSent) res.json({ status: false, resultado: 'Erro interno do servidor.' });
+    if (!res.headersSent) {
+      return res.json({ status: false, resultado: 'Erro interno do servidor.' });
+    }
   }
 });
 
-
-// ======== /crashff ========
-
 router.get('/crashff', async (req, res) => {
   try {
-    const squadId = req.query.squad;
-    if (!squadId) return res.json({ status: false, resultado: 'Cadê o parâmetro squad?' });
+    const squadId = req.query.squad; // parâmetro do squad
+    if (!squadId) {
+      console.log('Parâmetro squad ausente na requisição');
+      return res.json({ status: false, resultado: 'Cadê o parâmetro squad?' });
+    }
 
     console.log(`[CRASH]: Squad = ${squadId}`);
+
+    // Envia o comando de crash
     await client.sendMessage(grupoChatId, { message: `/crash ${squadId}` });
+    console.log(`Mensagem enviada: /crash ${squadId}`);
 
+    // Função que aguarda a mensagem de sucesso
     const handleResponse = new Promise((resolve, reject) => {
-      let primeiraMensagem = null;
-
       const eventHandler = async (event) => {
-        const message = event.message?.message;
-        if (!message) return;
-        console.log('Nova mensagem recebida:', message);
+        try {
+          const message = event.message?.message;
+          if (!message) return;
 
-        if (!primeiraMensagem) {
-          primeiraMensagem = message;
-          client.removeEventHandler(eventHandler);
-          resolve({ status: true, resultado: primeiraMensagem });
+          console.log('Nova mensagem recebida:', message);
+
+          // Procura a mensagem de sucesso
+          if (message.includes('✅ CRASH FINALIZADO!')) {
+            console.log('Crash concluído com sucesso:', message);
+            resolve({ status: true, resultado: message });
+            client.removeEventHandler(eventHandler);
+          }
+        } catch (err) {
+          console.error('Erro ao processar nova mensagem:', err);
         }
       };
 
       client.addEventHandler(eventHandler, new NewMessage({}));
 
+      // Timeout caso não receba resposta
       setTimeout(() => {
         client.removeEventHandler(eventHandler);
         reject({ status: false, resultado: 'Tempo de espera esgotado' });
-      }, 30000);
+      }, 30000); // 30 segundos
     });
 
     const resultado = await handleResponse;
+    console.log('Resposta recebida antes do timeout:', resultado);
     return res.json(resultado);
 
   } catch (err) {
     console.error('Erro na rota /crashff:', err);
-    if (!res.headersSent) res.json({ status: false, resultado: 'Erro interno do servidor.' });
+    if (!res.headersSent) {
+      return res.json({ status: false, resultado: 'Erro interno do servidor.' });
+    }
   }
 });
-
-
-// ======== /spamff ========
 
 router.get('/spamff', async (req, res) => {
   try {
     const id = req.query.id;
-    if (!id) return res.json({ status: false, resultado: 'Cadê o parâmetro id?' });
+    if (!id) {
+      console.log('Parâmetro id ausente na requisição');
+      return res.json({ status: false, resultado: 'Cadê o parâmetro id?' });
+    }
 
     console.log(`[SPAM]: ID = ${id}`);
+
+    // Envia o comando inicial
     await client.sendMessage(grupoChatId, { message: `/spam BR ${id}` });
+    console.log(`Mensagem enviada: /spam BR ${id}`);
 
+    // Função que aguarda as mensagens e processa
     const handleResponse = new Promise((resolve, reject) => {
-      let primeiraMensagem = null;
-
       const eventHandler = async (event) => {
-        const message = event.message?.message;
-        if (!message) return;
-        console.log('Nova mensagem recebida:', message);
+        try {
+          const message = event.message?.message;
+          if (!message) return;
 
-        if (!primeiraMensagem) {
-          primeiraMensagem = message;
-          client.removeEventHandler(eventHandler);
-          resolve({ status: true, resultado: primeiraMensagem });
+          console.log('Nova mensagem recebida:', message);
+
+          // Procura a mensagem de sucesso
+          if (message.includes('✅ SPAM DE AMIGOS ENVIADO COM SUCESSO!')) {
+            console.log('Spam enviado com sucesso:', message);
+            resolve({ status: true, resultado: message });
+            client.removeEventHandler(eventHandler);
+          }
+        } catch (err) {
+          console.error('Erro ao processar nova mensagem:', err);
         }
       };
 
       client.addEventHandler(eventHandler, new NewMessage({}));
 
+      // Timeout para caso não receba resposta
       setTimeout(() => {
         client.removeEventHandler(eventHandler);
         reject({ status: false, resultado: 'Tempo de espera esgotado' });
-      }, 30000);
+      }, 30000); // 30 segundos
     });
 
     const resultado = await handleResponse;
+    console.log('Resposta recebida antes do timeout:', resultado);
     return res.json(resultado);
 
   } catch (err) {
     console.error('Erro na rota /spamff:', err);
-    if (!res.headersSent) res.json({ status: false, resultado: 'Erro interno do servidor.' });
+    if (!res.headersSent) {
+      return res.json({ status: false, resultado: 'Erro interno do servidor.' });
+    }
   }
-});
-router.get('/spamconvite', async (req, res) => {
-try {
-const id = req.query.id;
-if (!id) return res.json({ status: false, resultado: 'Cadê o parâmetro id?' });
-
-console.log(`[SPAM CONVITE]: ID = ${id}`);  
-await client.sendMessage(grupoChatId, { message: `/spamvip ${id}` });  
-
-const handleResponse = new Promise((resolve, reject) => {  
-  let primeiraMensagem = null;  
-
-  const eventHandler = async (event) => {  
-    const message = event.message?.message;  
-    if (!message) return;  
-    console.log('Nova mensagem recebida:', message);  
-
-    if (!primeiraMensagem) {  
-      primeiraMensagem = message;  
-      client.removeEventHandler(eventHandler);  
-      resolve({ status: true, resultado: primeiraMensagem });  
-    }  
-  };  
-
-  client.addEventHandler(eventHandler, new NewMessage({}));  
-
-  setTimeout(() => {  
-    client.removeEventHandler(eventHandler);  
-    reject({ status: false, resultado: 'Tempo de espera esgotado' });  
-  }, 30000);  
-});  
-
-const resultado = await handleResponse;  
-return res.json(resultado);
-
-} catch (err) {
-console.error('Erro na rota /spamconvite:', err);
-if (!res.headersSent) res.json({ status: false, resultado: 'Erro interno do servidor.' });
-}
-});
-
-// ======== /spamsala ========
-
-router.get('/spamsala', async (req, res) => {
-  try {
-    const uid = req.query.uid;
-    const senha = req.query.senha;
-
-    if (!uid || !senha)
-      return res.json({ status: false, resultado: 'Cadê os parâmetros uid e senha?' });
-
-    console.log(`[SPAM SALA]: UID = ${uid}, Senha = ${senha}`);
-    await client.sendMessage(grupoChatId, { message: `/spamsala ${uid} ${senha}` });  
-
-const handleResponse = new Promise((resolve, reject) => {  
-  let primeiraMensagem = null;  
-
-  const eventHandler = async (event) => {  
-    const message = event.message?.message;  
-    if (!message) return;  
-    console.log('Nova mensagem recebida:', message);  
-
-    if (!primeiraMensagem) {  
-      primeiraMensagem = message;  
-      client.removeEventHandler(eventHandler);  
-      resolve({ status: true, resultado: primeiraMensagem });  
-    }  
-  };  
-
-  client.addEventHandler(eventHandler, new NewMessage({}));  
-
-  setTimeout(() => {  
-    client.removeEventHandler(eventHandler);  
-    reject({ status: false, resultado: 'Tempo de espera esgotado' });  
-  }, 30000);  
-});  
-
-const resultado = await handleResponse;  
-return res.json(resultado);
-
-} catch (err) {
-console.error('Erro na rota /spamsala:', err);
-if (!res.headersSent) res.json({ status: false, resultado: 'Erro interno do servidor.' });
-}
 });
 
 
@@ -15623,92 +14885,43 @@ router.get('/email', async (req, res) => {
     }
 });
 
+// Função para buscar áudio no MyInstants
 async function myinstants(query) {
-  // 🔧 Configuração correta do Chromium
-  const browser = await puppeteer.launch({
-    args: chromium.args,
-    defaultViewport: chromium.defaultViewport,
-    executablePath: await chromium.executablePath(),
-    headless: chromium.headless,
-  });
+    const user = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36';
+    const html = await axios.get('https://www.myinstants.com/pt/search/?name=' + encodeURIComponent(query), {
+        headers: {
+            'user-Agent': user,
+            'accept-language': "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7"
+        }
+    }).then(response => response.data);
 
-  const page = await browser.newPage();
-
-  await page.setUserAgent(
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) ' +
-    'AppleWebKit/537.36 (KHTML, like Gecko) ' +
-    'Chrome/120.0 Safari/537.36'
-  );
-
-  const url =
-    'https://www.myinstants.com/pt/search/?name=' +
-    encodeURIComponent(query);
-
-  await page.goto(url, {
-    waitUntil: 'networkidle2',
-    timeout: 60000,
-  });
-
-  // ⏳ Garante que os instants carregaram
-  await page.waitForSelector('#instants_container', { timeout: 30000 });
-
-  const html = await page.content();
-  await browser.close();
-
-  // 🧠 Parse do HTML
-  const $ = cheerio.load(html);
-  const results = [];
-
-  $('#instants_container .instant').each((_, elem) => {
-    const button = $(elem).find('button.small-button');
-    const link = $(elem).find('a.instant-link');
-
-    const onclick = button.attr('onclick');
-    if (!onclick) return;
-
-    const match = onclick.match(/play\('([^']+)'/);
-    if (!match) return;
-
-    const audio = 'https://www.myinstants.com' + match[1];
-    const title =
-      link.text().trim() ||
-      button.attr('title')?.replace('Tocar o som de ', '');
-
-    results.push({ title, audio });
-  });
-
-  return results;
+    const $ = cheerio.load(html);
+    const results = [];
+    $('#instants_container > .instants.result-page > .instant').each((i, elem) => {
+        const title = $(elem).find('button.small-button').attr('title').replace("Tocar o som de ", '');
+        const audio = "https://www.myinstants.com" + $(elem).find('button.small-button').attr('onclick').split("play('")[1].split("',")[0];
+        results.push({ title, audio });
+    });
+    return results;
 }
 
-/**
- * Rota da API
- */
+
+
+// Define a rota para buscar áudios
 router.get('/audiomeme', async (req, res) => {
-  const { query } = req.query;
-
-  if (!query) {
-    return res.status(400).json({
-      status: false,
-      message: 'O parâmetro query é obrigatório.',
-    });
-  }
-
-  try {
-    const results = await myinstants(query);
-
-    return res.json({
-      status: true,
-      total: results.length,
-      results,
-    });
-  } catch (err) {
-    console.error('[MYINSTANTS ERROR]', err);
-
-    return res.status(500).json({
-      status: false,
-      message: 'Erro ao buscar áudio.',
-    });
-  }
+    const { query } = req.query;
+    
+    if (!query) {
+        return res.status(400).json({ status: false, message: 'O parâmetro query é obrigatório.' });
+    }
+    
+    try {
+        const results = await myinstants(query);
+        return res.json({ status: true, results });
+    } catch (error) {
+        console.error('Erro ao buscar áudio:', error);
+        return res.status(500).json({ status: false, message: 'Erro no servidor interno.' });
+    }
 });
 
 router.get('/horoscopo/:signo', async (req, res) => {
@@ -15782,7 +14995,7 @@ router.get('/printsite', async (req, res) => {
         const { url } = req.query;
         if (!url) return res.json({ status: false, message: 'Faltando parâmetro url' });
 
-        const printsiteLink = `https://api.bronxyshost.com.br/api-bronxys/print_de_site?url=${encodeURIComponent(url)}&apikey=tiomaker8930`;
+        const printsiteLink = `https://api.bronxyshost.com.br/api-bronxys/print_de_site?url=${encodeURIComponent(url)}&apikey=KEY-TEMPORARIA-TELEGRAM-ALEATORY`;
         const response = await axios.get(printsiteLink, { responseType: 'arraybuffer' });
 
         res.set('Content-Type', 'image/png'); // Ajuste o tipo conforme o formato da imagem
@@ -15964,49 +15177,7 @@ router.get('/figu_roblox', async (req, res) => {
     }
 });
 
-router.get("/pobreflix", async (req, res) => {
-  const query = req.query.query;
-  if (!query) return res.json({ erro: "Use /pobreflix?query=NomeDoFilme" });
 
-  try {
-    const url = `https://www.pobreflix.chat/?s=${encodeURIComponent(query)}`;
-    const response = await fetch(url);
-    const html = await response.text();
-    const $ = cheerio.load(html);
-
-    const resultados = [];
-
-    $(".result-item").each((i, el) => {
-      const titulo = $(el).find(".title a").text().trim();
-      const link = $(el).find(".title a").attr("href");
-      const imagem = $(el).find(".thumbnail img").attr("src");
-      const imdb = $(el).find(".rating").text().trim() || "N/A";
-      const ano = $(el).find(".year").text().trim() || "N/A";
-      const descricao = $(el).find(".contenido p").text().trim() || "Sem descrição.";
-
-      resultados.push({
-        titulo,
-        link,
-        imagem: imagem?.startsWith("http") ? imagem : `https://www.pobreflix.chat/${imagem}`,
-        imdb,
-        ano,
-        descricao,
-      });
-    });
-
-    const tituloPagina = $("h1").text().trim() || "Nenhum título encontrado";
-
-    res.json({
-      pesquisa: query,
-      tituloPagina,
-      total: resultados.length,
-      resultados,
-    });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ erro: "Erro ao buscar dados do Pobreflix" });
-  }
-});
 
 router.get('/filme', async (req, res) => {
     try {

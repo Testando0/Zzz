@@ -9,11 +9,12 @@
   "author": "Redzin",
   "license": "MIT",
   "dependencies": {
-    "express": "",
     "axios": "",
     "node-fetch": "^2.6.11",
-    "yt-search": "",
+    "dependencies": {
     "youtubei.js": "latest",
+    "yt-search": "latest",
+    "express": "latest",
     "request": "",
     "node-fetch": "",
     "linkifyjs": "",

@@ -51,6 +51,15 @@ const getImageBuffer = async (url) => {
         throw new Error('Erro ao buscar imagem.');
     }
 };
+const { Innertube } = require('youtubei.js');
+let ytStreamer;
+
+async function initYouTube() {
+    if (!ytStreamer) {
+        ytStreamer = await Innertube.create();
+    }
+    return ytStreamer;
+}
 const API_KEY = "sk_55253a1928f65a03e8c680b002b1d5bf270044112e99516c";
 const ELEVEN_API = "https://api.elevenlabs.io/v1/text-to-speech";
 
@@ -763,70 +772,41 @@ router.get("/linkmp4", async (req, res) => {
   }
 });
 
-// ======================================================
-// ROTAS DE DOWNLOAD (PESQUISA + STREAMING)
-// ======================================================
-const { Innertube } = require('youtubei.js');
-
-// ROTA ATUALIZADA: 100% NATIVA E SEM PROXY/COOKIE
-router.get("/yt-audio", async (req, res) => {
-    const query = req.query.query || req.query.name;
-    
-    if (!query) {
-        return res.status(400).json({ 
-            status: false, 
-            criador: criador, // Variável já definida no seu código
-            error: 'Parâmetro "query" ou "name" não fornecido' 
-        });
-    }
+router.get('/yt-audio', async (req, res) => {
+    const nome = req.query.nome;
+    if (!nome) return res.status(400).json({ error: 'Falta o nome da música.' });
 
     try {
-        console.log(`[SISTEMA-NATIVO] Buscando música: ${query}`);
+        const yt = await initYouTube();
 
-        // Inicializa o cliente que emula um dispositivo Android oficial
-        const ytClient = await Innertube.create();
-        const busca = await ytClient.search(query, { type: 'video' });
-        const video = busca.videos[0];
+        // 1. Faz a busca do vídeo
+        const search = await yt.search(nome);
+        const video = search.videos[0];
 
-        if (!video) {
-            return res.status(404).json({ status: false, error: 'Música não encontrada no YouTube.' });
-        }
+        if (!video) return res.status(404).json({ error: 'Música não encontrada.' });
 
-        const tituloSanitizado = video.title.text.replace(/[^\w\s-]/gi, '').trim();
-        console.log(`[SISTEMA-NATIVO] Iniciando stream de: ${video.title.text}`);
+        // 2. Obtém o stream diretamente
+        // Nota: 'type: audio' e 'format: mp4' é a combinação mais estável hoje
+        const stream = await yt.download(video.id, {
+            type: 'audio',
+            quality: 'best',
+            format: 'mp4'
+        });
 
-        // Prepara os headers para o navegador do usuário baixar como MP3
-        res.setHeader('Content-Disposition', `attachment; filename="${tituloSanitizado}.mp3"`);
+        // 3. Configura o cabeçalho para o utilizador receber o ficheiro
         res.setHeader('Content-Type', 'audio/mpeg');
+        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(video.title)}.mp3"`);
 
-        // Obtém o stream de áudio usando a tecnologia InnerTube (Android Client)
-        const info = await ytClient.getBasicInfo(video.id);
-        const format = info.chooseFormat({ type: 'audio', quality: 'best' });
-        const stream = await info.download({ format: format });
-
-        // Usa o FFmpeg que já está no seu package.json para converter o fluxo em MP3 real
-        ffmpeg(stream)
-            .audioBitrate(128)
-            .audioCodec('libmp3lame')
-            .format('mp3')
-            .on('error', (err) => {
-                console.error('[ERRO-CONVERSÃO]', err.message);
-                if (!res.headersSent) res.end();
-            })
-            .on('end', () => {
-                console.log(`[SISTEMA-NATIVO] Download concluído: ${tituloSanitizado}`);
-            })
-            .pipe(res, { end: true });
+        // 4. Envia os dados (Chunks) para o cliente
+        for await (const chunk of stream) {
+            res.write(chunk);
+        }
+        res.end();
 
     } catch (error) {
-        console.error('[ERRO-CRÍTICO]', error.message);
+        console.error('Erro no download:', error);
         if (!res.headersSent) {
-            res.status(500).json({ 
-                status: false, 
-                criador: criador,
-                error: 'Ocorreu um erro ao processar o áudio. Tente novamente.',
-                detalhes: error.message 
-            });
+            res.status(500).json({ error: 'Erro ao processar o áudio.' });
         }
     }
 });

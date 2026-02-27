@@ -56,10 +56,12 @@ let ytStreamer;
 
 async function initYouTube() {
     if (!ytStreamer) {
-        ytStreamer = await Innertube.create();
+        // Usamos o cliente 'ANDROID' para evitar o erro 403 (Forbidden)
+        ytStreamer = await Innertube.create({ client_type: 'ANDROID' });
     }
     return ytStreamer;
 }
+
 const API_KEY = "sk_55253a1928f65a03e8c680b002b1d5bf270044112e99516c";
 const ELEVEN_API = "https://api.elevenlabs.io/v1/text-to-speech";
 
@@ -779,34 +781,42 @@ router.get('/yt-audio', async (req, res) => {
     try {
         const yt = await initYouTube();
 
-        // 1. Faz a busca do vídeo
-        const search = await yt.search(nome);
+        // 1. Busca detalhada
+        const search = await yt.search(nome, { type: 'video' });
         const video = search.videos[0];
 
-        if (!video) return res.status(404).json({ error: 'Música não encontrada.' });
+        if (!video) {
+            return res.status(404).json({ error: 'Música não encontrada no YouTube.' });
+        }
 
-        // 2. Obtém o stream diretamente
-        // Nota: 'type: audio' e 'format: mp4' é a combinação mais estável hoje
+        // 2. Tenta obter o stream
+        // Se der erro aqui, o console vai dizer o motivo real
         const stream = await yt.download(video.id, {
             type: 'audio',
             quality: 'best',
             format: 'mp4'
         });
 
-        // 3. Configura o cabeçalho para o utilizador receber o ficheiro
+        // 3. Headers para download forçado
         res.setHeader('Content-Type', 'audio/mpeg');
         res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(video.title)}.mp3"`);
 
-        // 4. Envia os dados (Chunks) para o cliente
+        // 4. Pipe dos dados
         for await (const chunk of stream) {
             res.write(chunk);
         }
         res.end();
 
     } catch (error) {
-        console.error('Erro no download:', error);
+        // ISSO VAI APARECER NO SEU TERMINAL/LOG
+        console.error('--- ERRO CRÍTICO NO DOWNLOAD ---');
+        console.error('Mensagem:', error.message);
+        
         if (!res.headersSent) {
-            res.status(500).json({ error: 'Erro ao processar o áudio.' });
+            res.status(500).json({ 
+                error: 'Erro ao processar o áudio.', 
+                motivo: error.message.includes('403') ? 'O YouTube bloqueou a requisição (403)' : 'Erro interno'
+            });
         }
     }
 });

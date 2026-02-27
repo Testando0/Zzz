@@ -766,41 +766,69 @@ router.get("/linkmp4", async (req, res) => {
 // ======================================================
 // ROTAS DE DOWNLOAD (PESQUISA + STREAMING)
 // ======================================================
+const { ytexec } = require('yt-dlp-exec');
 
-// Rota de Áudio: /play?nome=musica
-router.get('/yt-audio', async (req, res) => {
-    const { nome } = req.query;
-    if (!nome) return res.status(400).json({ error: 'Falta o nome da música.' });
+router.get("/yt-audio", async (req, res) => {
+  // Mantive a compatibilidade para os dois parâmetros que você usava nas rotas anteriores
+  const name = req.query.name || req.query.query;
+  
+  if (!name) {
+      return res.status(400).json({ error: 'Informe ?name= ou Parâmetro "query" não fornecido' });
+  }
 
-    try {
-        // Faz a pesquisa
-        const resultado = await search(nome);
-        const video = resultado.videos[0];
-        if (!video) return res.status(404).json({ error: 'Nenhum vídeo encontrado.' });
-
-        const titulo = video.title.replace(/[^\w\s]/gi, '');
-
-        // Configura os Headers para Download
-        res.setHeader('Content-Disposition', `attachment; filename="${titulo}.mp3"`);
-        res.setHeader('Content-Type', 'audio/mpeg');
-
-        // Stream direto com opções de request para evitar bloqueio
-        yt(video.url, {
-            filter: 'audioonly',
-            quality: 'highestaudio',
-            requestOptions: {
-                headers: {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
-                }
-            }
-        }).pipe(res).on('error', (err) => {
-            console.error(err);
-            if (!res.headersSent) res.status(500).send('Erro ao baixar áudio.');
-        });
-
-    } catch (e) {
-        res.status(500).json({ error: e.message });
+  try {
+    console.log("[musica] Buscando:", name);
+    
+    // Busca o vídeo no YouTube usando o módulo que você já possui (yt-search)
+    const r = await ytSearch(name);
+    const video = r.videos.length ? r.videos[0] : null;
+    
+    if (!video) {
+        return res.status(404).send("Nenhum vídeo encontrado no YouTube");
     }
+
+    console.log("[musica] Vídeo encontrado:", video.title);
+
+    // Sanitização para evitar erros de caracteres especiais no nome do arquivo
+    const tituloSanitizado = video.title.replace(/[^\w\s-]/gi, '').trim();
+
+    // Configura os Headers para forçar o download direto no navegador/aplicativo do usuário
+    res.setHeader('Content-Disposition', `attachment; filename="${tituloSanitizado}.mp3"`);
+    res.setHeader('Content-Type', 'audio/mpeg');
+    res.setHeader('Transfer-Encoding', 'chunked');
+
+    // Executa o yt-dlp extraindo o áudio da melhor qualidade diretamente para a memória
+    const ytDlpProcess = ytexec(video.url, {
+        extractAudio: true,
+        audioFormat: 'mp3',
+        audioQuality: 0, 
+        output: '-', // O segredo para o Render: joga a saída em fluxo, sem salvar no disco
+        noCheckCertificates: true,
+        noWarnings: true,
+        preferFreeFormats: true,
+        addHeader: ['referer:youtube.com', 'user-agent:googlebot']
+    }, { stdio: ['ignore', 'pipe', 'ignore'] });
+
+    // Conecta a saída da conversão diretamente à resposta (res) do seu servidor
+    ytDlpProcess.stdout.pipe(res);
+
+    ytDlpProcess.stdout.on('end', () => {
+        console.log(`[musica] Stream concluído com sucesso: ${video.title}`);
+    });
+
+    ytDlpProcess.on('error', (err) => {
+        console.error("[musica] Erro no processo do yt-dlp:", err.message);
+        if (!res.headersSent) {
+            res.status(500).json({ erro: err.message, details: 'Erro ao buscar áudio do YouTube' });
+        }
+    });
+
+  } catch (err) {
+    console.error("[musica] Erro geral:", err.message);
+    if (!res.headersSent) {
+        return res.status(500).json({ erro: err.message, details: 'Erro ao buscar áudio do YouTube' });
+    }
+  }
 });
 
 // Rota de Vídeo: /video?nome=video

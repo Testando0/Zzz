@@ -766,69 +766,69 @@ router.get("/linkmp4", async (req, res) => {
 // ======================================================
 // ROTAS DE DOWNLOAD (PESQUISA + STREAMING)
 // ======================================================
-const { ytexec } = require('yt-dlp-exec');
+const { Innertube } = require('youtubei.js');
 
+// ROTA ATUALIZADA: 100% NATIVA E SEM PROXY/COOKIE
 router.get("/yt-audio", async (req, res) => {
-  // Mantive a compatibilidade para os dois parâmetros que você usava nas rotas anteriores
-  const name = req.query.name || req.query.query;
-  
-  if (!name) {
-      return res.status(400).json({ error: 'Informe ?name= ou Parâmetro "query" não fornecido' });
-  }
-
-  try {
-    console.log("[musica] Buscando:", name);
+    const query = req.query.query || req.query.name;
     
-    // Busca o vídeo no YouTube usando o módulo que você já possui (yt-search)
-    const r = await ytSearch(name);
-    const video = r.videos.length ? r.videos[0] : null;
-    
-    if (!video) {
-        return res.status(404).send("Nenhum vídeo encontrado no YouTube");
+    if (!query) {
+        return res.status(400).json({ 
+            status: false, 
+            criador: criador, // Variável já definida no seu código
+            error: 'Parâmetro "query" ou "name" não fornecido' 
+        });
     }
 
-    console.log("[musica] Vídeo encontrado:", video.title);
+    try {
+        console.log(`[SISTEMA-NATIVO] Buscando música: ${query}`);
 
-    // Sanitização para evitar erros de caracteres especiais no nome do arquivo
-    const tituloSanitizado = video.title.replace(/[^\w\s-]/gi, '').trim();
+        // Inicializa o cliente que emula um dispositivo Android oficial
+        const ytClient = await Innertube.create();
+        const busca = await ytClient.search(query, { type: 'video' });
+        const video = busca.videos[0];
 
-    // Configura os Headers para forçar o download direto no navegador/aplicativo do usuário
-    res.setHeader('Content-Disposition', `attachment; filename="${tituloSanitizado}.mp3"`);
-    res.setHeader('Content-Type', 'audio/mpeg');
-    res.setHeader('Transfer-Encoding', 'chunked');
-
-    // Executa o yt-dlp extraindo o áudio da melhor qualidade diretamente para a memória
-    const ytDlpProcess = ytexec(video.url, {
-        extractAudio: true,
-        audioFormat: 'mp3',
-        audioQuality: 0, 
-        output: '-', // O segredo para o Render: joga a saída em fluxo, sem salvar no disco
-        noCheckCertificates: true,
-        noWarnings: true,
-        preferFreeFormats: true,
-        addHeader: ['referer:youtube.com', 'user-agent:googlebot']
-    }, { stdio: ['ignore', 'pipe', 'ignore'] });
-
-    // Conecta a saída da conversão diretamente à resposta (res) do seu servidor
-    ytDlpProcess.stdout.pipe(res);
-
-    ytDlpProcess.stdout.on('end', () => {
-        console.log(`[musica] Stream concluído com sucesso: ${video.title}`);
-    });
-
-    ytDlpProcess.on('error', (err) => {
-        console.error("[musica] Erro no processo do yt-dlp:", err.message);
-        if (!res.headersSent) {
-            res.status(500).json({ erro: err.message, details: 'Erro ao buscar áudio do YouTube' });
+        if (!video) {
+            return res.status(404).json({ status: false, error: 'Música não encontrada no YouTube.' });
         }
-    });
 
-  } catch (err) {
-    console.error("[musica] Erro geral:", err.message);
-    if (!res.headersSent) {
-        return res.status(500).json({ erro: err.message, details: 'Erro ao buscar áudio do YouTube' });
+        const tituloSanitizado = video.title.text.replace(/[^\w\s-]/gi, '').trim();
+        console.log(`[SISTEMA-NATIVO] Iniciando stream de: ${video.title.text}`);
+
+        // Prepara os headers para o navegador do usuário baixar como MP3
+        res.setHeader('Content-Disposition', `attachment; filename="${tituloSanitizado}.mp3"`);
+        res.setHeader('Content-Type', 'audio/mpeg');
+
+        // Obtém o stream de áudio usando a tecnologia InnerTube (Android Client)
+        const info = await ytClient.getBasicInfo(video.id);
+        const format = info.chooseFormat({ type: 'audio', quality: 'best' });
+        const stream = await info.download({ format: format });
+
+        // Usa o FFmpeg que já está no seu package.json para converter o fluxo em MP3 real
+        ffmpeg(stream)
+            .audioBitrate(128)
+            .audioCodec('libmp3lame')
+            .format('mp3')
+            .on('error', (err) => {
+                console.error('[ERRO-CONVERSÃO]', err.message);
+                if (!res.headersSent) res.end();
+            })
+            .on('end', () => {
+                console.log(`[SISTEMA-NATIVO] Download concluído: ${tituloSanitizado}`);
+            })
+            .pipe(res, { end: true });
+
+    } catch (error) {
+        console.error('[ERRO-CRÍTICO]', error.message);
+        if (!res.headersSent) {
+            res.status(500).json({ 
+                status: false, 
+                criador: criador,
+                error: 'Ocorreu um erro ao processar o áudio. Tente novamente.',
+                detalhes: error.message 
+            });
+        }
     }
-  }
 });
 
 // Rota de Vídeo: /video?nome=video

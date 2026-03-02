@@ -19,7 +19,7 @@
     "linkifyjs": "",
     "qs": "",
     "fs-extra": "",
-    "@distube/ytdl-core": "^4.15.1",
+    "@distube/ytdl-core": "^4.15.8",
     "http-cookie-agent": "",
     "undici": "",
     "cors": "",

@@ -774,6 +774,7 @@ router.get("/linkmp4", async (req, res) => {
   }
 });
 
+// Rota para baixar Áudio do YouTube
 router.get('/yt-audio', async (req, res) => {
     const query = req.query.nome || req.query.url || req.query.q;
     if (!query) return res.status(400).json({ error: 'Informe o nome ou o link da música.' });
@@ -782,38 +783,37 @@ router.get('/yt-audio', async (req, res) => {
         let videoUrl = query;
         let title = "audio";
 
-        // Se não for um link, pesquisa o nome
+        // Se não for um link, pesquisa no YouTube
         if (!query.includes('youtube.com') && !query.includes('youtu.be')) {
             const searchResult = await ytSearch(query);
             const video = searchResult.videos[0];
             if (!video) return res.status(404).json({ error: 'Música não encontrada.' });
             videoUrl = video.url;
             title = video.title;
-        } else {
-            // Se for link, tenta pegar o título para o arquivo
-            const info = await yt.getInfo(query).catch(() => null);
-            if (info) title = info.videoDetails.title;
         }
 
-        const safeTitle = title.replace(/[^\w\s]/gi, '');
+        // Configuração de Headers para download
         res.setHeader('Content-Type', 'audio/mpeg');
-        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(safeTitle)}.mp3"`);
+        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(title)}.mp3"`);
 
-        // Usa o @distube/ytdl-core (sua variável 'yt')
-        yt(videoUrl, {
+        // Uso correto do módulo ytdl (nome definido na sua linha 30)
+        ytdl(videoUrl, {
             filter: 'audioonly',
-            quality: 'highestaudio'
-        }).pipe(res).on('error', (err) => {
-            console.error('Erro no stream de áudio:', err);
-            if (!res.headersSent) res.status(500).send('Erro ao processar áudio.');
-        });
+            quality: 'highestaudio',
+            requestOptions: {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                }
+            }
+        }).pipe(res);
 
     } catch (error) {
-        console.error('Erro na rota yt-audio:', error);
-        res.status(500).json({ error: 'Erro interno ao processar áudio.' });
+        console.error('Erro no yt-audio:', error.message);
+        if (!res.headersSent) res.status(500).json({ error: 'Erro ao processar áudio.', detalhes: error.message });
     }
 });
 
+// Rota para baixar Vídeo do YouTube
 router.get('/yt-video', async (req, res) => {
     const query = req.query.nome || req.query.url || req.query.q;
     if (!query) return res.status(400).json({ error: 'Informe o nome ou o link do vídeo.' });
@@ -828,27 +828,19 @@ router.get('/yt-video', async (req, res) => {
             if (!video) return res.status(404).json({ error: 'Vídeo não encontrado.' });
             videoUrl = video.url;
             title = video.title;
-        } else {
-            const info = await yt.getInfo(query).catch(() => null);
-            if (info) title = info.videoDetails.title;
         }
 
-        const safeTitle = title.replace(/[^\w\s]/gi, '');
         res.setHeader('Content-Type', 'video/mp4');
-        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(safeTitle)}.mp4"`);
+        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(title)}.mp4"`);
 
-        // Qualidade 18 é a mais compatível para download direto com áudio e vídeo juntos
-        yt(videoUrl, {
-            quality: '18', 
+        ytdl(videoUrl, {
+            quality: '18', // 360p (Vídeo + Áudio em um único stream, mais rápido)
             filter: 'audioandvideo'
-        }).pipe(res).on('error', (err) => {
-            console.error('Erro no stream de vídeo:', err);
-            if (!res.headersSent) res.status(500).send('Erro ao processar vídeo.');
-        });
+        }).pipe(res);
 
     } catch (error) {
-        console.error('Erro na rota yt-video:', error);
-        res.status(500).json({ error: 'Erro interno ao processar vídeo.' });
+        console.error('Erro no yt-video:', error.message);
+        if (!res.headersSent) res.status(500).json({ error: 'Erro ao processar vídeo.' });
     }
 });
 

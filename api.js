@@ -774,17 +774,16 @@ router.get("/linkmp4", async (req, res) => {
   }
 });
 
-// Rota para baixar Áudio do YouTube
 router.get('/yt-audio', async (req, res) => {
     const query = req.query.nome || req.query.url || req.query.q;
-    if (!query) return res.status(400).json({ error: 'Informe o nome ou o link da música.' });
+    if (!query) return res.status(400).json({ error: 'Informe o nome ou o link.' });
 
     try {
         let videoUrl = query;
         let title = "audio";
 
-        // Se não for um link, pesquisa no YouTube
         if (!query.includes('youtube.com') && !query.includes('youtu.be')) {
+            console.log(`[Crisálida] Pesquisando áudio: ${query}`);
             const searchResult = await ytSearch(query);
             const video = searchResult.videos[0];
             if (!video) return res.status(404).json({ error: 'Música não encontrada.' });
@@ -792,24 +791,32 @@ router.get('/yt-audio', async (req, res) => {
             title = video.title;
         }
 
-        // Configuração de Headers para download
+        console.log(`[Crisálida] Iniciando stream de áudio para: ${title}`);
+        
         res.setHeader('Content-Type', 'audio/mpeg');
         res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(title)}.mp3"`);
 
-        // Uso correto do módulo ytdl (nome definido na sua linha 30)
-        ytdl(videoUrl, {
+        // Usando ytdl (nome que está na sua linha 27)
+        const stream = ytdl(videoUrl, {
             filter: 'audioonly',
             quality: 'highestaudio',
             requestOptions: {
                 headers: {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                 }
             }
-        }).pipe(res);
+        });
+
+        stream.pipe(res);
+
+        stream.on('error', (err) => {
+            console.error('[Crisálida] Erro no stream:', err.message);
+            if (!res.headersSent) res.status(500).send('Erro no download.');
+        });
 
     } catch (error) {
-        console.error('Erro no yt-audio:', error.message);
-        if (!res.headersSent) res.status(500).json({ error: 'Erro ao processar áudio.', detalhes: error.message });
+        console.error('[Crisálida] Erro geral na rota:', error.message);
+        res.status(500).json({ error: 'Erro interno.' });
     }
 });
 

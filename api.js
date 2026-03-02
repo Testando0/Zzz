@@ -23,7 +23,7 @@ const fetch = require("node-fetch");
 const puppeteer = require("puppeteer-core");
 const chromium = require("@sparticuz/chromium");
 const chatCopilot = require('unofficial-copilot-api/src/copilot.js');
-const yt = require('@distube/ytdl-core');
+const ytdl = require('@distube/ytdl-core');
 const criador = 'Redzin';
 const { exec } = require('child_process');
 const sharp = require('sharp'); // Biblioteca para conversão WebP
@@ -775,82 +775,80 @@ router.get("/linkmp4", async (req, res) => {
 });
 
 router.get('/yt-audio', async (req, res) => {
-    const nome = req.query.nome;
-    if (!nome) return res.status(400).json({ error: 'Falta o nome da música.' });
+    const query = req.query.nome || req.query.url || req.query.q;
+    if (!query) return res.status(400).json({ error: 'Informe o nome ou o link da música.' });
 
     try {
-        const yt = await initYouTube();
+        let videoUrl = query;
+        let title = "audio";
 
-        // 1. Busca detalhada
-        const search = await yt.search(nome, { type: 'video' });
-        const video = search.videos[0];
-
-        if (!video) {
-            return res.status(404).json({ error: 'Música não encontrada no YouTube.' });
+        // Se não for um link, pesquisa o nome
+        if (!query.includes('youtube.com') && !query.includes('youtu.be')) {
+            const searchResult = await ytSearch(query);
+            const video = searchResult.videos[0];
+            if (!video) return res.status(404).json({ error: 'Música não encontrada.' });
+            videoUrl = video.url;
+            title = video.title;
+        } else {
+            // Se for link, tenta pegar o título para o arquivo
+            const info = await yt.getInfo(query).catch(() => null);
+            if (info) title = info.videoDetails.title;
         }
 
-        // 2. Tenta obter o stream
-        // Se der erro aqui, o console vai dizer o motivo real
-        const stream = await yt.download(video.id, {
-            type: 'audio',
-            quality: 'best',
-            format: 'mp4'
+        const safeTitle = title.replace(/[^\w\s]/gi, '');
+        res.setHeader('Content-Type', 'audio/mpeg');
+        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(safeTitle)}.mp3"`);
+
+        // Usa o @distube/ytdl-core (sua variável 'yt')
+        yt(videoUrl, {
+            filter: 'audioonly',
+            quality: 'highestaudio'
+        }).pipe(res).on('error', (err) => {
+            console.error('Erro no stream de áudio:', err);
+            if (!res.headersSent) res.status(500).send('Erro ao processar áudio.');
         });
 
-        // 3. Headers para download forçado
-        res.setHeader('Content-Type', 'audio/mpeg');
-        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(video.title)}.mp3"`);
-
-        // 4. Pipe dos dados
-        for await (const chunk of stream) {
-            res.write(chunk);
-        }
-        res.end();
-
     } catch (error) {
-        // ISSO VAI APARECER NO SEU TERMINAL/LOG
-        console.error('--- ERRO CRÍTICO NO DOWNLOAD ---');
-        console.error('Mensagem:', error.message);
-        
-        if (!res.headersSent) {
-            res.status(500).json({ 
-                error: 'Erro ao processar o áudio.', 
-                motivo: error.message.includes('403') ? 'O YouTube bloqueou a requisição (403)' : 'Erro interno'
-            });
-        }
+        console.error('Erro na rota yt-audio:', error);
+        res.status(500).json({ error: 'Erro interno ao processar áudio.' });
     }
 });
 
-// Rota de Vídeo: /video?nome=video
 router.get('/yt-video', async (req, res) => {
-    const { nome } = req.query;
-    if (!nome) return res.status(400).json({ error: 'Falta o nome do vídeo.' });
+    const query = req.query.nome || req.query.url || req.query.q;
+    if (!query) return res.status(400).json({ error: 'Informe o nome ou o link do vídeo.' });
 
     try {
-        const resultado = await search(nome);
-        const video = resultado.videos[0];
-        if (!video) return res.status(404).json({ error: 'Vídeo não encontrado.' });
+        let videoUrl = query;
+        let title = "video";
 
-        const titulo = video.title.replace(/[^\w\s]/gi, '');
+        if (!query.includes('youtube.com') && !query.includes('youtu.be')) {
+            const searchResult = await ytSearch(query);
+            const video = searchResult.videos[0];
+            if (!video) return res.status(404).json({ error: 'Vídeo não encontrado.' });
+            videoUrl = video.url;
+            title = video.title;
+        } else {
+            const info = await yt.getInfo(query).catch(() => null);
+            if (info) title = info.videoDetails.title;
+        }
 
-        res.setHeader('Content-Disposition', `attachment; filename="${titulo}.mp4"`);
+        const safeTitle = title.replace(/[^\w\s]/gi, '');
         res.setHeader('Content-Type', 'video/mp4');
+        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(safeTitle)}.mp4"`);
 
-        // Qualidade 18 é a mais estável para evitar erros de cifra do YouTube
-        yt(video.url, {
-            quality: '18',
-            requestOptions: {
-                headers: {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
-                }
-            }
+        // Qualidade 18 é a mais compatível para download direto com áudio e vídeo juntos
+        yt(videoUrl, {
+            quality: '18', 
+            filter: 'audioandvideo'
         }).pipe(res).on('error', (err) => {
-            console.error(err);
-            if (!res.headersSent) res.status(500).send('Erro ao baixar vídeo.');
+            console.error('Erro no stream de vídeo:', err);
+            if (!res.headersSent) res.status(500).send('Erro ao processar vídeo.');
         });
 
-    } catch (e) {
-        res.status(500).json({ error: e.message });
+    } catch (error) {
+        console.error('Erro na rota yt-video:', error);
+        res.status(500).json({ error: 'Erro interno ao processar vídeo.' });
     }
 });
 

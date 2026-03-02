@@ -9,7 +9,7 @@
   "author": "Redzin",
   "license": "MIT",
   "dependencies": {
-    "axios": "",
+    "axios": "latest",
     "node-fetch": "^2.6.11",
     "youtubei.js": "latest",
     "yt-search": "latest",
@@ -19,7 +19,7 @@
     "linkifyjs": "",
     "qs": "",
     "fs-extra": "",
-    "@distube/ytdl-core": "https://github.com/distubejs/ytdl-core.git",
+    "@distube/ytdl-core": "^4.15.1",
     "http-cookie-agent": "",
     "undici": "",
     "cors": "",

@@ -611,244 +611,186 @@ router.get('/boneco', async (req, res) => {
   }
 });
 
-async function getAny4kLink(videoUrl, tipo) {
-  console.log(`[${tipo}] Processando URL:`, videoUrl);
+// ===================
+// APIS CONFIGURADAS
+// ===================
+const PESQUISA_API = "https://kuromi-system-tech.onrender.com/api/pesquisayt?query=";
+const DOWNLOAD_API = "https://yt-dl.officialhectormanuel.workers.dev/?url=";
 
-  const deviceId = uuidv4().replace(/-/g, "");
-  
-  // 1. CHECAGEM: Obtém metadados e formatos disponíveis
-  console.log(`[${tipo}] Buscando metadados (API check)...`);
-  const { data: checkData } = await axios.post(
-    "https://api.any4k.com/v1/dlp/check",
-    {
-      url: videoUrl,
-      lang: "pt",
-      country: "BR",
-      platform: "Web",
-      deviceId: deviceId
+// ===================
+// FUNÇÃO AUXILIAR: Pesquisa no YouTube pelo nome
+// ===================
+async function pesquisarYouTube(nome) {
+  console.log(`[Kuromi System] Pesquisando: ${nome}`);
+  const { data } = await axios.get(`${PESQUISA_API}${encodeURIComponent(nome)}`);
+
+  if (!data.formattedVideos || data.formattedVideos.length === 0) {
+    throw new Error("Nenhum vídeo encontrado na pesquisa.");
+  }
+
+  const video = data.formattedVideos[0];
+  console.log(`[Kuromi System] Encontrado: ${video.title} | ${video.link}`);
+  return video; // Retorna { link, title, thumbnail, channel, views, creator, duration }
+}
+
+// ===================
+// FUNÇÃO AUXILIAR: Sanitiza nome para uso no filename
+// ===================
+function sanitizarNome(nome) {
+  return nome
+    .replace(/[^\w\s\-áéíóúàèìòùãõâêîôûçÁÉÍÓÚÀÈÌÒÙÃÕÂÊÎÔÛÇ]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// ===================
+// FUNÇÃO AUXILIAR: Faz o proxy/download do arquivo com nome customizado
+// ===================
+async function baixarEEnviar(res, videoUrl, title, tipo) {
+  const nomeArquivo = `${sanitizarNome(title)} -- kuromi system`;
+  const ext = tipo === "audio" ? "mp3" : "mp4";
+  const contentType = tipo === "audio" ? "audio/mpeg" : "video/mp4";
+  const urlDownload = `${DOWNLOAD_API}${encodeURIComponent(videoUrl)}`;
+
+  console.log(`[Kuromi System] Baixando (${tipo}): ${urlDownload}`);
+
+  // Faz o proxy do stream direto para o cliente
+  const response = await axios.get(urlDownload, {
+    responseType: "stream",
+    timeout: 120000,
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     },
-    { headers: { "Content-Type": "application/json" } }
+  });
+
+  // Define os headers de download com o nome da música + kuromi system
+  res.setHeader("Content-Type", contentType);
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename*=UTF-8''${encodeURIComponent(nomeArquivo + "." + ext)}`
   );
 
-  if (checkData.err_code !== 0 || !checkData.data) {
-    throw new Error(`Erro na API Check: ${checkData.err_msg || 'Dados inválidos'}`);
+  // Se o servidor upstream enviar o Content-Length, repassa ao cliente
+  if (response.headers["content-length"]) {
+    res.setHeader("Content-Length", response.headers["content-length"]);
   }
 
-  const videoData = checkData.data;
-  console.log(`[${tipo}] Título encontrado:`, videoData.title);
+  response.data.pipe(res);
 
-  // 2. SELEÇÃO DO ARQUIVO
-  let targetFile = null;
-
-  // Se for música ou linkmp3, pega apenas áudio
-  if (tipo.includes("play-audio") || tipo === "playlink") {
-    // Tenta pegar m4a ou mp3 com maior bitrate
-    if (videoData.raw_audio && videoData.raw_audio.length > 0) {
-        // Pega o primeiro (geralmente melhor qualidade) ou filtra por m4a/mp3
-        targetFile = videoData.raw_audio.find(f => f.ext === 'm4a' || f.ext === 'mp3') || videoData.raw_audio[0];
-    }
-  } else {
-    // Se for clipe ou linkmp4, pega vídeo COM áudio
-    // A lista 'download' geralmente tem vídeo mixado (ex: 720p com som). 
-    // A lista 'raw_video' geralmente é 1080p+ mas SEM SOM (dash).
-    if (videoData.download && videoData.download.length > 0) {
-        // Prioriza mp4
-        targetFile = videoData.download.find(f => f.ext === 'mp4') || videoData.download[0];
-    }
-  }
-
-  if (!targetFile) {
-    throw new Error("Nenhum formato compatível encontrado para este vídeo.");
-  }
-
-  console.log(`[${tipo}] Formato selecionado: ${targetFile.ext} | ID: ${targetFile.id} | Tamanho: ${targetFile.filesize}`);
-
-  // 3. DOWNLOAD: Solicita o link final
-  const { data: downloadData } = await axios.post(
-    "https://api.any4k.com/v1/dlp/download",
-    {
-      url: videoUrl,
-      format: targetFile.id, // O ID do formato escolhido acima
-      lang: "pt",
-      country: "BR",
-      platform: "Web",
-      deviceId: deviceId,
-      sysVer: "1.0.0",
-      appVer: "1.0.0",
-      bundleId: "com.any4k.api"
-    },
-    { headers: { "Content-Type": "application/json" } }
-  );
-
-  if (downloadData.err_code !== 0) {
-    throw new Error(`Erro na API Download: ${downloadData.err_msg}`);
-  }
-
-  // 4. RETORNO DO LINK
-  // O endpoint retorna um ID que deve ser anexado à URL de arquivo
-  const fileUrl = `https://api.any4k.com/v1/file/o?i=${downloadData.data.id}`; // Note que as vezes vem em data.id ou data.data.id, ajustei baseado no padrão comum
-  
-  // Correção baseada no log do seu código original que usava downloadData.id direto. 
-  // Se a API retornar { data: { id: "..." } }, use downloadData.data.id. 
-  // Se retornar { id: "..." } na raiz (menos comum em APIs padronizadas), use downloadData.id.
-  // Vou usar um fallback seguro:
-  const finalId = downloadData.data ? downloadData.data.id : downloadData.id;
-  
-  console.log(`[${tipo}] Link gerado com sucesso.`);
-  return `https://api.any4k.com/v1/file/o?i=${finalId}`;
+  response.data.on("error", (err) => {
+    console.error(`[Kuromi System] Erro no stream (${tipo}):`, err.message);
+    if (!res.headersSent) res.status(500).json({ erro: "Erro durante o download." });
+  });
 }
 
 // ===================
 // ROTAS
 // ===================
 
-// 1. musica?name=
+// 1. /play-audio?name= → Pesquisa pelo nome e baixa áudio
 router.get("/play-audio", async (req, res) => {
   const name = req.query.name;
-  if (!name) return res.status(400).send("Informe ?name=");
+  if (!name) return res.status(400).json({ erro: 'Informe ?name= com o nome da música.' });
 
   try {
-    console.log("[musica] Buscando:", name);
-    const r = await ytSearch(name);
-    const video = r.videos.length ? r.videos[0] : null;
-    if (!video) return res.status(404).send("Nenhum vídeo encontrado no YouTube");
-
-    console.log("[musica] Vídeo encontrado:", video.title);
-    const link = await getAny4kLink(video.url, "musica");
-
-    return res.redirect(link);
+    const video = await pesquisarYouTube(name);
+    await baixarEEnviar(res, video.link, video.title, "audio");
   } catch (err) {
-    console.error("[musica] Erro:", err.message);
-    return res.status(500).json({ erro: err.message });
+    console.error("[play-audio] Erro:", err.message);
+    if (!res.headersSent) res.status(500).json({ erro: err.message });
   }
 });
 
-// 2. clipe?name=
+// 2. /play-video?name= → Pesquisa pelo nome e baixa vídeo
 router.get("/play-video", async (req, res) => {
   const name = req.query.name;
-  if (!name) return res.status(400).send("Informe ?name=");
+  if (!name) return res.status(400).json({ erro: 'Informe ?name= com o nome do vídeo.' });
 
   try {
-    console.log("[clipe] Buscando:", name);
-    const r = await ytSearch(name);
-    const video = r.videos.length ? r.videos[0] : null;
-    if (!video) return res.status(404).send("Nenhum vídeo encontrado no YouTube");
-
-    console.log("[clipe] Vídeo encontrado:", video.title);
-    const link = await getAny4kLink(video.url, "clipe");
-
-    return res.redirect(link);
+    const video = await pesquisarYouTube(name);
+    await baixarEEnviar(res, video.link, video.title, "video");
   } catch (err) {
-    console.error("[clipe] Erro:", err.message);
-    return res.status(500).json({ erro: err.message });
+    console.error("[play-video] Erro:", err.message);
+    if (!res.headersSent) res.status(500).json({ erro: err.message });
   }
 });
 
-// 3. linkmp3?url=
+// 3. /linkmp3?url= → Baixa áudio diretamente pelo link do YouTube
 router.get("/linkmp3", async (req, res) => {
   const url = req.query.url;
-  if (!url) return res.status(400).send("Informe ?url=");
+  if (!url) return res.status(400).json({ erro: 'Informe ?url= com o link do YouTube.' });
 
   try {
-    console.log("[playlink] URL recebida:", url);
-    const link = await getAny4kLink(url, "playlink");
-    return res.redirect(link);
+    console.log("[linkmp3] URL recebida:", url);
+    // Usa a URL como título provisório; o nome final será o do arquivo mesmo
+    const title = "audio";
+    await baixarEEnviar(res, url, title, "audio");
   } catch (err) {
-    console.error("[playlink] Erro:", err.message);
-    return res.status(500).json({ erro: err.message });
+    console.error("[linkmp3] Erro:", err.message);
+    if (!res.headersSent) res.status(500).json({ erro: err.message });
   }
 });
 
-// 4. linkmp4?url=
+// 4. /linkmp4?url= → Baixa vídeo diretamente pelo link do YouTube
 router.get("/linkmp4", async (req, res) => {
   const url = req.query.url;
-  if (!url) return res.status(400).send("Informe ?url=");
+  if (!url) return res.status(400).json({ erro: 'Informe ?url= com o link do YouTube.' });
 
   try {
-    console.log("[clipelink] URL recebida:", url);
-    const link = await getAny4kLink(url, "clipelink");
-    return res.redirect(link);
+    console.log("[linkmp4] URL recebida:", url);
+    const title = "video";
+    await baixarEEnviar(res, url, title, "video");
   } catch (err) {
-    console.error("[clipelink] Erro:", err.message);
-    return res.status(500).json({ erro: err.message });
+    console.error("[linkmp4] Erro:", err.message);
+    if (!res.headersSent) res.status(500).json({ erro: err.message });
   }
 });
 
-router.get('/yt-audio', async (req, res) => {
-    const query = req.query.nome || req.query.url || req.query.q;
-    if (!query) return res.status(400).json({ error: 'Informe o nome ou o link.' });
+// 5. /yt-audio?nome= ou ?url= → Pesquisa por nome OU baixa por link (áudio)
+router.get("/yt-audio", async (req, res) => {
+  const query = req.query.nome || req.query.url || req.query.q;
+  if (!query) return res.status(400).json({ erro: "Informe ?nome= ou ?url=" });
 
-    try {
-        let videoUrl = query;
-        let title = "audio";
+  try {
+    let videoUrl = query;
+    let title = "audio";
 
-        if (!query.includes('youtube.com') && !query.includes('youtu.be')) {
-            console.log(`[Crisálida] Pesquisando áudio: ${query}`);
-            const searchResult = await ytSearch(query);
-            const video = searchResult.videos[0];
-            if (!video) return res.status(404).json({ error: 'Música não encontrada.' });
-            videoUrl = video.url;
-            title = video.title;
-        }
-
-        console.log(`[Crisálida] Iniciando stream de áudio para: ${title}`);
-        
-        res.setHeader('Content-Type', 'audio/mpeg');
-        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(title)}.mp3"`);
-
-        // Usando ytdl (nome que está na sua linha 27)
-        const stream = ytdl(videoUrl, {
-            filter: 'audioonly',
-            quality: 'highestaudio',
-            requestOptions: {
-                headers: {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                }
-            }
-        });
-
-        stream.pipe(res);
-
-        stream.on('error', (err) => {
-            console.error('[Crisálida] Erro no stream:', err.message);
-            if (!res.headersSent) res.status(500).send('Erro no download.');
-        });
-
-    } catch (error) {
-        console.error('[Crisálida] Erro geral na rota:', error.message);
-        res.status(500).json({ error: 'Erro interno.' });
+    // Se não for link, pesquisa pelo nome
+    if (!query.includes("youtube.com") && !query.includes("youtu.be")) {
+      const video = await pesquisarYouTube(query);
+      videoUrl = video.link;
+      title = video.title;
     }
+
+    await baixarEEnviar(res, videoUrl, title, "audio");
+  } catch (err) {
+    console.error("[yt-audio] Erro:", err.message);
+    if (!res.headersSent) res.status(500).json({ erro: err.message });
+  }
 });
 
-// Rota para baixar Vídeo do YouTube
-router.get('/yt-video', async (req, res) => {
-    const query = req.query.nome || req.query.url || req.query.q;
-    if (!query) return res.status(400).json({ error: 'Informe o nome ou o link do vídeo.' });
+// 6. /yt-video?nome= ou ?url= → Pesquisa por nome OU baixa por link (vídeo)
+router.get("/yt-video", async (req, res) => {
+  const query = req.query.nome || req.query.url || req.query.q;
+  if (!query) return res.status(400).json({ erro: "Informe ?nome= ou ?url=" });
 
-    try {
-        let videoUrl = query;
-        let title = "video";
+  try {
+    let videoUrl = query;
+    let title = "video";
 
-        if (!query.includes('youtube.com') && !query.includes('youtu.be')) {
-            const searchResult = await ytSearch(query);
-            const video = searchResult.videos[0];
-            if (!video) return res.status(404).json({ error: 'Vídeo não encontrado.' });
-            videoUrl = video.url;
-            title = video.title;
-        }
-
-        res.setHeader('Content-Type', 'video/mp4');
-        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(title)}.mp4"`);
-
-        ytdl(videoUrl, {
-            quality: '18', // 360p (Vídeo + Áudio em um único stream, mais rápido)
-            filter: 'audioandvideo'
-        }).pipe(res);
-
-    } catch (error) {
-        console.error('Erro no yt-video:', error.message);
-        if (!res.headersSent) res.status(500).json({ error: 'Erro ao processar vídeo.' });
+    // Se não for link, pesquisa pelo nome
+    if (!query.includes("youtube.com") && !query.includes("youtu.be")) {
+      const video = await pesquisarYouTube(query);
+      videoUrl = video.link;
+      title = video.title;
     }
+
+    await baixarEEnviar(res, videoUrl, title, "video");
+  } catch (err) {
+    console.error("[yt-video] Erro:", err.message);
+    if (!res.headersSent) res.status(500).json({ erro: err.message });
+  }
 });
 
 async function generateAudio(res, voiceId, text) {

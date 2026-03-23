@@ -622,15 +622,15 @@ const DOWNLOAD_API = "https://yt-dl.officialhectormanuel.workers.dev/?url=";
 // ===================
 async function pesquisarYouTube(nome) {
   console.log(`[Kuromi System] Pesquisando: ${nome}`);
-  const { data } = await axios.get(`${PESQUISA_API}${encodeURIComponent(nome)}`);
+  const { data } = await axios.get(`${PESQUISA_API}${encodeURIComponent(nome)}`, { timeout: 15000 });
 
   if (!data.formattedVideos || data.formattedVideos.length === 0) {
     throw new Error("Nenhum vídeo encontrado na pesquisa.");
   }
 
   const video = data.formattedVideos[0];
-  console.log(`[Kuromi System] Encontrado: ${video.title} | ${video.link}`);
-  return video; // Retorna { link, title, thumbnail, channel, views, creator, duration }
+  console.log(`[Kuromi System] Encontrado: "${video.title}" → ${video.link}`);
+  return video; // { link, title, thumbnail, channel, views, creator, duration }
 }
 
 // ===================
@@ -638,49 +638,74 @@ async function pesquisarYouTube(nome) {
 // ===================
 function sanitizarNome(nome) {
   return nome
-    .replace(/[^\w\s\-áéíóúàèìòùãõâêîôûçÁÉÍÓÚÀÈÌÒÙÃÕÂÊÎÔÛÇ]/g, "")
+    .replace(/[<>:"/\\|?*\x00-\x1F]/g, "")
     .replace(/\s+/g, " ")
-    .trim();
+    .trim()
+    .substring(0, 180);
 }
 
 // ===================
-// FUNÇÃO AUXILIAR: Faz o proxy/download do arquivo com nome customizado
+// FUNÇÃO AUXILIAR: Faz proxy do arquivo com nome correto
+// O Cloudflare Worker bloqueia chamadas server-side puras,
+// por isso fazemos a requisição com headers completos de browser
+// e enviamos o stream com Content-Disposition customizado.
 // ===================
 async function baixarEEnviar(res, videoUrl, title, tipo) {
-  const nomeArquivo = `${sanitizarNome(title)} -- kuromi system`;
-  const ext = tipo === "audio" ? "mp3" : "mp4";
-  const contentType = tipo === "audio" ? "audio/mpeg" : "video/mp4";
-  const urlDownload = `${DOWNLOAD_API}${encodeURIComponent(videoUrl)}`;
+  const ext          = tipo === "audio" ? "mp3" : "mp4";
+  const contentType  = tipo === "audio" ? "audio/mpeg" : "video/mp4";
+  const nomeArquivo  = `${sanitizarNome(title)} -- kuromi system.${ext}`;
+  const urlDownload  = `${DOWNLOAD_API}${encodeURIComponent(videoUrl)}`;
 
-  console.log(`[Kuromi System] Baixando (${tipo}): ${urlDownload}`);
+  console.log(`[Kuromi System] Iniciando download (${tipo}): ${urlDownload}`);
 
-  // Faz o proxy do stream direto para o cliente
   const response = await axios.get(urlDownload, {
     responseType: "stream",
-    timeout: 120000,
+    timeout: 180000,
+    maxRedirects: 15,
     headers: {
-      "User-Agent":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      "User-Agent":       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+      "Accept":           "audio/webm,audio/ogg,audio/wav,audio/*;q=0.9,*/*;q=0.5",
+      "Accept-Language":  "pt-BR,pt;q=0.9,en;q=0.8",
+      "Accept-Encoding":  "identity",
+      "Referer":          "https://www.youtube.com/",
+      "Origin":           "https://www.youtube.com",
+      "Sec-Fetch-Mode":   "navigate",
+      "Sec-Fetch-Dest":   "audio",
+      "Connection":       "keep-alive",
     },
   });
 
-  // Define os headers de download com o nome da música + kuromi system
-  res.setHeader("Content-Type", contentType);
-  res.setHeader(
-    "Content-Disposition",
-    `attachment; filename*=UTF-8''${encodeURIComponent(nomeArquivo + "." + ext)}`
-  );
+  // Valida se o conteúdo recebido é realmente um arquivo de mídia
+  const receivedType = response.headers["content-type"] || "";
+  const contentLength = parseInt(response.headers["content-length"] || "0", 10);
 
-  // Se o servidor upstream enviar o Content-Length, repassa ao cliente
+  if (receivedType.includes("text/html") || receivedType.includes("application/json")) {
+    throw new Error(`Worker retornou conteúdo inválido (${receivedType}). Tente novamente.`);
+  }
+
+  if (contentLength > 0 && contentLength < 5000) {
+    throw new Error("Arquivo recebido é muito pequeno — possível erro no Worker.");
+  }
+
+  console.log(`[Kuromi System] Stream OK | tipo: ${receivedType} | tamanho: ${contentLength || "desconhecido"}`);
+
+  // Envia os headers corretos para o cliente
+  res.setHeader("Content-Type", contentType);
+  res.setHeader("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent(nomeArquivo)}`);
   if (response.headers["content-length"]) {
     res.setHeader("Content-Length", response.headers["content-length"]);
   }
 
+  // Pipe do stream para o cliente
   response.data.pipe(res);
 
   response.data.on("error", (err) => {
     console.error(`[Kuromi System] Erro no stream (${tipo}):`, err.message);
-    if (!res.headersSent) res.status(500).json({ erro: "Erro durante o download." });
+    if (!res.headersSent) res.status(500).json({ erro: "Erro durante o envio do arquivo." });
+  });
+
+  res.on("close", () => {
+    response.data.destroy();
   });
 }
 
@@ -691,7 +716,7 @@ async function baixarEEnviar(res, videoUrl, title, tipo) {
 // 1. /play-audio?name= → Pesquisa pelo nome e baixa áudio
 router.get("/play-audio", async (req, res) => {
   const name = req.query.name;
-  if (!name) return res.status(400).json({ erro: 'Informe ?name= com o nome da música.' });
+  if (!name) return res.status(400).json({ erro: "Informe ?name= com o nome da música." });
 
   try {
     const video = await pesquisarYouTube(name);
@@ -705,7 +730,7 @@ router.get("/play-audio", async (req, res) => {
 // 2. /play-video?name= → Pesquisa pelo nome e baixa vídeo
 router.get("/play-video", async (req, res) => {
   const name = req.query.name;
-  if (!name) return res.status(400).json({ erro: 'Informe ?name= com o nome do vídeo.' });
+  if (!name) return res.status(400).json({ erro: "Informe ?name= com o nome do vídeo." });
 
   try {
     const video = await pesquisarYouTube(name);
@@ -719,12 +744,16 @@ router.get("/play-video", async (req, res) => {
 // 3. /linkmp3?url= → Baixa áudio diretamente pelo link do YouTube
 router.get("/linkmp3", async (req, res) => {
   const url = req.query.url;
-  if (!url) return res.status(400).json({ erro: 'Informe ?url= com o link do YouTube.' });
+  if (!url) return res.status(400).json({ erro: "Informe ?url= com o link do YouTube." });
 
   try {
     console.log("[linkmp3] URL recebida:", url);
-    // Usa a URL como título provisório; o nome final será o do arquivo mesmo
-    const title = "audio";
+    // Tenta obter o título via pesquisa; se falhar, usa "audio" como padrão
+    let title = "audio";
+    try {
+      const video = await pesquisarYouTube(url);
+      if (video?.title) title = video.title;
+    } catch (_) {}
     await baixarEEnviar(res, url, title, "audio");
   } catch (err) {
     console.error("[linkmp3] Erro:", err.message);
@@ -735,11 +764,15 @@ router.get("/linkmp3", async (req, res) => {
 // 4. /linkmp4?url= → Baixa vídeo diretamente pelo link do YouTube
 router.get("/linkmp4", async (req, res) => {
   const url = req.query.url;
-  if (!url) return res.status(400).json({ erro: 'Informe ?url= com o link do YouTube.' });
+  if (!url) return res.status(400).json({ erro: "Informe ?url= com o link do YouTube." });
 
   try {
     console.log("[linkmp4] URL recebida:", url);
-    const title = "video";
+    let title = "video";
+    try {
+      const video = await pesquisarYouTube(url);
+      if (video?.title) title = video.title;
+    } catch (_) {}
     await baixarEEnviar(res, url, title, "video");
   } catch (err) {
     console.error("[linkmp4] Erro:", err.message);
@@ -754,13 +787,12 @@ router.get("/yt-audio", async (req, res) => {
 
   try {
     let videoUrl = query;
-    let title = "audio";
+    let title    = "audio";
 
-    // Se não for link, pesquisa pelo nome
     if (!query.includes("youtube.com") && !query.includes("youtu.be")) {
       const video = await pesquisarYouTube(query);
       videoUrl = video.link;
-      title = video.title;
+      title    = video.title;
     }
 
     await baixarEEnviar(res, videoUrl, title, "audio");
@@ -777,13 +809,12 @@ router.get("/yt-video", async (req, res) => {
 
   try {
     let videoUrl = query;
-    let title = "video";
+    let title    = "video";
 
-    // Se não for link, pesquisa pelo nome
     if (!query.includes("youtube.com") && !query.includes("youtu.be")) {
       const video = await pesquisarYouTube(query);
       videoUrl = video.link;
-      title = video.title;
+      title    = video.title;
     }
 
     await baixarEEnviar(res, videoUrl, title, "video");

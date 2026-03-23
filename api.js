@@ -646,66 +646,83 @@ function sanitizarNome(nome) {
 
 // ===================
 // FUNÇÃO AUXILIAR: Faz proxy do arquivo com nome correto
-// O Cloudflare Worker bloqueia chamadas server-side puras,
-// por isso fazemos a requisição com headers completos de browser
-// e enviamos o stream com Content-Disposition customizado.
+// O Worker retorna um JSON com o link real do arquivo.
+// Extraímos esse link e fazemos o proxy do stream para o cliente.
 // ===================
 async function baixarEEnviar(res, videoUrl, title, tipo) {
-  const ext          = tipo === "audio" ? "mp3" : "mp4";
-  const contentType  = tipo === "audio" ? "audio/mpeg" : "video/mp4";
-  const nomeArquivo  = `${sanitizarNome(title)} -- kuromi system.${ext}`;
-  const urlDownload  = `${DOWNLOAD_API}${encodeURIComponent(videoUrl)}`;
+  const ext         = tipo === "audio" ? "mp3" : "mp4";
+  const contentType = tipo === "audio" ? "audio/mpeg" : "video/mp4";
+  const nomeArquivo = `${sanitizarNome(title)} -- kuromi system.${ext}`;
+  const urlWorker   = `${DOWNLOAD_API}${encodeURIComponent(videoUrl)}`;
 
-  console.log(`[Kuromi System] Iniciando download (${tipo}): ${urlDownload}`);
+  console.log(`[Kuromi System] Consultando Worker (${tipo}): ${urlWorker}`);
 
-  const response = await axios.get(urlDownload, {
+  // PASSO 1: Chama o Worker para obter o JSON com o link real
+  const workerRes = await axios.get(urlWorker, {
+    timeout: 30000,
+    responseType: "json",
+    headers: {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+      "Accept": "application/json, */*",
+    },
+  });
+
+  const json = workerRes.data;
+  console.log(`[Kuromi System] Resposta do Worker:`, JSON.stringify(json).substring(0, 300));
+
+  // PASSO 2: Extrai a URL real do JSON (tenta vários campos possíveis)
+  const linkReal =
+    json?.url        ||
+    json?.link       ||
+    json?.download   ||
+    json?.audio      ||
+    json?.video      ||
+    json?.data?.url  ||
+    json?.data?.link ||
+    json?.data?.download ||
+    json?.result?.url ||
+    json?.result?.download ||
+    null;
+
+  if (!linkReal || typeof linkReal !== "string") {
+    console.error("[Kuromi System] JSON recebido:", JSON.stringify(json));
+    throw new Error(`Worker não retornou uma URL válida. Resposta: ${JSON.stringify(json).substring(0, 200)}`);
+  }
+
+  console.log(`[Kuromi System] URL real extraída: ${linkReal.substring(0, 100)}...`);
+
+  // PASSO 3: Faz o stream do arquivo real para o cliente com nome correto
+  const fileRes = await axios.get(linkReal, {
     responseType: "stream",
     timeout: 180000,
     maxRedirects: 15,
     headers: {
-      "User-Agent":       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-      "Accept":           "audio/webm,audio/ogg,audio/wav,audio/*;q=0.9,*/*;q=0.5",
-      "Accept-Language":  "pt-BR,pt;q=0.9,en;q=0.8",
-      "Accept-Encoding":  "identity",
-      "Referer":          "https://www.youtube.com/",
-      "Origin":           "https://www.youtube.com",
-      "Sec-Fetch-Mode":   "navigate",
-      "Sec-Fetch-Dest":   "audio",
-      "Connection":       "keep-alive",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+      "Accept": "*/*",
+      "Accept-Encoding": "identity",
+      "Referer": "https://www.youtube.com/",
     },
   });
 
-  // Valida se o conteúdo recebido é realmente um arquivo de mídia
-  const receivedType = response.headers["content-type"] || "";
-  const contentLength = parseInt(response.headers["content-length"] || "0", 10);
-
-  if (receivedType.includes("text/html") || receivedType.includes("application/json")) {
-    throw new Error(`Worker retornou conteúdo inválido (${receivedType}). Tente novamente.`);
-  }
-
-  if (contentLength > 0 && contentLength < 5000) {
-    throw new Error("Arquivo recebido é muito pequeno — possível erro no Worker.");
-  }
-
-  console.log(`[Kuromi System] Stream OK | tipo: ${receivedType} | tamanho: ${contentLength || "desconhecido"}`);
+  console.log(`[Kuromi System] Stream iniciado | Content-Type: ${fileRes.headers["content-type"]} | Tamanho: ${fileRes.headers["content-length"] || "?"}`);
 
   // Envia os headers corretos para o cliente
   res.setHeader("Content-Type", contentType);
   res.setHeader("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent(nomeArquivo)}`);
-  if (response.headers["content-length"]) {
-    res.setHeader("Content-Length", response.headers["content-length"]);
+  if (fileRes.headers["content-length"]) {
+    res.setHeader("Content-Length", fileRes.headers["content-length"]);
   }
 
   // Pipe do stream para o cliente
-  response.data.pipe(res);
+  fileRes.data.pipe(res);
 
-  response.data.on("error", (err) => {
+  fileRes.data.on("error", (err) => {
     console.error(`[Kuromi System] Erro no stream (${tipo}):`, err.message);
     if (!res.headersSent) res.status(500).json({ erro: "Erro durante o envio do arquivo." });
   });
 
   res.on("close", () => {
-    response.data.destroy();
+    fileRes.data.destroy();
   });
 }
 
